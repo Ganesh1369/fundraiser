@@ -1,0 +1,242 @@
+<div class="dashboard">
+    <!-- Top Header Bar -->
+    <header class="topbar">
+        <a routerLink="/" class="logo">
+            <span class="logo-icon">🔥</span>
+            <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+        </a>
+        <div class="topbar-actions">
+            <button class="btn btn-gold" (click)="showDonateModal = true">
+                <span>💰</span> Donate
+            </button>
+            @if (user?.userType === 'organization') {
+            <button class="btn btn-outline" (click)="showCertificateModal = true">
+                <span>📄</span> 80G Certificate
+            </button>
+            }
+            <button class="logout-btn" (click)="logout()">
+                <span>🚪</span> Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="welcome-text">
+                <h1>Welcome back, {{ (user?.name || 'Guest').split(' ')[0] }}! 👋</h1>
+                <p>Here's your giving summary</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-gold" (click)="showDonateModal = true">
+                    <span>💰</span>
+                    Quick Donate
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon gold">💰</div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ formatCurrency(summary.totalAmount) }}</div>
+                    <div class="stat-label">Total Donations</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">📊</div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ summary.totalDonations }}</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">🎁</div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ referralStats?.referralPoints || 0 }}</div>
+                    <div class="stat-label">Referral Points</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon purple">👥</div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ referralStats?.referralCount || 0 }}</div>
+                    <div class="stat-label">People Referred</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            <!-- Donation History -->
+            <div class="card donation-history">
+                <div class="card-header">
+                    <h2>Donation History</h2>
+                    <select class="filter-select" [(ngModel)]="selectedFilter" (change)="onFilterChange()">
+                        <option value="all">All Time</option>
+                        <option value="day">Past Day</option>
+                        <option value="week">Past Week</option>
+                        <option value="month">Past Month</option>
+                        <option value="year">Past Year</option>
+                    </select>
+                </div>
+
+                <div class="card-body">
+                    @if (donations.length === 0) {
+                    <div class="empty-state">
+                        <span class="empty-icon">📭</span>
+                        <p>No donations yet. Start your giving journey!</p>
+                        <button class="btn btn-primary" (click)="showDonateModal = true">Make First Donation</button>
+                    </div>
+                    } @else {
+                    <div class="donation-list">
+                        @for (donation of donations; track donation.id) {
+                        <div class="donation-item">
+                            <div class="donation-info">
+                                <div class="donation-amount">{{ formatCurrency(donation.amount) }}</div>
+                                <div class="donation-date">{{ formatDate(donation.createdAt) }}</div>
+                            </div>
+                            <div class="donation-status" [ngClass]="donation.status">
+                                {{ donation.status }}
+                            </div>
+                        </div>
+                        }
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Referral Card -->
+            <div class="card referral-card">
+                <div class="card-header">
+                    <h2>Invite & Earn</h2>
+                    <span class="points-badge">{{ referralStats?.referralPoints || 0 }} pts</span>
+                </div>
+
+                <div class="card-body">
+                    <p class="referral-info">
+                        Earn <strong>1 point for every ₹1</strong> donated by people you refer!
+                    </p>
+
+                    <div class="referral-code-box">
+                        <span class="code-label">Your Code</span>
+                        <span class="referral-code">{{ referralStats?.referralCode || user?.referralCode }}</span>
+                    </div>
+
+                    <div class="referral-link-box">
+                        <input type="text" class="referral-link-input" [value]="referralStats?.referralLink || ''"
+                            readonly>
+                        <button class="copy-btn" (click)="copyReferralLink()">
+                            {{ linkCopied ? '✓' : '📋' }}
+                        </button>
+                    </div>
+
+                    <div class="share-buttons">
+                        <button class="share-btn whatsapp" (click)="shareOnWhatsApp()">
+                            <span>📱</span>
+                            WhatsApp
+                        </button>
+                        <button class="share-btn twitter" (click)="shareOnTwitter()">
+                            <span>𝕏</span>
+                            Twitter
+                        </button>
+                    </div>
+
+                    @if (referralStats?.recentReferrals?.length) {
+                    <div class="recent-referrals">
+                        <h4>Recent Referrals</h4>
+                        @for (referral of referralStats!.recentReferrals!; track referral.name) {
+                        <div class="referral-item">
+                            <span class="referral-avatar">{{ referral.name.charAt(0) }}</span>
+                            <span class="referral-name">{{ referral.name }}</span>
+                        </div>
+                        }
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Donate Modal -->
+    @if (showDonateModal) {
+    <div class="modal-overlay" (click)="showDonateModal = false">
+        <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Make a Donation 💰</h2>
+                <button class="close-btn" (click)="showDonateModal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Every rupee helps a student succeed!</p>
+
+                <div class="amount-presets">
+                    @for (preset of [100, 500, 1000, 5000]; track preset) {
+                    <button class="preset-btn" [class.active]="donationAmount === preset"
+                        (click)="donationAmount = preset">
+                        {{ formatCurrency(preset) }}
+                    </button>
+                    }
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Or enter custom amount</label>
+                    <input type="number" class="input" [(ngModel)]="donationAmount" min="1"
+                        placeholder="Enter amount in ₹">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" (click)="showDonateModal = false">Cancel</button>
+                <button class="btn btn-gold" (click)="initiateDonation()" [disabled]="isLoading || donationAmount < 1">
+                    @if (isLoading) {
+                    Processing...
+                    } @else {
+                    Pay {{ formatCurrency(donationAmount) }}
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Certificate Modal -->
+    @if (showCertificateModal) {
+    <div class="modal-overlay" (click)="showCertificateModal = false">
+        <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Request 80G Certificate 📄</h2>
+                <button class="close-btn" (click)="showCertificateModal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Get your 80G tax benefit certificate for your donations.</p>
+
+                <div class="input-group">
+                    <label class="input-label">PAN Number *</label>
+                    <input type="text" class="input" [(ngModel)]="panNumber" placeholder="Enter your PAN number"
+                        style="text-transform: uppercase" maxlength="10">
+                </div>
+
+                <div class="info-box">
+                    <span>ℹ️</span>
+                    <p>Your certificate will be processed within 5-7 business days.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" (click)="showCertificateModal = false">Cancel</button>
+                <button class="btn btn-primary" (click)="requestCertificate()"
+                    [disabled]="isLoading || panNumber.length !== 10">
+                    @if (isLoading) {
+                    Submitting...
+                    } @else {
+                    Submit Request
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+</div>

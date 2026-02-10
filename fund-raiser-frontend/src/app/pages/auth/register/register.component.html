@@ -1,0 +1,226 @@
+<div class="auth-page">
+    <div class="auth-container register-container">
+        <div class="auth-card">
+            <!-- Header -->
+            <div class="auth-header">
+                <a routerLink="/" class="logo">
+                    <span class="logo-icon">🔥</span>
+                    <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+                </a>
+                <h1>Create Account</h1>
+                <p>Join our community of changemakers</p>
+            </div>
+
+            <!-- Stepper -->
+            <div class="stepper">
+                @for (step of [1,2,3,4,5]; track step) {
+                <div class="step-indicator" [class.active]="currentStep >= step" [class.current]="currentStep === step">
+                    <span class="step-number">{{ step }}</span>
+                </div>
+                @if (step < 5) { <div class="step-line" [class.active]="currentStep > step">
+            </div>
+            }
+            }
+        </div>
+
+        <!-- Step Title -->
+        <h2 class="step-title">{{ stepTitle }}</h2>
+
+        <!-- Referral Badge -->
+        @if (referrerName) {
+        <div class="referral-badge">
+            <span>🎁</span>
+            Referred by <strong>{{ referrerName }}</strong>
+        </div>
+        }
+
+        <!-- Error Message -->
+        @if (errorMessage) {
+        <div class="error-message">
+            <span>⚠️</span>
+            {{ errorMessage }}
+        </div>
+        }
+
+        <!-- Step 1: User Type Selection -->
+        @if (currentStep === 1) {
+        <div class="user-type-grid">
+            <div class="user-type-card" (click)="selectUserType('student')">
+                <div class="type-icon">🎓</div>
+                <h3>Student</h3>
+                <p>For students who want to contribute or receive help</p>
+            </div>
+            <div class="user-type-card" (click)="selectUserType('individual')">
+                <div class="type-icon">👤</div>
+                <h3>Individual</h3>
+                <p>For individuals who want to make a difference</p>
+            </div>
+            <div class="user-type-card" (click)="selectUserType('organization')">
+                <div class="type-icon">🏢</div>
+                <h3>Organization</h3>
+                <p>For companies with 80G tax benefits</p>
+            </div>
+        </div>
+        }
+
+        <!-- Step 2: Personal Details -->
+        @if (currentStep === 2) {
+        <form class="auth-form">
+            <div class="input-group">
+                <label class="input-label">Full Name *</label>
+                <input type="text" class="input" placeholder="Enter your full name" [(ngModel)]="data.name" name="name"
+                    required>
+            </div>
+
+            @if (data.userType === 'student') {
+            <div class="input-group">
+                <label class="input-label">Age *</label>
+                <input type="number" class="input" placeholder="Enter your age" [(ngModel)]="data.age" name="age"
+                    min="5" max="100">
+            </div>
+            }
+        </form>
+        }
+
+        <!-- Step 3: Contact Information -->
+        @if (currentStep === 3) {
+        <form class="auth-form">
+            <div class="input-group">
+                <label class="input-label">Email Address *</label>
+                <input type="email" class="input" placeholder="Enter your email" [(ngModel)]="data.email" name="email"
+                    required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Phone Number *</label>
+                <input type="tel" class="input" placeholder="Enter your phone number" [(ngModel)]="data.phone"
+                    name="phone" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Password *</label>
+                <input type="password" class="input" placeholder="Create a password (min 6 characters)"
+                    [(ngModel)]="data.password" name="password" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Confirm Password *</label>
+                <input type="password" class="input" placeholder="Confirm your password"
+                    [(ngModel)]="data.confirmPassword" name="confirmPassword" required>
+                @if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+                <span class="input-error">Passwords do not match</span>
+                }
+            </div>
+        </form>
+        }
+
+        <!-- Step 4: Location Details -->
+        @if (currentStep === 4) {
+        <form class="auth-form">
+            <div class="input-group">
+                <label class="input-label">Area / Locality</label>
+                <input type="text" class="input" placeholder="Enter your area" [(ngModel)]="data.area" name="area">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Locality</label>
+                <input type="text" class="input" placeholder="Enter your locality" [(ngModel)]="data.locality"
+                    name="locality">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">City *</label>
+                <input type="text" class="input" placeholder="Enter your city" [(ngModel)]="data.city" name="city"
+                    required>
+            </div>
+        </form>
+        }
+
+        <!-- Step 5: Additional Information -->
+        @if (currentStep === 5) {
+        <form class="auth-form">
+            @if (data.userType === 'student') {
+            <div class="input-group">
+                <label class="input-label">Class / Grade *</label>
+                <input type="text" class="input" placeholder="e.g., 10th, 12th, B.Tech 2nd Year"
+                    [(ngModel)]="data.classGrade" name="classGrade">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">School / College Name *</label>
+                <input type="text" class="input" placeholder="Enter your school or college name"
+                    [(ngModel)]="data.schoolName" name="schoolName" required>
+            </div>
+            }
+
+            @if (data.userType === 'organization') {
+            <div class="input-group">
+                <label class="input-label">Organization Name *</label>
+                <input type="text" class="input" placeholder="Enter organization name"
+                    [(ngModel)]="data.organizationName" name="organizationName" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">PAN Number *</label>
+                <input type="text" class="input" placeholder="Enter PAN number" [(ngModel)]="data.panNumber"
+                    name="panNumber" required style="text-transform: uppercase">
+            </div>
+
+            <div class="info-box">
+                <span>ℹ️</span>
+                <p>Organizations are eligible for 80G tax benefits on donations.</p>
+            </div>
+            }
+
+            @if (data.userType === 'individual') {
+            <div class="success-box">
+                <span>✅</span>
+                <p>You're all set! Click Complete Registration to create your account.</p>
+            </div>
+            }
+
+            <div class="input-group">
+                <label class="input-label">Referral Code (Optional)</label>
+                <input type="text" class="input" placeholder="Enter referral code if you have one"
+                    [(ngModel)]="data.referralCode" name="referralCode" (blur)="validateReferralCode()">
+            </div>
+        </form>
+        }
+
+        <!-- Navigation Buttons -->
+        @if (currentStep > 1) {
+        <div class="form-actions">
+            <button type="button" class="btn btn-outline" (click)="prevStep()">
+                ← Back
+            </button>
+
+            @if (currentStep < totalSteps) { <button type="button" class="btn btn-primary" (click)="nextStep()"
+                [disabled]="!canProceed()">
+                Continue →
+                </button>
+                } @else {
+                <button type="button" class="btn btn-gold" (click)="onSubmit()" [disabled]="isLoading || !canProceed()">
+                    @if (isLoading) {
+                    <span class="spinner"></span>
+                    Creating Account...
+                    } @else {
+                    Complete Registration 🎉
+                    }
+                </button>
+                }
+        </div>
+        }
+
+        <!-- Footer -->
+        <div class="auth-footer">
+            <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- Background -->
+<div class="auth-bg">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+</div>
+</div>

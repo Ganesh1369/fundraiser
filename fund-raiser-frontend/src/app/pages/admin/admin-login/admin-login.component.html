@@ -1,0 +1,54 @@
+<div class="auth-page admin-login">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <a routerLink="/" class="logo">
+                    <span class="logo-icon">🔥</span>
+                    <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+                </a>
+                <div class="admin-badge">Admin Portal</div>
+                <h1>Admin Login</h1>
+                <p>Access the administration panel</p>
+            </div>
+
+            @if (errorMessage) {
+            <div class="error-message">
+                <span>⚠️</span>
+                {{ errorMessage }}
+            </div>
+            }
+
+            <form (ngSubmit)="onSubmit()" class="auth-form">
+                <div class="input-group">
+                    <label class="input-label">Username</label>
+                    <input type="text" class="input" placeholder="Enter admin username" [(ngModel)]="username"
+                        name="username" required>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" class="input" placeholder="Enter password" [(ngModel)]="password"
+                        name="password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="isLoading">
+                    @if (isLoading) {
+                    <span class="spinner"></span>
+                    Signing in...
+                    } @else {
+                    Access Admin Panel
+                    }
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <a routerLink="/login">← Back to User Login</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-bg">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+    </div>
+</div>

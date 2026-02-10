@@ -1,0 +1,51 @@
+--- USERS ---
+[
+  {
+    "id": "7cb83590-0521-4280-9ee8-a6739a966a5b",
+    "name": "Ganesh",
+    "email": "ganeshoptiplex791@gmail.com",
+    "user_type": "student"
+  },
+  {
+    "id": "ad44feaa-6bd8-44a9-9307-e0cf8803f42b",
+    "name": "Ganesh",
+    "email": "ganeshoptiplex790@gmail.com",
+    "user_type": "individual"
+  },
+  {
+    "id": "64e6e64a-3034-4ed0-9644-dbe59e0beeb1",
+    "name": "Ganesh",
+    "email": "ganeshoptiplex792@gmail.com",
+    "user_type": "organization"
+  }
+]
+
+--- DONATIONS ---
+[
+  {
+    "id": "8704df95-ce7f-48f0-bb9d-f09af1269fab",
+    "user_id": "7cb83590-0521-4280-9ee8-a6739a966a5b",
+    "amount": "1000.00",
+    "status": "completed",
+    "created_at": "2026-02-09T20:51:22.198Z"
+  },
+  {
+    "id": "9dcef3d3-96fc-4630-86c2-d9195df02641",
+    "user_id": "ad44feaa-6bd8-44a9-9307-e0cf8803f42b",
+    "amount": "5000.00",
+    "status": "completed",
+    "created_at": "2026-02-09T21:02:47.776Z"
+  },
+  {
+    "id": "e97f946b-797a-43bc-9657-74809380f7cc",
+    "user_id": "64e6e64a-3034-4ed0-9644-dbe59e0beeb1",
+    "amount": "5000.00",
+    "status": "completed",
+    "created_at": "2026-02-09T21:09:27.123Z"
+  }
+]
+
+--- DONATION SUMMARY PER USER ---
+User: ganeshoptiplex791@gmail.com (7cb83590-0521-4280-9ee8-a6739a966a5b) - Donations: 1
+User: ganeshoptiplex790@gmail.com (ad44feaa-6bd8-44a9-9307-e0cf8803f42b) - Donations: 1
+User: ganeshoptiplex792@gmail.com (64e6e64a-3034-4ed0-9644-dbe59e0beeb1) - Donations: 1

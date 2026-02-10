@@ -1,0 +1,288 @@
+<div class="admin-dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar dark">
+        <div class="sidebar-header">
+            <a routerLink="/" class="logo">
+                <span class="logo-icon">🔥</span>
+                <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
+            </a>
+            <span class="admin-badge">Admin</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item" [class.active]="activeTab === 'dashboard'" (click)="activeTab = 'dashboard'">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+            <a class="nav-item" [class.active]="activeTab === 'registrations'" (click)="activeTab = 'registrations'">
+                <span class="nav-icon">👥</span>
+                Registrations
+            </a>
+            <a class="nav-item" [class.active]="activeTab === 'donations'" (click)="activeTab = 'donations'">
+                <span class="nav-icon">💰</span>
+                Donations
+            </a>
+            <a class="nav-item" [class.active]="activeTab === 'leaderboard'" (click)="activeTab = 'leaderboard'">
+                <span class="nav-icon">🏆</span>
+                Leaderboard
+            </a>
+            <a class="nav-item" [class.active]="activeTab === 'certificates'" (click)="activeTab = 'certificates'">
+                <span class="nav-icon">📄</span>
+                Certificates
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="logout-btn" (click)="logout()">
+                <span>🚪</span>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="admin-header">
+            <h1>
+                @switch (activeTab) {
+                @case ('dashboard') { Dashboard Overview }
+                @case ('registrations') { User Registrations }
+                @case ('donations') { Donation Management }
+                @case ('leaderboard') { Leaderboard }
+                @case ('certificates') { 80G Certificates }
+                }
+            </h1>
+        </header>
+
+        <!-- Dashboard Tab -->
+        @if (activeTab === 'dashboard') {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">👥</span>
+                    <span class="stat-label">Total Users</span>
+                </div>
+                <div class="stat-value">{{ stats?.users?.total || 0 }}</div>
+                <div class="stat-breakdown">
+                    <span>🎓 {{ stats?.users?.byType?.student || 0 }}</span>
+                    <span>👤 {{ stats?.users?.byType?.individual || 0 }}</span>
+                    <span>🏢 {{ stats?.users?.byType?.organization || 0 }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <span class="stat-icon">💰</span>
+                    <span class="stat-label">Total Raised</span>
+                </div>
+                <div class="stat-value">{{ formatCurrency(stats?.donations?.totalAmount || 0) }}</div>
+                <div class="stat-breakdown">
+                    <span>✅ {{ stats?.donations?.totalCount || 0 }} transactions</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">�</span>
+                    <span class="stat-label">This Month</span>
+                </div>
+                <div class="stat-value">{{ formatCurrency(stats?.donations?.thisMonth || 0) }}</div>
+                <div class="stat-breakdown">
+                    <span>Raised</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📄</span>
+                    <span class="stat-label">Certificates</span>
+                </div>
+                <div class="stat-value">{{ stats?.certificates?.['pending'] || 0 }}</div>
+                <div class="stat-breakdown">
+                    <span>Pending review</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Tables -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Recent Registrations</h2>
+                    <button class="btn btn-sm btn-outline" (click)="activeTab = 'registrations'">View All</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (user of registrations.slice(0, 5); track user.id) {
+                            <tr>
+                                <td>{{ user.name }}</td>
+                                <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
+                                <td>{{ formatDate(user.created_at) }}</td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Top Donors</h2>
+                    <button class="btn btn-sm btn-outline" (click)="activeTab = 'leaderboard'">View All</button>
+                </div>
+                <div class="leaderboard-mini">
+                    @for (entry of leaderboard.slice(0, 5); track entry.name; let i = $index) {
+                    <div class="leader-item">
+                        <span class="rank" [ngClass]="'rank-' + (i + 1)">{{ i + 1 }}</span>
+                        <span class="name">{{ entry.name }}</span>
+                        <span class="score">{{ formatCurrency(entry.totalDonations) }}</span>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+        }
+
+        <!-- Registrations Tab -->
+        @if (activeTab === 'registrations') {
+        <div class="filters">
+            <select class="filter-select" [(ngModel)]="userTypeFilter" (change)="onFilterChange()">
+                <option value="">All Types</option>
+                <option value="student">Students</option>
+                <option value="individual">Individuals</option>
+                <option value="organization">Organizations</option>
+            </select>
+            <input type="text" class="filter-input" placeholder="Search by name or email..." [(ngModel)]="searchQuery"
+                (input)="onFilterChange()">
+            <button class="btn btn-primary" (click)="exportRegistrations()">
+                📥 Export Excel
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Type</th>
+                            <th>City</th>
+                            <th>Registered</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (user of registrations; track user.id) {
+                        <tr>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
+                            <td>{{ user.city || '-' }}</td>
+                            <td>{{ formatDate(user.created_at) }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        }
+
+        <!-- Donations Tab -->
+        @if (activeTab === 'donations') {
+        <div class="filters">
+            <select class="filter-select" [(ngModel)]="donationStatusFilter" (change)="onFilterChange()">
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+            </select>
+            <button class="btn btn-primary" (click)="exportDonations()">
+                📥 Export Excel
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Donor</th>
+                            <th>Email</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Payment ID</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (donation of donations; track donation.id) {
+                        <tr>
+                            <td>{{ donation.user_name }}</td>
+                            <td>{{ donation.user_email }}</td>
+                            <td class="amount">{{ formatCurrency(donation.amount) }}</td>
+                            <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
+                            <td>{{ donation.razorpay_payment_id || '-' }}</td>
+                            <td>{{ formatDate(donation.created_at) }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        }
+
+        <!-- Leaderboard Tab -->
+        @if (activeTab === 'leaderboard') {
+        <div class="card">
+            <div class="leaderboard">
+                @for (entry of leaderboard; track entry.name; let i = $index) {
+                <div class="leaderboard-row" [class.top-3]="i < 3">
+                    <div class="rank-cell">
+                        @switch (i) {
+                        @case (0) { 🥇 }
+                        @case (1) { 🥈 }
+                        @case (2) { 🥉 }
+                        @default { {{ i + 1 }} }
+                        }
+                    </div>
+                    <div class="user-cell">
+                        <div class="user-name">{{ entry.name }}</div>
+                        <div class="user-email">{{ entry.email }}</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="donation-amount">{{ formatCurrency(entry.totalDonations) }}</div>
+                        <div class="referral-points">{{ entry.referralPoints }} pts</div>
+                    </div>
+                    <div class="score-cell">
+                        <div class="score">{{ entry.score }}</div>
+                        <div class="score-label">Score</div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+        }
+
+        <!-- Certificates Tab -->
+        @if (activeTab === 'certificates') {
+        <div class="card">
+            <div class="empty-state">
+                <span class="empty-icon">📄</span>
+                <h3>Certificate Management</h3>
+                <p>View and manage 80G certificate requests from organizations.</p>
+            </div>
+        </div>
+        }
+    </main>
+</div>

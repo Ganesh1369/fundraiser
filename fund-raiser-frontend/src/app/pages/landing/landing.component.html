@@ -1,0 +1,251 @@
+<!-- ===== Navigation ===== -->
+<nav class="navbar">
+    <div class="container navbar-content">
+        <a routerLink="/" class="logo">
+            <span class="logo-icon">🔥</span>
+            <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+        </a>
+        <div class="nav-links">
+            <a routerLink="/" class="nav-link active">Home</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#about" class="nav-link">About</a>
+            <a routerLink="/login" class="nav-link">Login</a>
+            <a routerLink="/register" class="btn btn-primary">Get Started</a>
+        </div>
+        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+</nav>
+
+<!-- ===== Hero Section ===== -->
+<section class="hero">
+    <div class="hero-bg">
+        <div class="hero-gradient"></div>
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <div class="container hero-content">
+        <div class="hero-text animate-fade-in-up">
+            <span class="hero-badge">
+                <span class="badge-icon">✨</span>
+                Empowering Education Through Giving
+            </span>
+            <h1 class="hero-title">
+                Transform Lives<br>
+                <span class="text-gradient">One Donation</span><br>
+                at a Time
+            </h1>
+            <p class="hero-description">
+                Join thousands of donors making quality education accessible to deserving students.
+                Every rupee counts. Every donation matters.
+            </p>
+            <div class="hero-actions">
+                <a routerLink="/register" class="btn btn-gold btn-lg">
+                    Start Donating
+                    <span class="btn-arrow">→</span>
+                </a>
+                <a href="#about" class="btn btn-outline btn-lg">
+                    Learn More
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-visual animate-fade-in-up delay-200">
+            <div class="hero-card glass-card">
+                <div class="hero-card-header">
+                    <span class="live-indicator"></span>
+                    <span>Live Impact</span>
+                </div>
+                <div class="hero-card-amount">₹3.5Cr+</div>
+                <div class="hero-card-label">Raised for Education</div>
+                <div class="hero-card-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 78%"></div>
+                    </div>
+                    <span class="progress-text">78% of yearly goal</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="container">
+            <div class="stats-grid">
+                @for (stat of stats; track stat.label) {
+                <div class="stat-item">
+                    <div class="stat-value">{{ stat.value }}</div>
+                    <div class="stat-label">{{ stat.label }}</div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Features Section ===== -->
+<section id="features" class="section features-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Features</span>
+            <h2 class="section-title">Why Choose <span class="text-gradient">FundRaiser</span>?</h2>
+            <p class="section-subtitle">
+                A platform designed to make giving simple, transparent, and rewarding.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            @for (feature of features; track feature.title; let i = $index) {
+            <div class="feature-card" [style.animation-delay.ms]="i * 100">
+                <div class="feature-icon">{{ feature.icon }}</div>
+                <h3 class="feature-title">{{ feature.title }}</h3>
+                <p class="feature-description">{{ feature.description }}</p>
+            </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ===== How It Works Section ===== -->
+<section class="section how-it-works">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Process</span>
+            <h2 class="section-title">How It <span class="text-gradient">Works</span></h2>
+            <p class="section-subtitle">
+                Start making a difference in just 3 simple steps
+            </p>
+        </div>
+
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">01</div>
+                <div class="step-content">
+                    <h3>Register</h3>
+                    <p>Create your account as a student, individual, or organization</p>
+                </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">02</div>
+                <div class="step-content">
+                    <h3>Donate</h3>
+                    <p>Make secure donations through Razorpay payment gateway</p>
+                </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">03</div>
+                <div class="step-content">
+                    <h3>Track Impact</h3>
+                    <p>Monitor your contributions and see the lives you've changed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Testimonials Section ===== -->
+<section id="about" class="section testimonials-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Testimonials</span>
+            <h2 class="section-title">What People <span class="text-gradient">Say</span></h2>
+        </div>
+
+        <div class="testimonials-grid">
+            @for (testimonial of testimonials; track testimonial.name) {
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p>"{{ testimonial.text }}"</p>
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">{{ testimonial.avatar }}</div>
+                    <div class="author-info">
+                        <div class="author-name">{{ testimonial.name }}</div>
+                        <div class="author-role">{{ testimonial.role }}</div>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA Section ===== -->
+<section class="section cta-section">
+    <div class="container">
+        <div class="cta-card">
+            <div class="cta-content">
+                <h2>Ready to Make a Difference?</h2>
+                <p>Join our community of changemakers and help transform education in India.</p>
+                <div class="cta-actions">
+                    <a routerLink="/register" class="btn btn-gold btn-lg">
+                        Get Started Free
+                        <span class="btn-arrow">→</span>
+                    </a>
+                    <a routerLink="/register" class="btn btn-outline btn-lg" style="border-color: white; color: white;">
+                        Register as Organization
+                    </a>
+                </div>
+            </div>
+            <div class="cta-visual">
+                <div class="cta-icon">🎓</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a routerLink="/" class="logo">
+                    <span class="logo-icon">🔥</span>
+                    <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+                </a>
+                <p>Empowering education through the power of giving. Together, we can change lives.</p>
+            </div>
+
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a routerLink="/">Home</a>
+                <a href="#features">Features</a>
+                <a routerLink="/login">Login</a>
+                <a routerLink="/register">Register</a>
+            </div>
+
+            <div class="footer-links">
+                <h4>User Types</h4>
+                <a routerLink="/register">Student</a>
+                <a routerLink="/register">Individual</a>
+                <a routerLink="/register">Organization</a>
+            </div>
+
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="#">Contact Us</a>
+                <a href="#">FAQs</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© {{ currentYear }} FundRaiser. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" aria-label="Twitter">𝕏</a>
+                <a href="#" aria-label="LinkedIn">in</a>
+                <a href="#" aria-label="Instagram">📷</a>
+            </div>
+        </div>
+    </div>
+</footer>
