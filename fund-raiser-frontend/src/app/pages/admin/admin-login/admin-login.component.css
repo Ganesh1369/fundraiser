@@ -1,10 +1,10 @@
 /* Admin Login Styles */
 .admin-login .auth-bg .shape-1 {
-    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+    background: linear-gradient(135deg, #081C15 0%, #1B4332 100%);
 }
 
 .admin-login .auth-bg .shape-2 {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%);
 }
 
 .admin-badge {

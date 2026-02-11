@@ -6,23 +6,26 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                'eco-green': '#2D6A4F',
-                'deep-forest': '#1B4332',
-                'trust-navy': '#081C15',
-                'soft-sage': '#D8E2DC',
-                'earth-sand': '#F4F1DE',
+                'eco-green': '#21BF99', // Teal Green
+                'deep-forest': '#191970', // Midnight Blue
+                'trust-navy': '#191970', // Midnight Blue
+                'light-sage': '#BADAD4', // Soft Teal
+                'soft-sage': '#D4FBF2', // Mint/Aqua
+                'earth-sand': '#191970', // Midnight Blue (User override)
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
             },
             boxShadow: {
-                'eco': '0 4px 24px rgba(27, 67, 50, 0.12)',
-                'eco-lg': '0 8px 40px rgba(27, 67, 50, 0.18)',
+                'eco': '0 4px 24px rgba(33, 191, 153, 0.12)',
+                'eco-lg': '0 8px 40px rgba(33, 191, 153, 0.18)',
+                'eco-glow': '0 4px 20px rgba(33, 191, 153, 0.25)',
             },
             backgroundImage: {
-                'eco-gradient': 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)',
-                'forest-gradient': 'linear-gradient(180deg, #081C15 0%, #1B4332 100%)',
-                'sand-gradient': 'linear-gradient(135deg, #F4F1DE 0%, #D8E2DC 100%)',
+                'eco-gradient': 'linear-gradient(135deg, #21BF99 0%, #BADAD4 100%)',
+                'forest-gradient': 'linear-gradient(180deg, #191970 0%, #191970 100%)',
+                'sand-gradient': 'linear-gradient(135deg, #89645F 0%, #E2B0A1 100%)',
+                'hero-gradient': 'linear-gradient(135deg, #21BF99 0%, #BADAD4 100%)',
             }
         },
     },

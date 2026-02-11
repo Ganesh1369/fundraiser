@@ -108,7 +108,7 @@
 }
 
 .stat-icon.gold {
-    background: rgba(255, 215, 0, 0.15);
+    background: rgba(45, 106, 79, 0.12);
 }
 
 .stat-icon.blue {
@@ -470,11 +470,12 @@
 }
 
 .preset-btn:hover {
-    border-color: var(--color-gold-end);
+    border-color: var(--color-eco-green);
 }
 
 .preset-btn.active {
     background: var(--gradient-gold);
+    color: var(--color-white);
     border-color: transparent;
 }
 

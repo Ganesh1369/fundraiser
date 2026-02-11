@@ -5,7 +5,7 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: linear-gradient(135deg, #081C15 0%, #1B4332 50%, #2D6A4F 100%);
+    background: linear-gradient(135deg, var(--color-off-white) 0%, var(--color-soft-sage) 100%);
     position: relative;
     overflow: hidden;
 }
@@ -35,7 +35,7 @@
     gap: 8px;
     font-size: 20px;
     font-weight: 700;
-    color: #081C15;
+    color: var(--color-text);
     text-decoration: none;
     margin-bottom: 20px;
 }
@@ -45,7 +45,7 @@
 }
 
 .auth-header .logo-text {
-    color: #1B4332;
+    color: var(--color-text);
 }
 
 .auth-header .text-gradient {
@@ -57,7 +57,7 @@
 .auth-header h1 {
     font-size: 24px;
     margin: 0 0 8px;
-    color: #1B4332;
+    color: var(--color-text);
     font-weight: 700;
 }
 
@@ -139,7 +139,7 @@
 .checkbox-label input {
     width: 16px;
     height: 16px;
-    accent-color: #2D6A4F;
+    accent-color: var(--color-eco-green);
 }
 
 .forgot-link {
@@ -157,7 +157,7 @@
 .btn-block {
     width: 100%;
     padding: 13px;
-    background: linear-gradient(135deg, #2D6A4F, #1B4332);
+    background: var(--gradient-gold);
     color: #fff;
     border: none;
     border-radius: 10px;
@@ -255,7 +255,7 @@
 .auth-bg .shape-1 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, #40916C, transparent);
+    background: radial-gradient(circle, var(--color-soft-sage), transparent);
     top: -100px;
     right: -100px;
 }

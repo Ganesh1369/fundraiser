@@ -85,7 +85,7 @@
 
 .step-indicator.active {
     background: var(--gradient-gold);
-    color: var(--color-text);
+    color: var(--color-white);
 }
 
 .step-indicator.current {
@@ -158,8 +158,8 @@
 }
 
 .user-type-card:hover {
-    border-color: var(--color-gold-end);
-    background: rgba(255, 215, 0, 0.05);
+    border-color: var(--color-eco-green);
+    background: rgba(45, 106, 79, 0.05);
     transform: translateY(-4px);
 }
 
@@ -219,7 +219,7 @@
 
 .input:focus {
     outline: none;
-    border-color: var(--color-black);
+    border-color: var(--color-eco-green);
     background: var(--color-white);
 }
 
