@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../services/api.service';
 
 @Component({
     selector: 'app-login',
@@ -16,9 +17,9 @@ export class LoginComponent {
     isLoading = false;
     errorMessage = '';
 
-    constructor(private router: Router) { }
+    constructor(private router: Router, private api: ApiService) { }
 
-    async onSubmit(): Promise<void> {
+    onSubmit(): void {
         if (!this.email || !this.password) {
             this.errorMessage = 'Please fill in all fields';
             return;
@@ -27,26 +28,21 @@ export class LoginComponent {
         this.isLoading = true;
         this.errorMessage = '';
 
-        try {
-            const response = await fetch('http://localhost:3000/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: this.email, password: this.password })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                localStorage.setItem('token', data.data.token);
-                localStorage.setItem('user', JSON.stringify(data.data.user));
-                this.router.navigate(['/dashboard']);
-            } else {
-                this.errorMessage = data.message || 'Login failed';
+        this.api.login(this.email, this.password).subscribe({
+            next: (data: any) => {
+                this.isLoading = false;
+                if (data.success) {
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    this.router.navigate(['/dashboard']);
+                } else {
+                    this.errorMessage = data.message || 'Login failed';
+                }
+            },
+            error: (err: any) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Connection error. Please try again.';
             }
-        } catch (error) {
-            this.errorMessage = 'Connection error. Please try again.';
-        } finally {
-            this.isLoading = false;
-        }
+        });
     }
 }

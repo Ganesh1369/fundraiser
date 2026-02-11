@@ -1,9 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../services/api.service';
 
 declare var Razorpay: any;
 
@@ -22,6 +21,8 @@ interface Donation {
     status: string;
     createdAt: string;
     paymentId?: string;
+    request80g?: boolean;
+    certificateStatus?: string | null;
 }
 
 interface DonationSummary {
@@ -38,6 +39,16 @@ interface ReferralStats {
     recentReferrals: { name: string; created_at: string }[];
 }
 
+interface CertificateRequest {
+    id: string;
+    panNumber: string;
+    status: string;
+    requestedAt: string;
+    processedAt: string | null;
+    donationAmount: number | null;
+    donationDate: string | null;
+}
+
 @Component({
     selector: 'app-dashboard',
     standalone: true,
@@ -50,183 +61,164 @@ export class DashboardComponent implements OnInit {
     donations: Donation[] = [];
     summary: DonationSummary = { totalDonations: 0, totalAmount: 0, thisMonthAmount: 0 };
     referralStats: ReferralStats | null = null;
+    certificateRequests: CertificateRequest[] = [];
 
+    activeTab = 'overview';
     donationAmount = 100;
+    request80g = false;
     selectedFilter = 'all';
     isLoading = false;
     showDonateModal = false;
     showCertificateModal = false;
     panNumber = '';
+    selectedDonationId = '';
     linkCopied = false;
 
     constructor(
         private router: Router,
-        private http: HttpClient,
+        private api: ApiService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
-        console.log('DashboardComponent initialized');
         this.loadUser();
         this.loadDashboardData();
-        console.log("user data loaded");
     }
 
     loadUser(): void {
         try {
             const userData = localStorage.getItem('user');
-            console.log('Raw user data from localStorage:', userData);
-
             if (userData && userData !== 'undefined' && userData !== 'null') {
                 this.user = JSON.parse(userData);
-                console.log('Parsed user:', this.user);
             } else {
-                console.warn('No user data found, redirecting to login');
                 this.router.navigate(['/login']);
             }
-        } catch (e) {
-            console.error('Error parsing user data:', e);
+        } catch {
             this.router.navigate(['/login']);
         }
     }
 
-    async loadDashboardData(): Promise<void> {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        try {
-            // Load summary
-            try {
-                const summaryData = await firstValueFrom(this.http.get<any>('http://localhost:3000/api/user/donations/summary', { headers }));
-                if (summaryData.success) {
-                    this.summary = summaryData.data;
-                    this.cdr.detectChanges();
-                }
-            } catch (error: any) {
-                if (error.status === 401 || error.status === 403) {
-                    this.logout();
-                    return;
-                }
-                console.error('Summary API failed', error);
+    loadDashboardData(): void {
+        this.api.getDonationSummary().subscribe({
+            next: (res: any) => {
+                if (res.success) { this.summary = res.data; this.cdr.detectChanges(); }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
             }
+        });
 
-            // Load donations
-            await this.loadDonations();
+        this.loadDonations();
 
-            // Load referral stats
-            try {
-                const referralData = await firstValueFrom(this.http.get<any>('http://localhost:3000/api/user/referrals', { headers }));
-                if (referralData.success) {
-                    this.referralStats = referralData.data;
-                    this.cdr.detectChanges();
-                }
-            } catch (error: any) {
-                if (error.status === 401 || error.status === 403) {
-                    this.logout();
-                    return;
-                }
-                console.error('Referral API failed', error);
+        this.api.getReferrals().subscribe({
+            next: (res: any) => {
+                if (res.success) { this.referralStats = res.data; this.cdr.detectChanges(); }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
             }
+        });
 
-        } catch (error) {
-            console.error('Failed to load dashboard data:', error);
+        if (this.user?.userType === 'organization') {
+            this.loadCertificates();
         }
     }
 
-    async loadDonations(): Promise<void> {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const filterParam = this.selectedFilter !== 'all' ? `?period=${this.selectedFilter}` : '';
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        try {
-            const data = await firstValueFrom(this.http.get<any>(`http://localhost:3000/api/user/donations${filterParam}`, { headers }));
-
-            if (data.success) {
-                console.log('User Donations Loaded:', data.data);
-                this.donations = data.data;
-                this.cdr.detectChanges();
-            } else {
-                console.warn('User Donations API failed:', data);
+    loadDonations(): void {
+        this.api.getDonations(this.selectedFilter).subscribe({
+            next: (res: any) => {
+                if (res.success) { this.donations = res.data; this.cdr.detectChanges(); }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
             }
-        } catch (error: any) {
-            if (error.status === 401 || error.status === 403) {
-                this.logout();
-                return;
-            }
-            console.error('Failed to load donations:', error);
-        }
+        });
+    }
+
+    loadCertificates(): void {
+        this.api.getCertificateRequests().subscribe({
+            next: (res: any) => {
+                if (res.success) { this.certificateRequests = res.data; this.cdr.detectChanges(); }
+            },
+            error: () => { }
+        });
     }
 
     onFilterChange(): void {
         this.loadDonations();
     }
 
-    async initiateDonation(): Promise<void> {
-        const token = localStorage.getItem('token');
-        if (!token || this.donationAmount < 1) return;
+    initiateDonation(): void {
+        if (this.donationAmount < 1) return;
 
         this.isLoading = true;
-        const headers = { 'Authorization': `Bearer ${token}` };
 
-        try {
-            const data = await firstValueFrom(this.http.post<any>('http://localhost:3000/api/donations/create-order', { amount: this.donationAmount }, { headers }));
-
-            if (data.success) {
-                const options = {
-                    key: data.data.keyId,
-                    amount: data.data.amount,
-                    currency: data.data.currency,
-                    name: 'FundRaiser',
-                    description: 'Donation for Education',
-                    order_id: data.data.orderId,
-                    handler: async (response: any) => {
-                        await this.verifyPayment(response, data.data.donationId);
-                    },
-                    prefill: {
-                        name: this.user?.name,
-                        email: this.user?.email
-                    },
-                    theme: {
-                        color: '#FFD700'
-                    }
-                };
-
-                const razorpay = new Razorpay(options);
-                razorpay.open();
+        this.api.createOrder(this.donationAmount, this.request80g).subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                if (res.success) {
+                    const options = {
+                        key: res.data.keyId,
+                        amount: res.data.amount,
+                        currency: res.data.currency,
+                        name: 'FundRaiser',
+                        description: 'Donation for Education',
+                        order_id: res.data.orderId,
+                        handler: (response: any) => {
+                            this.verifyPayment(response, res.data.donationId);
+                        },
+                        prefill: { name: this.user?.name, email: this.user?.email },
+                        theme: { color: '#2D6A4F' }
+                    };
+                    const razorpay = new Razorpay(options);
+                    razorpay.open();
+                }
+                this.showDonateModal = false;
+            },
+            error: () => {
+                this.isLoading = false;
+                this.showDonateModal = false;
             }
-        } catch (error) {
-            console.error('Failed to create order:', error);
-        } finally {
-            this.isLoading = false;
-            this.showDonateModal = false;
-        }
+        });
     }
 
-    async verifyPayment(response: any, donationId: string): Promise<void> {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+    verifyPayment(response: any, donationId: string): void {
+        this.api.verifyPayment({
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+            donationId
+        }).subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.loadDashboardData();
+                    alert('Thank you for your donation! 🎉');
+                }
+            },
+            error: (err: any) => console.error('Payment verification failed:', err)
+        });
+    }
 
-        const headers = { 'Authorization': `Bearer ${token}` };
+    requestCertificate(): void {
+        if (!this.panNumber) return;
 
-        try {
-            const data = await firstValueFrom(this.http.post<any>('http://localhost:3000/api/donations/verify', {
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-                donationId
-            }, { headers }));
+        this.isLoading = true;
 
-            if (data.success) {
-                this.loadDashboardData();
-                alert('Thank you for your donation! 🎉');
-            }
-        } catch (error) {
-            console.error('Payment verification failed:', error);
-        }
+        this.api.requestCertificate(this.panNumber, this.selectedDonationId || undefined).subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                if (res.success) {
+                    alert('Certificate request submitted successfully!');
+                    this.showCertificateModal = false;
+                    this.panNumber = '';
+                    this.selectedDonationId = '';
+                    this.loadCertificates();
+                } else {
+                    alert(res.message || 'Failed to submit request');
+                }
+            },
+            error: () => { this.isLoading = false; }
+        });
     }
 
     copyReferralLink(): void {
@@ -251,27 +243,12 @@ export class DashboardComponent implements OnInit {
         }
     }
 
-    async requestCertificate(): Promise<void> {
-        const token = localStorage.getItem('token');
-        if (!token || !this.panNumber) return;
-
-        this.isLoading = true;
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        try {
-            const data = await firstValueFrom(this.http.post<any>('http://localhost:3000/api/user/certificate-request', { panNumber: this.panNumber }, { headers }));
-
-            if (data.success) {
-                alert('Certificate request submitted successfully!');
-                this.showCertificateModal = false;
-                this.panNumber = '';
-            } else {
-                alert(data.message || 'Failed to submit request');
-            }
-        } catch (error) {
-            console.error('Failed to request certificate:', error);
-        } finally {
-            this.isLoading = false;
+    getCertStatusClass(status: string): string {
+        switch (status) {
+            case 'approved': return 'status-approved';
+            case 'rejected': return 'status-rejected';
+            case 'processing': return 'status-processing';
+            default: return 'status-pending';
         }
     }
 
@@ -283,17 +260,13 @@ export class DashboardComponent implements OnInit {
 
     formatDate(dateString: string): string {
         return new Date(dateString).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
+            day: 'numeric', month: 'short', year: 'numeric'
         });
     }
 
     formatCurrency(amount: number): string {
         return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
+            style: 'currency', currency: 'INR', maximumFractionDigits: 0
         }).format(amount);
     }
 }

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../services/api.service';
 
 interface RegistrationData {
     userType: 'student' | 'individual' | 'organization' | '';
@@ -30,10 +31,16 @@ interface RegistrationData {
 })
 export class RegisterComponent {
     currentStep = 1;
-    totalSteps = 5;
+    totalSteps = 6; // Added OTP step
     isLoading = false;
     errorMessage = '';
+    successMessage = '';
     referrerName = '';
+
+    // OTP fields
+    otpSent = false;
+    otpVerified = false;
+    otp = '';
 
     data: RegistrationData = {
         userType: '',
@@ -53,8 +60,7 @@ export class RegisterComponent {
         referralCode: ''
     };
 
-    constructor(private router: Router, private route: ActivatedRoute) {
-        // Check for referral code in URL
+    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService) {
         this.route.queryParams.subscribe(params => {
             if (params['ref']) {
                 this.data.referralCode = params['ref'];
@@ -68,8 +74,9 @@ export class RegisterComponent {
             case 1: return 'Choose Your Role';
             case 2: return 'Personal Details';
             case 3: return 'Contact Information';
-            case 4: return 'Location Details';
-            case 5: return 'Additional Information';
+            case 4: return 'Verify Your Email';
+            case 5: return 'Location Details';
+            case 6: return 'Additional Information';
             default: return '';
         }
     }
@@ -79,18 +86,70 @@ export class RegisterComponent {
         this.nextStep();
     }
 
-    async validateReferralCode(): Promise<void> {
+    validateReferralCode(): void {
         if (!this.data.referralCode) return;
 
-        try {
-            const response = await fetch(`http://localhost:3000/api/auth/validate-referral/${this.data.referralCode}`);
-            const result = await response.json();
-            if (result.success) {
-                this.referrerName = result.data.referrerName;
-            }
-        } catch (error) {
-            console.log('Referral validation failed');
+        this.api.validateReferral(this.data.referralCode).subscribe({
+            next: (result: any) => {
+                if (result.success) {
+                    this.referrerName = result.data.referrerName;
+                }
+            },
+            error: () => { /* ignore */ }
+        });
+    }
+
+    sendOtp(): void {
+        if (!this.data.email) {
+            this.errorMessage = 'Please enter your email first';
+            return;
         }
+        this.isLoading = true;
+        this.errorMessage = '';
+        this.successMessage = '';
+
+        this.api.sendOtp(this.data.email, 'register').subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                if (res.success) {
+                    this.otpSent = true;
+                    this.successMessage = 'OTP sent to your email!';
+                } else {
+                    this.errorMessage = res.message || 'Failed to send OTP';
+                }
+            },
+            error: (err: any) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Failed to send OTP';
+            }
+        });
+    }
+
+    verifyOtp(): void {
+        if (!this.otp || this.otp.length !== 6) {
+            this.errorMessage = 'Please enter a valid 6-digit OTP';
+            return;
+        }
+        this.isLoading = true;
+        this.errorMessage = '';
+
+        this.api.verifyOtp(this.data.email, this.otp, 'register').subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                if (res.success) {
+                    this.otpVerified = true;
+                    this.successMessage = 'Email verified! ✓';
+                    // Auto-advance after short delay
+                    setTimeout(() => this.nextStep(), 800);
+                } else {
+                    this.errorMessage = res.message || 'Invalid OTP';
+                }
+            },
+            error: (err: any) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Invalid OTP. Please try again.';
+            }
+        });
     }
 
     canProceed(): boolean {
@@ -103,14 +162,12 @@ export class RegisterComponent {
                 return !!this.data.email && !!this.data.phone && !!this.data.password &&
                     this.data.password === this.data.confirmPassword && this.data.password.length >= 6;
             case 4:
-                return !!this.data.city;
+                return this.otpVerified;
             case 5:
-                if (this.data.userType === 'student') {
-                    return !!this.data.schoolName;
-                }
-                if (this.data.userType === 'organization') {
-                    return !!this.data.organizationName && !!this.data.panNumber;
-                }
+                return !!this.data.city;
+            case 6:
+                if (this.data.userType === 'student') return !!this.data.schoolName;
+                if (this.data.userType === 'organization') return !!this.data.organizationName && !!this.data.panNumber;
                 return true;
             default:
                 return false;
@@ -119,8 +176,15 @@ export class RegisterComponent {
 
     nextStep(): void {
         if (this.currentStep < this.totalSteps) {
+            // If moving from step 3 to 4, auto-send OTP
+            if (this.currentStep === 3 && !this.otpSent) {
+                this.currentStep++;
+                this.sendOtp();
+                return;
+            }
             this.currentStep++;
             this.errorMessage = '';
+            this.successMessage = '';
         }
     }
 
@@ -128,10 +192,11 @@ export class RegisterComponent {
         if (this.currentStep > 1) {
             this.currentStep--;
             this.errorMessage = '';
+            this.successMessage = '';
         }
     }
 
-    async onSubmit(): Promise<void> {
+    onSubmit(): void {
         if (!this.canProceed()) {
             this.errorMessage = 'Please fill in all required fields';
             return;
@@ -140,41 +205,36 @@ export class RegisterComponent {
         this.isLoading = true;
         this.errorMessage = '';
 
-        try {
-            const response = await fetch('http://localhost:3000/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userType: this.data.userType,
-                    name: this.data.name,
-                    age: this.data.age,
-                    email: this.data.email,
-                    phone: this.data.phone,
-                    password: this.data.password,
-                    classGrade: this.data.classGrade,
-                    schoolName: this.data.schoolName,
-                    area: this.data.area,
-                    locality: this.data.locality,
-                    city: this.data.city,
-                    organizationName: this.data.organizationName,
-                    panNumber: this.data.panNumber,
-                    referralCode: this.data.referralCode
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                localStorage.setItem('token', result.data.token);
-                localStorage.setItem('user', JSON.stringify(result.data.user));
-                this.router.navigate(['/dashboard']);
-            } else {
-                this.errorMessage = result.message || 'Registration failed';
+        this.api.register({
+            userType: this.data.userType,
+            name: this.data.name,
+            age: this.data.age,
+            email: this.data.email,
+            phone: this.data.phone,
+            password: this.data.password,
+            classGrade: this.data.classGrade,
+            schoolName: this.data.schoolName,
+            area: this.data.area,
+            locality: this.data.locality,
+            city: this.data.city,
+            organizationName: this.data.organizationName,
+            panNumber: this.data.panNumber,
+            referralCode: this.data.referralCode
+        }).subscribe({
+            next: (result: any) => {
+                this.isLoading = false;
+                if (result.success) {
+                    localStorage.setItem('token', result.data.token);
+                    localStorage.setItem('user', JSON.stringify(result.data.user));
+                    this.router.navigate(['/dashboard']);
+                } else {
+                    this.errorMessage = result.message || 'Registration failed';
+                }
+            },
+            error: (err: any) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Connection error. Please try again.';
             }
-        } catch (error) {
-            this.errorMessage = 'Connection error. Please try again.';
-        } finally {
-            this.isLoading = false;
-        }
+        });
     }
 }

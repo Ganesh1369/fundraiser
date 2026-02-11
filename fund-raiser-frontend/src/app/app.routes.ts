@@ -14,6 +14,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/auth/register/register.component').then(m => m.RegisterComponent)
     },
     {
+        path: 'forgot-password',
+        loadComponent: () => import('./pages/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+    },
+    {
         path: 'dashboard',
         loadComponent: () => import('./pages/user/dashboard/dashboard.component').then(m => m.DashboardComponent)
     },

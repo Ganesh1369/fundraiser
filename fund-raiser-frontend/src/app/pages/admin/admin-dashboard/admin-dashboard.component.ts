@@ -1,9 +1,9 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../services/api.service';
+import { environment } from '../../../environment';
 
 interface DashboardStats {
     users: {
@@ -45,9 +45,23 @@ interface LeaderboardEntry {
     rank: number;
     name: string;
     email: string;
+    city: string;
+    userType: string;
     totalDonations: number;
+    donationCount: number;
     referralPoints: number;
     score: number;
+}
+
+interface CertificateRequest {
+    id: string;
+    userName: string;
+    userEmail: string;
+    panNumber: string;
+    status: string;
+    requestedAt: string;
+    processedAt: string | null;
+    donationAmount: number | null;
 }
 
 @Component({
@@ -63,22 +77,23 @@ export class AdminDashboardComponent implements OnInit {
     registrations: Registration[] = [];
     donations: Donation[] = [];
     leaderboard: LeaderboardEntry[] = [];
+    certificates: CertificateRequest[] = [];
 
     // Filters
     userTypeFilter = '';
     donationStatusFilter = '';
+    leaderboardUserTypeFilter = '';
     searchQuery = '';
 
     isLoading = false;
 
     constructor(
         private router: Router,
-        private http: HttpClient,
+        private api: ApiService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
-        console.log('AdminDashboardComponent initialized');
         this.checkAuth();
         this.loadDashboardData();
     }
@@ -90,156 +105,131 @@ export class AdminDashboardComponent implements OnInit {
         }
     }
 
-    async loadDashboardData(): Promise<void> {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
+    loadDashboardData(): void {
         this.isLoading = true;
-        const headers = { 'Authorization': `Bearer ${token}` };
 
-        try {
-            // Load stats
-            try {
-                const statsData = await firstValueFrom(this.http.get<any>('http://localhost:3000/api/admin/stats', { headers }));
-                if (statsData.success) {
-                    this.stats = statsData.data;
+        this.api.getAdminStats().subscribe({
+            next: (res: any) => {
+                if (res.success) { this.stats = res.data; this.cdr.detectChanges(); }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
+            }
+        });
+
+        this.loadRegistrations();
+        this.loadDonations();
+        this.loadLeaderboard();
+        this.loadCertificates();
+
+        this.isLoading = false;
+    }
+
+    loadRegistrations(): void {
+        this.api.getAdminRegistrations(50, this.userTypeFilter, this.searchQuery).subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.registrations = res.data.registrations || [];
                     this.cdr.detectChanges();
                 }
-            } catch (error: any) {
-                if (error.status === 401 || error.status === 403) {
-                    this.logout();
-                    return;
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
+            }
+        });
+    }
+
+    loadDonations(): void {
+        this.api.getAdminDonations(50, this.donationStatusFilter).subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.donations = res.data.donations || [];
+                    this.cdr.detectChanges();
                 }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
             }
-
-            // Load registrations
-            await this.loadRegistrations();
-
-            // Load donations
-            await this.loadDonations();
-
-            // Load leaderboard
-            await this.loadLeaderboard();
-
-        } catch (error) {
-            console.error('Failed to load dashboard:', error);
-        } finally {
-            this.isLoading = false;
-            this.cdr.detectChanges();
-        }
+        });
     }
 
-    async loadRegistrations(): Promise<void> {
+    loadLeaderboard(): void {
+        this.api.getLeaderboard(20, this.leaderboardUserTypeFilter).subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.leaderboard = res.data;
+                    this.cdr.detectChanges();
+                }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
+            }
+        });
+    }
+
+    loadCertificates(): void {
+        this.api.getAdminCertificates().subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.certificates = res.data || [];
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { }
+        });
+    }
+
+    updateCertificateStatus(certId: string, status: string): void {
+        this.api.updateCertificateStatus(certId, status).subscribe({
+            next: (res: any) => {
+                if (res.success) this.loadCertificates();
+            },
+            error: () => { }
+        });
+    }
+
+    exportRegistrations(): void {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
 
-        let url = 'http://localhost:3000/api/admin/registrations?limit=50';
-        if (this.userTypeFilter) url += `&userType=${this.userTypeFilter}`;
-        if (this.searchQuery) url += `&search=${this.searchQuery}`;
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        try {
-            const data = await firstValueFrom(this.http.get<any>(url, { headers }));
-            if (data.success) {
-                this.registrations = data.data.registrations || [];
-                this.cdr.detectChanges();
-            }
-        } catch (error: any) {
-            if (error.status === 401 || error.status === 403) {
-                this.logout();
-                return;
-            }
-            console.error('Failed to load registrations:', error);
-        }
-    }
-
-    async loadDonations(): Promise<void> {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        let url = 'http://localhost:3000/api/admin/donations?limit=50';
-        if (this.donationStatusFilter) url += `&status=${this.donationStatusFilter}`;
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        try {
-            const data = await firstValueFrom(this.http.get<any>(url, { headers }));
-            if (data.success) {
-                this.donations = data.data.donations || [];
-                this.cdr.detectChanges();
-            }
-        } catch (error: any) {
-            if (error.status === 401 || error.status === 403) {
-                this.logout();
-                return;
-            }
-            console.error('Failed to load donations:', error);
-        }
-    }
-
-    async loadLeaderboard(): Promise<void> {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        try {
-            const data = await firstValueFrom(this.http.get<any>('http://localhost:3000/api/admin/leaderboard?limit=10', { headers }));
-            if (data.success) {
-                this.leaderboard = data.data;
-                this.cdr.detectChanges();
-            }
-        } catch (error: any) {
-            if (error.status === 401 || error.status === 403) {
-                this.logout();
-                return;
-            }
-            console.error('Failed to load leaderboard:', error);
-        }
-    }
-
-    async exportRegistrations(): Promise<void> {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        try {
-            const res = await fetch('http://localhost:3000/api/admin/registrations/export', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const blob = await res.blob();
+        fetch(`${environment.apiUrl}/admin/registrations/export`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.blob()).then(blob => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'registrations.xlsx';
             a.click();
-        } catch (error) {
-            console.error('Export failed:', error);
-        }
+        }).catch(err => console.error('Export failed:', err));
     }
 
-    async exportDonations(): Promise<void> {
+    exportDonations(): void {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
 
-        try {
-            const res = await fetch('http://localhost:3000/api/admin/donations/export', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const blob = await res.blob();
+        fetch(`${environment.apiUrl}/admin/donations/export`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.blob()).then(blob => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'donations.xlsx';
             a.click();
-        } catch (error) {
-            console.error('Export failed:', error);
-        }
+        }).catch(err => console.error('Export failed:', err));
     }
 
     onFilterChange(): void {
-        if (this.activeTab === 'registrations') {
-            this.loadRegistrations();
-        } else if (this.activeTab === 'donations') {
-            this.loadDonations();
+        if (this.activeTab === 'registrations') this.loadRegistrations();
+        else if (this.activeTab === 'donations') this.loadDonations();
+        else if (this.activeTab === 'leaderboard') this.loadLeaderboard();
+    }
+
+    getCertStatusClass(status: string): string {
+        switch (status) {
+            case 'approved': return 'status-approved';
+            case 'rejected': return 'status-rejected';
+            case 'processing': return 'status-processing';
+            default: return 'status-pending';
         }
     }
 
@@ -251,17 +241,13 @@ export class AdminDashboardComponent implements OnInit {
 
     formatDate(dateString: string): string {
         return new Date(dateString).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
+            day: 'numeric', month: 'short', year: 'numeric'
         });
     }
 
     formatCurrency(amount: number): string {
         return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
+            style: 'currency', currency: 'INR', maximumFractionDigits: 0
         }).format(amount);
     }
 }

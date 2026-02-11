@@ -244,32 +244,53 @@
 
         <!-- Leaderboard Tab -->
         @if (activeTab === 'leaderboard') {
+        <div class="filters">
+            <select class="filter-select" [(ngModel)]="leaderboardUserTypeFilter" (change)="onFilterChange()">
+                <option value="">All Types</option>
+                <option value="student">Students</option>
+                <option value="individual">Individuals</option>
+                <option value="organization">Organizations</option>
+            </select>
+        </div>
         <div class="card">
-            <div class="leaderboard">
-                @for (entry of leaderboard; track entry.name; let i = $index) {
-                <div class="leaderboard-row" [class.top-3]="i < 3">
-                    <div class="rank-cell">
-                        @switch (i) {
-                        @case (0) { 🥇 }
-                        @case (1) { 🥈 }
-                        @case (2) { 🥉 }
-                        @default { {{ i + 1 }} }
+            <div class="table-wrapper">
+                <table class="data-table leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>City</th>
+                            <th>Type</th>
+                            <th>Donations</th>
+                            <th># Txns</th>
+                            <th>Referral Pts</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (entry of leaderboard; track entry.name; let i = $index) {
+                        <tr [class.top-3]="i < 3">
+                            <td class="rank-cell">
+                                @switch (i) {
+                                @case (0) { 🥇 }
+                                @case (1) { 🥈 }
+                                @case (2) { 🥉 }
+                                @default { {{ i + 1 }} }
+                                }
+                            </td>
+                            <td class="name-cell">{{ entry.name }}</td>
+                            <td>{{ entry.email }}</td>
+                            <td>{{ entry.city || '-' }}</td>
+                            <td><span class="badge" [ngClass]="entry.userType">{{ entry.userType }}</span></td>
+                            <td class="amount">{{ formatCurrency(entry.totalDonations) }}</td>
+                            <td>{{ entry.donationCount }}</td>
+                            <td>{{ entry.referralPoints }}</td>
+                            <td class="score-cell"><strong>{{ entry.score }}</strong></td>
+                        </tr>
                         }
-                    </div>
-                    <div class="user-cell">
-                        <div class="user-name">{{ entry.name }}</div>
-                        <div class="user-email">{{ entry.email }}</div>
-                    </div>
-                    <div class="stats-cell">
-                        <div class="donation-amount">{{ formatCurrency(entry.totalDonations) }}</div>
-                        <div class="referral-points">{{ entry.referralPoints }} pts</div>
-                    </div>
-                    <div class="score-cell">
-                        <div class="score">{{ entry.score }}</div>
-                        <div class="score-label">Score</div>
-                    </div>
-                </div>
-                }
+                    </tbody>
+                </table>
             </div>
         </div>
         }
@@ -277,11 +298,51 @@
         <!-- Certificates Tab -->
         @if (activeTab === 'certificates') {
         <div class="card">
+            @if (certificates.length === 0) {
             <div class="empty-state">
                 <span class="empty-icon">📄</span>
-                <h3>Certificate Management</h3>
-                <p>View and manage 80G certificate requests from organizations.</p>
+                <h3>No Certificate Requests</h3>
+                <p>When organizations request 80G certificates, they will appear here.</p>
             </div>
+            } @else {
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>PAN</th>
+                            <th>Donation</th>
+                            <th>Requested</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (cert of certificates; track cert.id) {
+                        <tr>
+                            <td>{{ cert.userName }}</td>
+                            <td>{{ cert.userEmail }}</td>
+                            <td class="pan-cell">{{ cert.panNumber }}</td>
+                            <td class="amount">{{ cert.donationAmount ? formatCurrency(cert.donationAmount) : '-' }}
+                            </td>
+                            <td>{{ formatDate(cert.requestedAt) }}</td>
+                            <td><span class="status-badge" [ngClass]="getCertStatusClass(cert.status)">{{ cert.status
+                                    }}</span></td>
+                            <td class="action-cell">
+                                @if (cert.status === 'pending') {
+                                <button class="btn-action approve"
+                                    (click)="updateCertificateStatus(cert.id, 'approved')">✓</button>
+                                <button class="btn-action reject"
+                                    (click)="updateCertificateStatus(cert.id, 'rejected')">✗</button>
+                                }
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
         </div>
         }
     </main>

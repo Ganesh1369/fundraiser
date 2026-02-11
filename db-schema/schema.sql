@@ -41,6 +41,9 @@ CREATE TABLE users (
     referred_by UUID REFERENCES users(id),
     referral_points INTEGER DEFAULT 0,
     
+    -- Email Verification
+    email_verified BOOLEAN DEFAULT false,
+
     -- Metadata
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -73,6 +76,9 @@ CREATE TABLE donations (
     -- Referral Attribution
     referrer_id UUID REFERENCES users(id),
     points_awarded BOOLEAN DEFAULT false,
+
+    -- 80G Certificate Request Flag
+    request_80g BOOLEAN DEFAULT false,
     
     -- Metadata
     payment_method VARCHAR(50),
@@ -150,6 +156,20 @@ CREATE TABLE push_subscriptions (
 
 CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
 
+-- OTP Verifications Table
+CREATE TABLE otp_verifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) NOT NULL,
+    otp VARCHAR(10) NOT NULL,
+    purpose VARCHAR(20) NOT NULL DEFAULT 'register', -- register, reset_password
+    verified BOOLEAN DEFAULT false,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_otp_verifications_email ON otp_verifications(email);
+CREATE INDEX idx_otp_verifications_email_purpose ON otp_verifications(email, purpose);
+
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -177,14 +197,17 @@ CREATE OR REPLACE VIEW leaderboard AS
 SELECT 
     u.id,
     u.name,
+    u.email,
+    u.city,
     u.user_type,
     u.referral_points,
     COALESCE(SUM(d.amount) FILTER (WHERE d.status = 'completed'), 0) as total_donations,
+    COUNT(d.id) FILTER (WHERE d.status = 'completed') as donation_count,
     (COALESCE(SUM(d.amount) FILTER (WHERE d.status = 'completed'), 0) + u.referral_points) as score
 FROM users u
 LEFT JOIN donations d ON u.id = d.user_id
 WHERE u.is_active = true
-GROUP BY u.id, u.name, u.user_type, u.referral_points
+GROUP BY u.id, u.name, u.email, u.city, u.user_type, u.referral_points
 ORDER BY score DESC;
 
 -- Insert default admin user (password: admin123 - should be changed in production)

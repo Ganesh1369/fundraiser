@@ -13,11 +13,11 @@
 
             <!-- Stepper -->
             <div class="stepper">
-                @for (step of [1,2,3,4,5]; track step) {
+                @for (step of [1,2,3,4,5,6]; track step) {
                 <div class="step-indicator" [class.active]="currentStep >= step" [class.current]="currentStep === step">
                     <span class="step-number">{{ step }}</span>
                 </div>
-                @if (step < 5) { <div class="step-line" [class.active]="currentStep > step">
+                @if (step < 6) { <div class="step-line" [class.active]="currentStep > step">
             </div>
             }
             }
@@ -114,8 +114,49 @@
         </form>
         }
 
-        <!-- Step 4: Location Details -->
+        <!-- Step 4: OTP Verification -->
         @if (currentStep === 4) {
+        <div class="otp-section">
+            @if (successMessage) {
+            <div class="success-box">
+                <span>✅</span>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            @if (!otpVerified) {
+            <div class="otp-card">
+                <div class="otp-icon">📧</div>
+                <p class="otp-desc">We've sent a 6-digit verification code to <strong>{{ data.email }}</strong></p>
+                <div class="input-group">
+                    <label class="input-label">Enter OTP</label>
+                    <input type="text" class="input otp-input" placeholder="000000" maxlength="6" [(ngModel)]="otp"
+                        name="otp" autocomplete="one-time-code">
+                </div>
+                <button type="button" class="btn btn-primary btn-block" (click)="verifyOtp()"
+                    [disabled]="isLoading || otp.length !== 6">
+                    @if (isLoading) {
+                    <span class="spinner"></span>
+                    Verifying...
+                    } @else {
+                    Verify Email
+                    }
+                </button>
+                <button type="button" class="btn-resend" (click)="sendOtp()" [disabled]="isLoading">
+                    Resend OTP
+                </button>
+            </div>
+            } @else {
+            <div class="verified-box">
+                <div class="verified-icon">✓</div>
+                <p>Email verified successfully!</p>
+            </div>
+            }
+        </div>
+        }
+
+        <!-- Step 5: Location Details -->
+        @if (currentStep === 5) {
         <form class="auth-form">
             <div class="input-group">
                 <label class="input-label">Area / Locality</label>
@@ -136,8 +177,8 @@
         </form>
         }
 
-        <!-- Step 5: Additional Information -->
-        @if (currentStep === 5) {
+        <!-- Step 6: Additional Information -->
+        @if (currentStep === 6) {
         <form class="auth-form">
             @if (data.userType === 'student') {
             <div class="input-group">
