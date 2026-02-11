@@ -547,5 +547,30 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-dark-gray);
-}
+
+  /* ===== Event Themes ===== */
+  .theme-marathon {
+    --color-eco-green: #E63946;
+    /* Energetic Red */
+    --color-light-sage: #F1FAEE;
+    --color-soft-sage: #F1FAEE;
+    --gradient-gold: linear-gradient(135deg, #E63946 0%, #F4A261 100%);
+    --color-off-white: #FEF9F9;
+    --color-text: #1D3557;
+  }
+
+  .theme-cyclothon {
+    --color-eco-green: #457B9D;
+    /* Strong Blue */
+    --color-light-sage: #F1FAEE;
+    --color-soft-sage: #A8DADC;
+    --gradient-gold: linear-gradient(135deg, #457B9D 0%, #1D3557 100%);
+    --color-off-white: #F0F8FF;
+    --color-text: #1D3557;
+  }
+
+  .theme-walkathon {
+    /* Default Eco Theme - reinforcing variables just in case */
+    --color-eco-green: #21BF99;
+    --gradient-gold: linear-gradient(135deg, #21BF99 0%, #BADAD4 100%);
+  }

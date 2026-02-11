@@ -93,3 +93,11 @@ exports.subscribePush = async (req, res, next) => {
         next(error);
     }
 };
+exports.getUserEvents = async (req, res, next) => {
+    try {
+        const data = await userService.getUserEvents(req.user.id);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};

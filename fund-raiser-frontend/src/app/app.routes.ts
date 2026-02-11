@@ -26,8 +26,32 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
     },
     {
+        path: 'admin/events',
+        loadComponent: () => import('./pages/admin/events/admin-events-list/admin-events-list.component').then(m => m.AdminEventsListComponent)
+    },
+    {
+        path: 'admin/events/new',
+        loadComponent: () => import('./pages/admin/events/admin-event-create/admin-event-create.component').then(m => m.AdminEventCreateComponent)
+    },
+    {
+        path: 'admin/events/:id',
+        loadComponent: () => import('./pages/admin/events/admin-event-detail/admin-event-detail.component').then(m => m.AdminEventDetailComponent)
+    },
+    {
         path: 'admin/login',
         loadComponent: () => import('./pages/admin/admin-login/admin-login.component').then(m => m.AdminLoginComponent)
+    },
+    {
+        path: 'events/:id',
+        loadComponent: () => import('./pages/events/event-landing/event-landing.component').then(m => m.EventLandingComponent)
+    },
+    {
+        path: 'events/:id/register',
+        loadComponent: () => import('./pages/events/event-register/event-register.component').then(m => m.EventRegisterComponent)
+    },
+    {
+        path: 'events/:id/success',
+        loadComponent: () => import('./pages/events/event-success/event-success.component').then(m => m.EventSuccessComponent)
     },
     {
         path: '**',

@@ -14,6 +14,10 @@
                 <span class="nav-icon">📊</span>
                 Dashboard
             </a>
+            <a class="nav-item" routerLink="/admin/events" routerLinkActive="active">
+                <span class="nav-icon">📅</span>
+                Events
+            </a>
             <a class="nav-item" [class.active]="activeTab === 'registrations'" (click)="activeTab = 'registrations'">
                 <span class="nav-icon">👥</span>
                 Registrations

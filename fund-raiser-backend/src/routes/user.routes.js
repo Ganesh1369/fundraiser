@@ -33,4 +33,7 @@ router.get('/certificate-requests', isOrganization, userController.getCertificat
 // Subscribe to push notifications
 router.post('/push-subscribe', userController.subscribePush);
 
+// Get user's registered events
+router.get('/events', userController.getUserEvents);
+
 module.exports = router;

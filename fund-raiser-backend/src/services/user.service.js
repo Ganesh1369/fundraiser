@@ -181,7 +181,24 @@ const getCertificateRequests = async (userId) => {
     }));
 };
 
+/**
+ * Get events registered by the user
+ */
+const getUserEvents = async (userId) => {
+    const result = await db.query(
+        `SELECT e.id, e.event_name, e.event_date, e.event_location, e.banner_url,
+                er.registration_status, er.created_at as registered_at
+         FROM event_registrations er
+         JOIN events e ON e.id = er.event_id
+         WHERE er.user_id = $1
+         ORDER BY e.event_date DESC`,
+        [userId]
+    );
+    return result.rows;
+};
+
 module.exports = {
     getProfile, updateProfile, getDonations, getDonationSummary,
-    getReferrals, getReferralPointsHistory, requestCertificate, getCertificateRequests
+    getReferrals, getReferralPointsHistory, requestCertificate, getCertificateRequests,
+    getUserEvents
 };
