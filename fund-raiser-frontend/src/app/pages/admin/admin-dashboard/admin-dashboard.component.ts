@@ -4,6 +4,7 @@ import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
 import { environment } from '../../../environment';
+import { LucideAngularModule } from 'lucide-angular';
 
 interface DashboardStats {
     users: {
@@ -67,7 +68,7 @@ interface CertificateRequest {
 @Component({
     selector: 'app-admin-dashboard',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule],
     templateUrl: './admin-dashboard.component.html',
     styleUrl: './admin-dashboard.component.css'
 })

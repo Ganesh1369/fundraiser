@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { EventService } from '../../../../services/event.service';
 import { environment } from '../../../../environment';
+import { LucideAngularModule } from 'lucide-angular';
 
 interface Event {
   id: string | number;
@@ -31,7 +32,7 @@ interface Pagination {
 @Component({
   selector: 'app-admin-event-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './admin-event-detail.component.html',
   styleUrl: './admin-event-detail.component.css'
 })

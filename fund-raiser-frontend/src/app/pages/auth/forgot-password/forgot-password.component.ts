@@ -2,12 +2,13 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
 
 @Component({
     selector: 'app-forgot-password',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule],
     templateUrl: './forgot-password.component.html',
     styleUrl: './forgot-password.component.css'
 })
@@ -18,6 +19,8 @@ export class ForgotPasswordComponent {
     newPassword: string = '';
     confirmPassword: string = '';
     isLoading: boolean = false;
+    showPassword: boolean = false;
+    showConfirmPassword: boolean = false;
     message: string = '';
     errorMessage: string = '';
 

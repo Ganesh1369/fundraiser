@@ -2,11 +2,12 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { EventService } from '../../../../services/event.service';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-admin-events-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './admin-events-list.component.html',
   styleUrl: './admin-events-list.component.css'
 })
@@ -14,6 +15,7 @@ export class AdminEventsListComponent implements OnInit {
   events: any[] = [];
   loading = true;
   activeTab = 'events';
+  copiedEventId: number | null = null;
 
   constructor(private eventService: EventService, private cdr: ChangeDetectorRef) { }
 
@@ -68,6 +70,19 @@ export class AdminEventsListComponent implements OnInit {
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: 'numeric', month: 'short', year: 'numeric'
     });
+  }
+
+  getRegistrationLink(eventId: number): string {
+    return `${window.location.origin}/events/${eventId}/register`;
+  }
+
+  copyLink(eventId: number): void {
+    navigator.clipboard.writeText(this.getRegistrationLink(eventId));
+    this.copiedEventId = eventId;
+    setTimeout(() => {
+      this.copiedEventId = null;
+      this.cdr.detectChanges();
+    }, 2000);
   }
 
   logout(): void {

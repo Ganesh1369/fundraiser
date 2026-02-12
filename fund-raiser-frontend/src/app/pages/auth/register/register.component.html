@@ -1,267 +1,292 @@
-<div class="auth-page">
-    <div class="auth-container register-container">
-        <div class="auth-card">
+<div class="min-h-screen flex items-center justify-center px-5 py-10 bg-cover bg-center bg-no-repeat" style="background-image: url('/vivid-blurred-colorful-background.jpg')">
+    <div class="w-full max-w-lg">
+        <div class="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-elevated p-8 md:p-10">
             <!-- Header -->
-            <div class="auth-header">
-                <a routerLink="/" class="logo">
-                    <span class="logo-icon">🔥</span>
-                    <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+            <div class="text-center mb-6">
+                <a routerLink="/" class="inline-flex items-center gap-2 text-accent font-bold text-lg no-underline mb-4">
+                    <lucide-icon name="flame" class="w-5 h-5 text-primary"></lucide-icon>
+                    <span>Prima<span class="text-primary">thon'26</span></span>
                 </a>
-                <h1>Create Account</h1>
-                <p>Join our community of changemakers</p>
+                <h1 class="text-2xl font-bold text-accent mb-1">Create Account</h1>
+                <p class="text-sm text-neutral-400">Join our community of changemakers</p>
             </div>
 
             <!-- Stepper -->
-            <div class="stepper">
+            <div class="flex items-center justify-center gap-0.5 sm:gap-1 mb-6">
                 @for (step of [1,2,3,4,5,6]; track step) {
-                <div class="step-indicator" [class.active]="currentStep >= step" [class.current]="currentStep === step">
-                    <span class="step-number">{{ step }}</span>
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-semibold transition-all shrink-0"
+                    [ngClass]="{
+                        'bg-primary text-white': currentStep >= step,
+                        'bg-neutral-200 text-neutral-400': currentStep < step,
+                        'ring-2 ring-offset-1 sm:ring-offset-2 ring-primary scale-110': currentStep === step
+                    }">
+                    @if (currentStep > step) {
+                    <lucide-icon name="check" class="w-3 h-3 sm:w-4 sm:h-4"></lucide-icon>
+                    } @else {
+                    {{ step }}
+                    }
                 </div>
-                @if (step < 6) { <div class="step-line" [class.active]="currentStep > step">
-            </div>
-            }
-            }
-        </div>
-
-        <!-- Step Title -->
-        <h2 class="step-title">{{ stepTitle }}</h2>
-
-        <!-- Referral Badge -->
-        @if (referrerName) {
-        <div class="referral-badge">
-            <span>🎁</span>
-            Referred by <strong>{{ referrerName }}</strong>
-        </div>
-        }
-
-        <!-- Error Message -->
-        @if (errorMessage) {
-        <div class="error-message">
-            <span>⚠️</span>
-            {{ errorMessage }}
-        </div>
-        }
-
-        <!-- Step 1: User Type Selection -->
-        @if (currentStep === 1) {
-        <div class="user-type-grid">
-            <div class="user-type-card" (click)="selectUserType('student')">
-                <div class="type-icon">🎓</div>
-                <h3>Student</h3>
-                <p>For students who want to contribute or receive help</p>
-            </div>
-            <div class="user-type-card" (click)="selectUserType('individual')">
-                <div class="type-icon">👤</div>
-                <h3>Individual</h3>
-                <p>For individuals who want to make a difference</p>
-            </div>
-            <div class="user-type-card" (click)="selectUserType('organization')">
-                <div class="type-icon">🏢</div>
-                <h3>Organization</h3>
-                <p>For companies with 80G tax benefits</p>
-            </div>
-        </div>
-        }
-
-        <!-- Step 2: Personal Details -->
-        @if (currentStep === 2) {
-        <form class="auth-form">
-            <div class="input-group">
-                <label class="input-label">Full Name *</label>
-                <input type="text" class="input" placeholder="Enter your full name" [(ngModel)]="data.name" name="name"
-                    required>
-            </div>
-
-            @if (data.userType === 'student') {
-            <div class="input-group">
-                <label class="input-label">Age *</label>
-                <input type="number" class="input" placeholder="Enter your age" [(ngModel)]="data.age" name="age"
-                    min="5" max="100">
-            </div>
-            }
-        </form>
-        }
-
-        <!-- Step 3: Contact Information -->
-        @if (currentStep === 3) {
-        <form class="auth-form">
-            <div class="input-group">
-                <label class="input-label">Email Address *</label>
-                <input type="email" class="input" placeholder="Enter your email" [(ngModel)]="data.email" name="email"
-                    required>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Phone Number *</label>
-                <input type="tel" class="input" placeholder="Enter your phone number" [(ngModel)]="data.phone"
-                    name="phone" required>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Password *</label>
-                <input type="password" class="input" placeholder="Create a password (min 6 characters)"
-                    [(ngModel)]="data.password" name="password" required>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Confirm Password *</label>
-                <input type="password" class="input" placeholder="Confirm your password"
-                    [(ngModel)]="data.confirmPassword" name="confirmPassword" required>
-                @if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
-                <span class="input-error">Passwords do not match</span>
+                @if (step < 6) {
+                <div class="w-3 sm:w-5 md:w-8 h-0.5 transition-colors" [ngClass]="currentStep > step ? 'bg-primary' : 'bg-neutral-300'"></div>
+                }
                 }
             </div>
-        </form>
-        }
 
-        <!-- Step 4: OTP Verification -->
-        @if (currentStep === 4) {
-        <div class="otp-section">
-            @if (successMessage) {
-            <div class="success-box">
-                <span>✅</span>
-                <p>{{ successMessage }}</p>
+            <!-- Step Title -->
+            <h2 class="text-center text-lg font-semibold text-accent mb-6">{{ stepTitle }}</h2>
+
+            <!-- Referral Badge -->
+            @if (referrerName) {
+            <div class="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm mb-5">
+                <lucide-icon name="gift" class="w-4 h-4"></lucide-icon>
+                Referred by <strong>{{ referrerName }}</strong>
             </div>
             }
 
-            @if (!otpVerified) {
-            <div class="otp-card">
-                <div class="otp-icon">📧</div>
-                <p class="otp-desc">We've sent a 6-digit verification code to <strong>{{ data.email }}</strong></p>
-                <div class="input-group">
-                    <label class="input-label">Enter OTP</label>
-                    <input type="text" class="input otp-input" placeholder="000000" maxlength="6" [(ngModel)]="otp"
-                        name="otp" autocomplete="one-time-code">
+            <!-- Error Message -->
+            @if (errorMessage) {
+            <div class="px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm mb-5">
+                <div class="flex items-center gap-2">
+                    <lucide-icon name="alert-triangle" class="w-4 h-4 shrink-0"></lucide-icon>
+                    {{ errorMessage }}
                 </div>
-                <button type="button" class="btn btn-primary btn-block" (click)="verifyOtp()"
-                    [disabled]="isLoading || otp.length !== 6">
-                    @if (isLoading) {
-                    <span class="spinner"></span>
-                    Verifying...
-                    } @else {
-                    Verify Email
+                @if (isEmailTaken) {
+                <div class="mt-2 pt-2 border-t border-red-100 text-neutral-600">
+                    You may have registered through an event. <a routerLink="/login" class="text-primary font-semibold no-underline">Sign in here</a>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Step 1: User Type Selection -->
+            @if (currentStep === 1) {
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
+                <button type="button" (click)="selectUserType('student')"
+                    class="flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-5 bg-white/40 border-2 border-white/30 rounded-xl sm:rounded-2xl hover:border-primary hover:bg-primary-50 transition-all cursor-pointer">
+                    <lucide-icon name="graduation-cap" class="w-7 h-7 sm:w-8 sm:h-8 text-primary"></lucide-icon>
+                    <span class="text-xs sm:text-sm font-semibold text-accent">Student</span>
+                    <span class="text-[10px] sm:text-xs text-neutral-400 text-center hidden sm:block">Contribute or receive help</span>
+                </button>
+                <button type="button" (click)="selectUserType('individual')"
+                    class="flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-5 bg-white/40 border-2 border-white/30 rounded-xl sm:rounded-2xl hover:border-primary hover:bg-primary-50 transition-all cursor-pointer">
+                    <lucide-icon name="user" class="w-7 h-7 sm:w-8 sm:h-8 text-primary"></lucide-icon>
+                    <span class="text-xs sm:text-sm font-semibold text-accent">Individual</span>
+                    <span class="text-[10px] sm:text-xs text-neutral-400 text-center hidden sm:block">Make a difference</span>
+                </button>
+                <button type="button" (click)="selectUserType('organization')"
+                    class="flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-5 bg-white/40 border-2 border-white/30 rounded-xl sm:rounded-2xl hover:border-primary hover:bg-primary-50 transition-all cursor-pointer">
+                    <lucide-icon name="building-2" class="w-7 h-7 sm:w-8 sm:h-8 text-primary"></lucide-icon>
+                    <span class="text-xs sm:text-sm font-semibold text-accent">Org</span>
+                    <span class="text-[10px] sm:text-xs text-neutral-400 text-center hidden sm:block">80G tax benefits</span>
+                </button>
+            </div>
+            }
+
+            <!-- Step 2: Personal Details -->
+            @if (currentStep === 2) {
+            <div class="flex flex-col gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Full Name *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Enter your full name" [(ngModel)]="data.name" name="name">
+                </div>
+                @if (data.userType === 'student') {
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Date of Birth *</label>
+                    <input type="text" appFlatpickr [fpConfig]="{ maxDate: 'today' }"
+                        class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        [(ngModel)]="data.dateOfBirth" name="dateOfBirth" placeholder="Select date">
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Step 3: Contact Information -->
+            @if (currentStep === 3) {
+            <div class="flex flex-col gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Email Address *</label>
+                    <input type="email" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="you&#64;example.com" [(ngModel)]="data.email" name="email">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Phone Number *</label>
+                    <input type="tel" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="10-digit phone number" [(ngModel)]="data.phone" name="phone">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Password *</label>
+                    <div class="relative">
+                        <input [type]="showPassword ? 'text' : 'password'" class="w-full px-4 py-3 pr-12 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            placeholder="Min 6 characters" [(ngModel)]="data.password" name="password">
+                        <button type="button" (click)="showPassword = !showPassword"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                            @if (showPassword) {
+                            <lucide-icon name="eye-off" class="w-5 h-5"></lucide-icon>
+                            } @else {
+                            <lucide-icon name="eye" class="w-5 h-5"></lucide-icon>
+                            }
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Confirm Password *</label>
+                    <div class="relative">
+                        <input [type]="showConfirmPassword ? 'text' : 'password'" class="w-full px-4 py-3 pr-12 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            placeholder="Confirm your password" [(ngModel)]="data.confirmPassword" name="confirmPassword">
+                        <button type="button" (click)="showConfirmPassword = !showConfirmPassword"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                            @if (showConfirmPassword) {
+                            <lucide-icon name="eye-off" class="w-5 h-5"></lucide-icon>
+                            } @else {
+                            <lucide-icon name="eye" class="w-5 h-5"></lucide-icon>
+                            }
+                        </button>
+                    </div>
+                    @if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+                    <span class="text-xs text-red-500 mt-1 block">Passwords do not match</span>
                     }
-                </button>
-                <button type="button" class="btn-resend" (click)="sendOtp()" [disabled]="isLoading">
-                    Resend OTP
-                </button>
-            </div>
-            } @else {
-            <div class="verified-box">
-                <div class="verified-icon">✓</div>
-                <p>Email verified successfully!</p>
-            </div>
-            }
-        </div>
-        }
-
-        <!-- Step 5: Location Details -->
-        @if (currentStep === 5) {
-        <form class="auth-form">
-            <div class="input-group">
-                <label class="input-label">Area / Locality</label>
-                <input type="text" class="input" placeholder="Enter your area" [(ngModel)]="data.area" name="area">
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Locality</label>
-                <input type="text" class="input" placeholder="Enter your locality" [(ngModel)]="data.locality"
-                    name="locality">
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">City *</label>
-                <input type="text" class="input" placeholder="Enter your city" [(ngModel)]="data.city" name="city"
-                    required>
-            </div>
-        </form>
-        }
-
-        <!-- Step 6: Additional Information -->
-        @if (currentStep === 6) {
-        <form class="auth-form">
-            @if (data.userType === 'student') {
-            <div class="input-group">
-                <label class="input-label">Class / Grade *</label>
-                <input type="text" class="input" placeholder="e.g., 10th, 12th, B.Tech 2nd Year"
-                    [(ngModel)]="data.classGrade" name="classGrade">
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">School / College Name *</label>
-                <input type="text" class="input" placeholder="Enter your school or college name"
-                    [(ngModel)]="data.schoolName" name="schoolName" required>
+                </div>
             </div>
             }
 
-            @if (data.userType === 'organization') {
-            <div class="input-group">
-                <label class="input-label">Organization Name *</label>
-                <input type="text" class="input" placeholder="Enter organization name"
-                    [(ngModel)]="data.organizationName" name="organizationName" required>
-            </div>
+            <!-- Step 4: OTP Verification -->
+            @if (currentStep === 4) {
+            <div class="mb-6">
+                @if (successMessage) {
+                <div class="flex items-center gap-2 px-4 py-3 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm mb-4">
+                    <lucide-icon name="circle-check" class="w-4 h-4"></lucide-icon>
+                    <p class="m-0">{{ successMessage }}</p>
+                </div>
+                }
 
-            <div class="input-group">
-                <label class="input-label">PAN Number *</label>
-                <input type="text" class="input" placeholder="Enter PAN number" [(ngModel)]="data.panNumber"
-                    name="panNumber" required style="text-transform: uppercase">
-            </div>
-
-            <div class="info-box">
-                <span>ℹ️</span>
-                <p>Organizations are eligible for 80G tax benefits on donations.</p>
-            </div>
-            }
-
-            @if (data.userType === 'individual') {
-            <div class="success-box">
-                <span>✅</span>
-                <p>You're all set! Click Complete Registration to create your account.</p>
-            </div>
-            }
-
-            <div class="input-group">
-                <label class="input-label">Referral Code (Optional)</label>
-                <input type="text" class="input" placeholder="Enter referral code if you have one"
-                    [(ngModel)]="data.referralCode" name="referralCode" (blur)="validateReferralCode()">
-            </div>
-        </form>
-        }
-
-        <!-- Navigation Buttons -->
-        @if (currentStep > 1) {
-        <div class="form-actions">
-            <button type="button" class="btn btn-outline" (click)="prevStep()">
-                ← Back
-            </button>
-
-            @if (currentStep < totalSteps) { <button type="button" class="btn btn-primary" (click)="nextStep()"
-                [disabled]="!canProceed()">
-                Continue →
-                </button>
+                @if (!otpVerified) {
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="mail" class="w-7 h-7"></lucide-icon></div>
+                    <p class="text-sm text-neutral-500 mb-5">We've sent a 6-digit code to <strong class="text-accent">{{ data.email }}</strong></p>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Enter OTP</label>
+                        <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-center text-xl tracking-widest font-semibold placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            placeholder="000000" maxlength="6" [(ngModel)]="otp" name="otp" autocomplete="one-time-code">
+                    </div>
+                    <button type="button"
+                        class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mb-3"
+                        (click)="verifyOtp()" [disabled]="isLoading || otp.length !== 6">
+                        @if (isLoading) {
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Verifying...
+                        } @else {
+                        Verify Email
+                        }
+                    </button>
+                    <button type="button" class="text-sm text-primary font-medium hover:text-primary-600" (click)="sendOtp()" [disabled]="isLoading">
+                        Resend OTP
+                    </button>
+                </div>
                 } @else {
-                <button type="button" class="btn btn-gold" (click)="onSubmit()" [disabled]="isLoading || !canProceed()">
+                <div class="text-center py-4">
+                    <div class="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="circle-check" class="w-8 h-8"></lucide-icon></div>
+                    <p class="text-sm font-medium text-accent">Email verified successfully!</p>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Step 5: Location Details -->
+            @if (currentStep === 5) {
+            <div class="flex flex-col gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">City *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Your city" [(ngModel)]="data.city" name="city">
+                </div>
+            </div>
+            }
+
+            <!-- Step 6: Additional Information -->
+            @if (currentStep === 6) {
+            <div class="flex flex-col gap-4 mb-6">
+                @if (data.userType === 'student') {
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Class / Grade *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="e.g., 10th, 12th, B.Tech 2nd Year" [(ngModel)]="data.classGrade" name="classGrade">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">School / College Name *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Enter your school or college name" [(ngModel)]="data.schoolName" name="schoolName">
+                </div>
+                }
+
+                @if (data.userType === 'organization') {
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Enter organization name" [(ngModel)]="data.organizationName" name="organizationName">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                        placeholder="Enter PAN number" [(ngModel)]="data.panNumber" name="panNumber">
+                </div>
+                <div class="flex items-start gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-sm">
+                    <lucide-icon name="info" class="w-4 h-4 shrink-0"></lucide-icon>
+                    <p class="m-0">Organizations are eligible for 80G tax benefits on donations.</p>
+                </div>
+                }
+
+                @if (data.userType === 'individual') {
+                <div class="flex items-center gap-2 px-4 py-3 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm">
+                    <lucide-icon name="circle-check" class="w-4 h-4"></lucide-icon>
+                    <p class="m-0">You're all set! Click Complete Registration to create your account.</p>
+                </div>
+                }
+
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Referral Code (Optional)</label>
+                    <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Enter referral code if you have one" [(ngModel)]="data.referralCode" name="referralCode" (blur)="validateReferralCode()">
+                </div>
+            </div>
+            }
+
+            <!-- Navigation Buttons -->
+            @if (currentStep > 1) {
+            <div class="flex gap-3">
+                <button type="button"
+                    class="flex-1 py-3 border border-neutral-200 shadow-sm text-neutral-600 font-semibold rounded-xl hover:border-neutral-300 transition-colors bg-white"
+                    (click)="prevStep()">
+                    &larr; Back
+                </button>
+
+                @if (currentStep < totalSteps && (currentStep !== 4 || otpVerified)) {
+                <button type="button"
+                    class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    (click)="nextStep()" [disabled]="!canProceed()">
+                    Continue &rarr;
+                </button>
+                }
+
+                @if (currentStep === totalSteps) {
+                <button type="button"
+                    class="flex-1 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    (click)="onSubmit()" [disabled]="isLoading || !canProceed()">
                     @if (isLoading) {
-                    <span class="spinner"></span>
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Creating Account...
                     } @else {
-                    Complete Registration 🎉
+                    Complete Registration
                     }
                 </button>
                 }
-        </div>
-        }
+            </div>
+            }
 
-        <!-- Footer -->
-        <div class="auth-footer">
-            <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+            <!-- Footer -->
+            <div class="text-center mt-6 pt-5 border-t border-white/20">
+                <p class="text-sm text-neutral-500">Already have an account? <a routerLink="/login" class="text-primary font-semibold no-underline hover:text-primary-600">Sign in</a></p>
+            </div>
         </div>
     </div>
-</div>
-
-<!-- Background -->
-<div class="auth-bg">
-    <div class="shape shape-1"></div>
-    <div class="shape shape-2"></div>
-</div>
 </div>

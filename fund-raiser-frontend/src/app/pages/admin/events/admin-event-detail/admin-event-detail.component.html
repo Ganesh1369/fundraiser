@@ -3,38 +3,38 @@
     <aside class="sidebar dark">
         <div class="sidebar-header">
             <a routerLink="/" class="logo">
-                <span class="logo-icon">🔥</span>
-                <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
+                <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
+                <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
             </a>
             <span class="admin-badge">Admin</span>
         </div>
         <nav class="sidebar-nav">
             <a class="nav-item" routerLink="/admin">
-                <span class="nav-icon">📊</span> Dashboard
+                <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon> Dashboard
             </a>
             <a class="nav-item active" routerLink="/admin/events">
-                <span class="nav-icon">📅</span> Events
+                <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon> Events
             </a>
             <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'registrations'}">
-                <span class="nav-icon">👥</span>
+                <lucide-icon name="users" class="nav-icon w-4 h-4"></lucide-icon>
                 Registrations
             </a>
             <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'donations'}">
-                <span class="nav-icon">💰</span>
+                <lucide-icon name="wallet" class="nav-icon w-4 h-4"></lucide-icon>
                 Donations
             </a>
             <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'leaderboard'}">
-                <span class="nav-icon">🏆</span>
+                <lucide-icon name="trophy" class="nav-icon w-4 h-4"></lucide-icon>
                 Leaderboard
             </a>
             <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'certificates'}">
-                <span class="nav-icon">📄</span>
+                <lucide-icon name="file-text" class="nav-icon w-4 h-4"></lucide-icon>
                 Certificates
             </a>
         </nav>
         <div class="sidebar-footer">
             <button class="logout-btn" (click)="logout()">
-                <span>🚪</span> Logout
+                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon> Logout
             </button>
         </div>
     </aside>
@@ -61,7 +61,11 @@
                         <h1>{{ event.event_name }}</h1>
                     </div>
                     <button (click)="exportData()" class="btn btn-primary" [disabled]="exporting">
-                        {{ exporting ? '⏳ Exporting...' : '📥 Export Excel' }}
+                        @if (exporting) {
+                        <lucide-icon name="clock" class="w-4 h-4 inline-block"></lucide-icon> Exporting...
+                        } @else {
+                        <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
+                        }
                     </button>
                 </div>
             </header>
@@ -70,14 +74,14 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-header">
-                        <span class="stat-icon">👥</span>
+                        <lucide-icon name="users" class="stat-icon w-5 h-5"></lucide-icon>
                         <span class="stat-label">Total Registrations</span>
                     </div>
                     <div class="stat-value">{{ event.registration_count }}</div>
                 </div>
                 <div class="stat-card" [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
                     <div class="stat-header">
-                        <span class="stat-icon">🔓</span>
+                        <lucide-icon name="lock-open" class="stat-icon w-5 h-5"></lucide-icon>
                         <span class="stat-label">Status</span>
                     </div>
                     <div class="stat-value status-text">
@@ -86,14 +90,14 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-header">
-                        <span class="stat-icon">📅</span>
+                        <lucide-icon name="calendar" class="stat-icon w-5 h-5"></lucide-icon>
                         <span class="stat-label">Date</span>
                     </div>
                     <div class="stat-value small">{{ formatDate(event.event_date) }}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-header">
-                        <span class="stat-icon">🏷️</span>
+                        <lucide-icon name="tag" class="stat-icon w-5 h-5"></lucide-icon>
                         <span class="stat-label">Type</span>
                     </div>
                     <div class="stat-value small capitalize">{{ event.event_type }}</div>

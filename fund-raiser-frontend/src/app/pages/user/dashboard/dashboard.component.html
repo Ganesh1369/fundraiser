@@ -1,83 +1,92 @@
-<div class="dashboard">
-    <!-- Top Header Bar -->
-    <header class="topbar">
-        <a routerLink="/" class="logo">
-            <span class="logo-icon">🔥</span>
-            <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
-        </a>
-        <div class="topbar-actions">
-            <button class="btn btn-gold" (click)="showDonateModal = true">
-                <span>💰</span> Donate
-            </button>
-            @if (user?.userType === 'organization') {
-            <button class="btn btn-outline" (click)="showCertificateModal = true">
-                <span>📄</span> 80G Certificate
-            </button>
-            }
-            <button class="logout-btn" (click)="logout()">
-                <span>🚪</span> Logout
-            </button>
+<div class="min-h-screen bg-neutral-50">
+    <!-- Topbar -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
+        <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-3">
+            <a routerLink="/" class="flex items-center gap-2 text-lg font-bold text-accent no-underline shrink-0">
+                <lucide-icon name="flame" class="w-5 h-5 text-primary"></lucide-icon>
+                <span class="hidden sm:inline">Prima<span class="text-primary">thon'26</span></span>
+            </a>
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <button class="px-3 sm:px-4 py-2 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
+                    (click)="showDonateModal = true">
+                    Donate
+                </button>
+                @if (user?.userType === 'organization') {
+                <button class="px-3 sm:px-4 py-2 border border-neutral-200 text-xs sm:text-sm font-medium text-neutral-700 rounded-xl hover:border-primary hover:text-primary transition-all"
+                    (click)="showCertificateModal = true">
+                    <span class="sm:hidden">80G</span>
+                    <span class="hidden sm:inline">80G Certificate</span>
+                </button>
+                }
+                <button class="px-2 sm:px-3 py-2 text-xs sm:text-sm text-neutral-500 hover:text-red-500 transition-colors"
+                    (click)="logout()">
+                    Logout
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <header class="dashboard-header">
-            <div class="welcome-text">
-                <h1>Welcome back, {{ (user?.name || 'Guest').split(' ')[0] }}! 👋</h1>
-                <p>Here's your giving summary</p>
+    <main class="max-w-6xl mx-auto px-5 py-8">
+        <!-- Welcome -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-accent mb-1">Welcome back, {{ (user?.name || 'Guest').split(' ')[0] }}!</h1>
+                <p class="text-sm text-neutral-500 m-0">Here's your giving summary</p>
             </div>
-            <div class="header-actions">
-                <button class="btn btn-gold" (click)="showDonateModal = true">
-                    <span>💰</span>
-                    Quick Donate
-                </button>
-            </div>
-        </header>
+            <button class="hidden md:flex px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors items-center gap-2"
+                (click)="showDonateModal = true">
+                Quick Donate
+            </button>
+        </div>
 
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon gold">💰</div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ formatCurrency(summary.totalAmount) }}</div>
-                    <div class="stat-label">Total Donations</div>
-                </div>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-2xl p-5 shadow-soft">
+                <div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-xl mb-3"><lucide-icon name="wallet" class="w-5 h-5 text-primary"></lucide-icon></div>
+                <div class="text-xl font-bold text-accent">{{ formatCurrency(summary.totalAmount) }}</div>
+                <div class="text-xs text-neutral-500 mt-1">Total Donations</div>
             </div>
-
-            <div class="stat-card">
-                <div class="stat-icon blue">📊</div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ summary.totalDonations }}</div>
-                    <div class="stat-label">Transactions</div>
-                </div>
+            <div class="bg-white rounded-2xl p-5 shadow-soft">
+                <div class="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-xl mb-3"><lucide-icon name="bar-chart-3" class="w-5 h-5 text-blue-500"></lucide-icon></div>
+                <div class="text-xl font-bold text-accent">{{ summary.totalDonations }}</div>
+                <div class="text-xs text-neutral-500 mt-1">Transactions</div>
             </div>
-
-            <div class="stat-card">
-                <div class="stat-icon green">🎁</div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ referralStats?.referralPoints || 0 }}</div>
-                    <div class="stat-label">Referral Points</div>
-                </div>
+            <div class="bg-white rounded-2xl p-5 shadow-soft">
+                <div class="w-10 h-10 flex items-center justify-center bg-amber-50 rounded-xl mb-3"><lucide-icon name="gift" class="w-5 h-5 text-amber-500"></lucide-icon></div>
+                <div class="text-xl font-bold text-accent">{{ referralStats?.referralPoints || 0 }}</div>
+                <div class="text-xs text-neutral-500 mt-1">Referral Points</div>
             </div>
-
-            <div class="stat-card">
-                <div class="stat-icon purple">👥</div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ referralStats?.referralCount || 0 }}</div>
-                    <div class="stat-label">People Referred</div>
-                </div>
+            <div class="bg-white rounded-2xl p-5 shadow-soft">
+                <div class="w-10 h-10 flex items-center justify-center bg-purple-50 rounded-xl mb-3"><lucide-icon name="users" class="w-5 h-5 text-purple-500"></lucide-icon></div>
+                <div class="text-xl font-bold text-accent">{{ referralStats?.referralCount || 0 }}</div>
+                <div class="text-xs text-neutral-500 mt-1">People Referred</div>
             </div>
         </div>
 
+        <!-- Profile Incomplete Banner -->
+        @if (profileIncomplete) {
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8">
+            <div class="flex items-center gap-3">
+                <lucide-icon name="alert-triangle" class="w-6 h-6 text-amber-500 shrink-0"></lucide-icon>
+                <div>
+                    <strong class="text-sm text-accent block">Complete your profile</strong>
+                    <p class="text-xs text-neutral-500 m-0">Fill in your details to unlock all features</p>
+                </div>
+            </div>
+            <button class="px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-600 transition-colors whitespace-nowrap"
+                (click)="openProfileModal()">Complete Profile</button>
+        </div>
+        }
+
         <!-- Main Grid -->
-        <div class="dashboard-grid">
-            <!-- Donation History -->
-            <div class="card donation-history">
-                <div class="card-header">
-                    <h2>Donation History</h2>
-                    <select class="filter-select" [(ngModel)]="selectedFilter" (change)="onFilterChange()">
+        <div class="grid lg:grid-cols-5 gap-6">
+            <!-- Donation History (wider) -->
+            <div class="lg:col-span-3 bg-white rounded-2xl shadow-soft overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                    <h2 class="text-base font-semibold text-accent m-0">Donation History</h2>
+                    <select class="px-3 py-1.5 text-xs border border-neutral-200 rounded-lg bg-white text-neutral-600 focus:border-primary focus:ring-1 focus:ring-primary/10"
+                        [(ngModel)]="selectedFilter" (change)="onFilterChange()">
                         <option value="all">All Time</option>
                         <option value="day">Past Day</option>
                         <option value="week">Past Week</option>
@@ -85,31 +94,41 @@
                         <option value="year">Past Year</option>
                     </select>
                 </div>
-
-                <div class="card-body">
+                <div class="p-6">
                     @if (donations.length === 0) {
-                    <div class="empty-state">
-                        <span class="empty-icon">📭</span>
-                        <p>No donations yet. Start your giving journey!</p>
-                        <button class="btn btn-primary" (click)="showDonateModal = true">Make First Donation</button>
+                    <div class="text-center py-10">
+                        <div class="w-14 h-14 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="inbox" class="w-7 h-7 text-neutral-400"></lucide-icon></div>
+                        <p class="text-sm text-neutral-500 mb-4">No donations yet. Start your giving journey!</p>
+                        <button class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
+                            (click)="showDonateModal = true">Make First Donation</button>
                     </div>
                     } @else {
-                    <div class="donation-list">
+                    <div class="flex flex-col gap-3">
                         @for (donation of donations; track donation.id) {
-                        <div class="donation-item">
-                            <div class="donation-info">
-                                <div class="donation-amount">{{ formatCurrency(donation.amount) }}</div>
-                                <div class="donation-date">{{ formatDate(donation.createdAt) }}</div>
+                        <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                            <div>
+                                <div class="text-sm font-semibold text-accent">{{ formatCurrency(donation.amount) }}</div>
+                                <div class="text-xs text-neutral-400 mt-0.5">{{ formatDate(donation.createdAt) }}</div>
                             </div>
-                            <div class="donation-badges">
+                            <div class="flex items-center gap-2">
                                 @if (donation.request80g) {
-                                <span class="badge badge-80g"
-                                    [ngClass]="getCertStatusClass(donation.certificateStatus || 'pending')">80G {{
-                                    donation.certificateStatus || 'pending' }}</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full"
+                                    [ngClass]="{
+                                        'bg-primary/10 text-primary': (donation.certificateStatus || 'pending') === 'approved',
+                                        'bg-amber-50 text-amber-600': (donation.certificateStatus || 'pending') === 'pending' || (donation.certificateStatus || 'pending') === 'processing',
+                                        'bg-red-50 text-red-500': (donation.certificateStatus || 'pending') === 'rejected'
+                                    }">
+                                    80G {{ donation.certificateStatus || 'pending' }}
+                                </span>
                                 }
-                                <div class="donation-status" [ngClass]="donation.status">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full capitalize"
+                                    [ngClass]="{
+                                        'bg-primary/10 text-primary': donation.status === 'completed',
+                                        'bg-amber-50 text-amber-600': donation.status === 'pending',
+                                        'bg-red-50 text-red-500': donation.status === 'failed'
+                                    }">
                                     {{ donation.status }}
-                                </div>
+                                </span>
                             </div>
                         </div>
                         }
@@ -118,49 +137,49 @@
                 </div>
             </div>
 
-            <!-- Referral Card -->
-            <div class="card referral-card">
-                <div class="card-header">
-                    <h2>Invite & Earn</h2>
-                    <span class="points-badge">{{ referralStats?.referralPoints || 0 }} pts</span>
+            <!-- Referral Card (narrower) -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-soft overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                    <h2 class="text-base font-semibold text-accent m-0">Invite & Earn</h2>
+                    <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">{{ referralStats?.referralPoints || 0 }} pts</span>
                 </div>
-
-                <div class="card-body">
-                    <p class="referral-info">
-                        Earn <strong>1 point for every ₹1</strong> donated by people you refer!
+                <div class="p-6">
+                    <p class="text-sm text-neutral-500 mb-5">
+                        Earn <strong class="text-accent">1 point for every &#8377;1</strong> donated by people you refer!
                     </p>
 
-                    <div class="referral-code-box">
-                        <span class="code-label">Your Code</span>
-                        <span class="referral-code">{{ referralStats?.referralCode || user?.referralCode }}</span>
+                    <div class="flex flex-col items-center bg-neutral-50 rounded-xl p-4 mb-4">
+                        <span class="text-xs text-neutral-400 mb-1">Your Code</span>
+                        <span class="text-xl font-bold text-primary tracking-widest">{{ referralStats?.referralCode || user?.referralCode }}</span>
                     </div>
 
-                    <div class="referral-link-box">
-                        <input type="text" class="referral-link-input" [value]="referralStats?.referralLink || ''"
-                            readonly>
-                        <button class="copy-btn" (click)="copyReferralLink()">
-                            {{ linkCopied ? '✓' : '📋' }}
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" class="flex-1 px-3 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg truncate"
+                            [value]="referralStats?.referralLink || ''" readonly>
+                        <button class="px-3 py-2.5 bg-accent text-white text-sm rounded-lg hover:bg-accent-600 transition-colors"
+                            (click)="copyReferralLink()">
+                            <lucide-icon [name]="linkCopied ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
                         </button>
                     </div>
 
-                    <div class="share-buttons">
-                        <button class="share-btn whatsapp" (click)="shareOnWhatsApp()">
-                            <span>📱</span>
-                            WhatsApp
+                    <div class="flex gap-3 mb-5">
+                        <button class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-50 text-green-600 text-sm font-medium rounded-xl hover:bg-green-100 transition-colors"
+                            (click)="shareOnWhatsApp()">
+                            <lucide-icon name="message-circle" class="w-4 h-4"></lucide-icon> WhatsApp
                         </button>
-                        <button class="share-btn twitter" (click)="shareOnTwitter()">
-                            <span>𝕏</span>
-                            Twitter
+                        <button class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-neutral-100 text-neutral-700 text-sm font-medium rounded-xl hover:bg-neutral-200 transition-colors"
+                            (click)="shareOnTwitter()">
+                            <lucide-icon name="share-2" class="w-4 h-4"></lucide-icon> Twitter
                         </button>
                     </div>
 
                     @if (referralStats?.recentReferrals?.length) {
-                    <div class="recent-referrals">
-                        <h4>Recent Referrals</h4>
+                    <div class="pt-4 border-t border-neutral-100">
+                        <h4 class="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-3">Recent Referrals</h4>
                         @for (referral of referralStats!.recentReferrals!; track referral.name) {
-                        <div class="referral-item">
-                            <span class="referral-avatar">{{ referral.name.charAt(0) }}</span>
-                            <span class="referral-name">{{ referral.name }}</span>
+                        <div class="flex items-center gap-3 py-2">
+                            <span class="w-7 h-7 flex items-center justify-center bg-primary/10 text-primary text-xs font-semibold rounded-full">{{ referral.name.charAt(0) }}</span>
+                            <span class="text-sm text-neutral-700">{{ referral.name }}</span>
                         </div>
                         }
                     </div>
@@ -170,23 +189,29 @@
 
             <!-- Certificate Requests (for org users) -->
             @if (user?.userType === 'organization' && certificateRequests.length > 0) {
-            <div class="card certificate-card">
-                <div class="card-header">
-                    <h2>80G Certificate Requests</h2>
+            <div class="lg:col-span-5 bg-white rounded-2xl shadow-soft overflow-hidden">
+                <div class="px-6 py-4 border-b border-neutral-100">
+                    <h2 class="text-base font-semibold text-accent m-0">80G Certificate Requests</h2>
                 </div>
-                <div class="card-body">
-                    <div class="cert-list">
+                <div class="p-6">
+                    <div class="flex flex-col gap-3">
                         @for (cert of certificateRequests; track cert.id) {
-                        <div class="cert-item">
-                            <div class="cert-info">
-                                <span class="cert-pan">PAN: {{ cert.panNumber }}</span>
+                        <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                            <div class="flex flex-wrap items-center gap-3 text-sm">
+                                <span class="font-medium text-accent">PAN: {{ cert.panNumber }}</span>
                                 @if (cert.donationAmount) {
-                                <span class="cert-amount">{{ formatCurrency(cert.donationAmount) }}</span>
+                                <span class="text-neutral-500">{{ formatCurrency(cert.donationAmount) }}</span>
                                 }
-                                <span class="cert-date">{{ formatDate(cert.requestedAt) }}</span>
+                                <span class="text-xs text-neutral-400">{{ formatDate(cert.requestedAt) }}</span>
                             </div>
-                            <span class="cert-status" [ngClass]="getCertStatusClass(cert.status)">{{ cert.status
-                                }}</span>
+                            <span class="px-2.5 py-1 text-xs font-medium rounded-full capitalize"
+                                [ngClass]="{
+                                    'bg-primary/10 text-primary': cert.status === 'approved',
+                                    'bg-amber-50 text-amber-600': cert.status === 'pending' || cert.status === 'processing',
+                                    'bg-red-50 text-red-500': cert.status === 'rejected'
+                                }">
+                                {{ cert.status }}
+                            </span>
                         </div>
                         }
                     </div>
@@ -198,41 +223,48 @@
 
     <!-- Donate Modal -->
     @if (showDonateModal) {
-    <div class="modal-overlay" (click)="showDonateModal = false">
-        <div class="modal" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-                <h2>Make a Donation 💰</h2>
-                <button class="close-btn" (click)="showDonateModal = false">×</button>
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showDonateModal = false">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                <h2 class="text-lg font-bold text-accent m-0">Make a Donation</h2>
+                <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
+                    (click)="showDonateModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
             </div>
-            <div class="modal-body">
-                <p>Every rupee helps a student succeed!</p>
+            <div class="px-6 py-5">
+                <p class="text-sm text-neutral-500 mb-5">Every rupee helps a student succeed!</p>
 
-                <div class="amount-presets">
+                <div class="grid grid-cols-4 gap-2 mb-5">
                     @for (preset of [100, 500, 1000, 5000]; track preset) {
-                    <button class="preset-btn" [class.active]="donationAmount === preset"
+                    <button class="py-2.5 text-sm font-semibold rounded-xl border-2 transition-all"
+                        [class]="donationAmount === preset
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-neutral-50 text-neutral-700 border-transparent hover:border-primary/30'"
                         (click)="donationAmount = preset">
                         {{ formatCurrency(preset) }}
                     </button>
                     }
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">Or enter custom amount</label>
-                    <input type="number" class="input" [(ngModel)]="donationAmount" min="1"
-                        placeholder="Enter amount in ₹">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Or enter custom amount</label>
+                    <input type="number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        [(ngModel)]="donationAmount" min="1" placeholder="Enter amount in &#8377;">
                 </div>
 
                 @if (user?.userType === 'organization') {
-                <label class="checkbox-80g">
-                    <input type="checkbox" [(ngModel)]="request80g">
+                <label class="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer">
+                    <input type="checkbox" [(ngModel)]="request80g" class="w-4 h-4 accent-primary">
                     <span>Request 80G certificate for this donation</span>
                 </label>
                 }
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" (click)="showDonateModal = false">Cancel</button>
-                <button class="btn btn-gold" (click)="initiateDonation()" [disabled]="isLoading || donationAmount < 1">
+            <div class="flex gap-3 px-6 py-4 border-t border-neutral-100">
+                <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
+                    (click)="showDonateModal = false">Cancel</button>
+                <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+                    (click)="initiateDonation()" [disabled]="isLoading || donationAmount < 1">
                     @if (isLoading) {
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Processing...
                     } @else {
                     Pay {{ formatCurrency(donationAmount) }}
@@ -245,34 +277,119 @@
 
     <!-- Certificate Modal -->
     @if (showCertificateModal) {
-    <div class="modal-overlay" (click)="showCertificateModal = false">
-        <div class="modal" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-                <h2>Request 80G Certificate 📄</h2>
-                <button class="close-btn" (click)="showCertificateModal = false">×</button>
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showCertificateModal = false">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                <h2 class="text-lg font-bold text-accent m-0">Request 80G Certificate</h2>
+                <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
+                    (click)="showCertificateModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
             </div>
-            <div class="modal-body">
-                <p>Get your 80G tax benefit certificate for your donations.</p>
+            <div class="px-6 py-5">
+                <p class="text-sm text-neutral-500 mb-5">Get your 80G tax benefit certificate for your donations.</p>
 
-                <div class="input-group">
-                    <label class="input-label">PAN Number *</label>
-                    <input type="text" class="input" [(ngModel)]="panNumber" placeholder="Enter your PAN number"
-                        style="text-transform: uppercase" maxlength="10">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                        [(ngModel)]="panNumber" placeholder="Enter your PAN number" maxlength="10">
                 </div>
 
-                <div class="info-box">
-                    <span>ℹ️</span>
-                    <p>Your certificate will be processed within 5-7 business days.</p>
+                <div class="flex items-start gap-3 p-4 bg-blue-50 rounded-xl text-sm text-blue-700">
+                    <lucide-icon name="info" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
+                    <p class="m-0">Your certificate will be processed within 5-7 business days.</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" (click)="showCertificateModal = false">Cancel</button>
-                <button class="btn btn-primary" (click)="requestCertificate()"
-                    [disabled]="isLoading || panNumber.length !== 10">
+            <div class="flex gap-3 px-6 py-4 border-t border-neutral-100">
+                <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
+                    (click)="showCertificateModal = false">Cancel</button>
+                <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+                    (click)="requestCertificate()" [disabled]="isLoading || panNumber.length !== 10">
                     @if (isLoading) {
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Submitting...
                     } @else {
                     Submit Request
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Profile Modal -->
+    @if (showProfileModal) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showProfileModal = false">
+        <div class="w-full max-w-lg bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                <h2 class="text-lg font-bold text-accent m-0">Edit Profile</h2>
+                <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
+                    (click)="showProfileModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
+            </div>
+            <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Name</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.name" placeholder="Full name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Phone</label>
+                        <input type="tel" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.phone" placeholder="Phone number">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">City</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.city" placeholder="City">
+                    </div>
+                </div>
+
+                @if (profile?.userType === 'student') {
+                <h4 class="text-sm font-semibold text-accent mt-6 mb-4 pt-4 border-t border-neutral-100">Student Details</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Age</label>
+                        <input type="number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.age" placeholder="Age">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Class / Grade *</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.classGrade" placeholder="e.g. 10th, B.Tech">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">School / College *</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.schoolName" placeholder="School name">
+                    </div>
+                </div>
+                }
+
+                @if (profile?.userType === 'organization') {
+                <h4 class="text-sm font-semibold text-accent mt-6 mb-4 pt-4 border-t border-neutral-100">Organization Details</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name *</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.organizationName" placeholder="Organization name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                            [(ngModel)]="profileForm.panNumber" placeholder="PAN number" maxlength="10">
+                    </div>
+                </div>
+                }
+            </div>
+            <div class="flex gap-3 px-6 py-4 border-t border-neutral-100">
+                <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
+                    (click)="showProfileModal = false">Cancel</button>
+                <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+                    (click)="saveProfile()" [disabled]="isLoading">
+                    @if (isLoading) {
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    Saving...
+                    } @else {
+                    Save Profile
                     }
                 </button>
             </div>

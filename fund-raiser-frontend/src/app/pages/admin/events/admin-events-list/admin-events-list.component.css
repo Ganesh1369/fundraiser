@@ -8,7 +8,7 @@
 /* ===== Dark Sidebar — Midnight Blue ===== */
 .sidebar.dark {
     width: 260px;
-    background: linear-gradient(180deg, #191970 0%, #252580 100%);
+    background: linear-gradient(180deg, #102a43 0%, #1e3a8a 100%);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -37,13 +37,13 @@
 }
 
 .text-gold {
-    color: #21BF99;
+    color: #22c55e;
 }
 
 .admin-badge {
     padding: var(--space-xs) var(--space-sm);
-    background: rgba(33, 191, 153, 0.2);
-    color: #21BF99;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
     border-radius: var(--radius-sm);
     font-size: var(--font-size-xs);
     font-weight: 600;
@@ -76,8 +76,8 @@
 }
 
 .sidebar.dark .nav-item.active {
-    background: rgba(33, 191, 153, 0.2);
-    color: #21BF99;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
 }
 
 .sidebar-footer {
@@ -169,7 +169,7 @@
 
 .event-name {
     font-weight: 600;
-    color: #191970;
+    color: #102a43;
 }
 
 .event-location {
@@ -189,8 +189,8 @@
 }
 
 .badge.event-type {
-    background: rgba(33, 191, 153, 0.1);
-    color: #21BF99;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
 }
 
 .status-badge {
@@ -214,7 +214,49 @@
 .count-cell {
     font-weight: 700;
     font-size: var(--font-size-base);
-    color: #191970;
+    color: #102a43;
+}
+
+/* ===== Registration Link ===== */
+.link-cell {
+    max-width: 220px;
+}
+
+.link-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.reg-link {
+    font-size: var(--font-size-xs);
+    color: #102a43;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.reg-link:hover {
+    color: #22c55e;
+    text-decoration: underline;
+}
+
+.btn-copy {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(34, 197, 94, 0.1);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    transition: all 0.2s ease;
+}
+
+.btn-copy:hover {
+    background: rgba(34, 197, 94, 0.2);
 }
 
 /* ===== Action Buttons ===== */
@@ -234,12 +276,12 @@
 }
 
 .btn-action.view {
-    background: rgba(33, 191, 153, 0.1);
-    color: #21BF99;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
 }
 
 .btn-action.view:hover {
-    background: rgba(33, 191, 153, 0.2);
+    background: rgba(34, 197, 94, 0.2);
 }
 
 .btn-action.toggle {
@@ -281,7 +323,7 @@
     width: 32px;
     height: 32px;
     border: 3px solid var(--color-light-gray);
-    border-top-color: #21BF99;
+    border-top-color: #22c55e;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }

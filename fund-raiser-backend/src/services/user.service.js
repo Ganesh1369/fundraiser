@@ -6,7 +6,7 @@ const db = require('../config/db');
 const getProfile = async (userId) => {
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                area, locality, city, organization_name, pan_number,
+                city, organization_name, pan_number,
                 referral_code, referral_points, created_at
          FROM users WHERE id = $1`,
         [userId]
@@ -17,8 +17,7 @@ const getProfile = async (userId) => {
     return {
         id: u.id, userType: u.user_type, name: u.name, age: u.age,
         email: u.email, phone: u.phone, classGrade: u.class_grade,
-        schoolName: u.school_name, area: u.area, locality: u.locality,
-        city: u.city, organizationName: u.organization_name,
+        schoolName: u.school_name, city: u.city, organizationName: u.organization_name,
         panNumber: u.pan_number, referralCode: u.referral_code,
         referralPoints: u.referral_points, createdAt: u.created_at
     };
@@ -28,15 +27,21 @@ const getProfile = async (userId) => {
  * Update user profile
  */
 const updateProfile = async (userId, data) => {
-    const { name, age, phone, area, locality, city, schoolName, classGrade } = data;
+    const { name, age, phone, city, schoolName, classGrade, organizationName, panNumber, userType } = data;
+
+    // Validate userType if provided
+    const validTypes = ['individual', 'student', 'organization'];
+    const safeUserType = validTypes.includes(userType) ? userType : undefined;
+
     const result = await db.query(
-        `UPDATE users SET 
+        `UPDATE users SET
             name = COALESCE($1, name), age = COALESCE($2, age),
-            phone = COALESCE($3, phone), area = COALESCE($4, area),
-            locality = COALESCE($5, locality), city = COALESCE($6, city),
-            school_name = COALESCE($7, school_name), class_grade = COALESCE($8, class_grade)
-         WHERE id = $9 RETURNING id, name, email`,
-        [name, age, phone, area, locality, city, schoolName, classGrade, userId]
+            phone = COALESCE($3, phone), city = COALESCE($4, city),
+            school_name = COALESCE($5, school_name), class_grade = COALESCE($6, class_grade),
+            organization_name = COALESCE($7, organization_name), pan_number = COALESCE($8, pan_number),
+            user_type = COALESCE($9, user_type)
+         WHERE id = $10 RETURNING id, name, email, user_type`,
+        [name, age, phone, city, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
     );
     return result.rows[0];
 };

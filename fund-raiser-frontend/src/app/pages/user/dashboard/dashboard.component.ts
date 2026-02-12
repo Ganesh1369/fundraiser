@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
 
 declare var Razorpay: any;
@@ -52,7 +53,7 @@ interface CertificateRequest {
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.css'
 })
@@ -70,9 +71,18 @@ export class DashboardComponent implements OnInit {
     isLoading = false;
     showDonateModal = false;
     showCertificateModal = false;
+    showProfileModal = false;
     panNumber = '';
     selectedDonationId = '';
     linkCopied = false;
+
+    profile: any = null;
+    profileIncomplete = false;
+    profileForm: any = {
+        name: '', phone: '', city: '',
+        age: '', classGrade: '', schoolName: '',
+        organizationName: '', panNumber: ''
+    };
 
     constructor(
         private router: Router,
@@ -83,6 +93,7 @@ export class DashboardComponent implements OnInit {
     ngOnInit(): void {
         this.loadUser();
         this.loadDashboardData();
+        this.loadProfile();
     }
 
     loadUser(): void {
@@ -161,14 +172,14 @@ export class DashboardComponent implements OnInit {
                         key: res.data.keyId,
                         amount: res.data.amount,
                         currency: res.data.currency,
-                        name: 'FundRaiser',
-                        description: 'Donation for Education',
+                        name: 'Primathon\'26',
+                        description: 'Primathon\'26 Registration',
                         order_id: res.data.orderId,
                         handler: (response: any) => {
                             this.verifyPayment(response, res.data.donationId);
                         },
                         prefill: { name: this.user?.name, email: this.user?.email },
-                        theme: { color: '#2D6A4F' }
+                        theme: { color: '#22c55e' }
                     };
                     const razorpay = new Razorpay(options);
                     razorpay.open();
@@ -192,7 +203,7 @@ export class DashboardComponent implements OnInit {
             next: (res: any) => {
                 if (res.success) {
                     this.loadDashboardData();
-                    alert('Thank you for your donation! 🎉');
+                    alert('Thank you for your donation!');
                 }
             },
             error: (err: any) => console.error('Payment verification failed:', err)
@@ -231,14 +242,14 @@ export class DashboardComponent implements OnInit {
 
     shareOnWhatsApp(): void {
         if (this.referralStats?.referralLink) {
-            const text = `Join me on FundRaiser and help support education! Use my referral link: ${this.referralStats.referralLink}`;
+            const text = `Join me at Primathon'26 — run for a healthier, greener city! Use my referral link: ${this.referralStats.referralLink}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
     }
 
     shareOnTwitter(): void {
         if (this.referralStats?.referralLink) {
-            const text = `Join me on FundRaiser and help support education! 🎓`;
+            const text = `Join me at Primathon'26 — run for a healthier, greener city!`;
             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(this.referralStats.referralLink)}`, '_blank');
         }
     }
@@ -250,6 +261,77 @@ export class DashboardComponent implements OnInit {
             case 'processing': return 'status-processing';
             default: return 'status-pending';
         }
+    }
+
+    loadProfile(): void {
+        this.api.getProfile().subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.profile = res.data;
+                    this.checkProfileComplete();
+                    this.cdr.detectChanges();
+                }
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
+            }
+        });
+    }
+
+    checkProfileComplete(): void {
+        if (!this.profile) return;
+        const type = this.profile.userType;
+        if (type === 'student') {
+            this.profileIncomplete = !this.profile.classGrade || !this.profile.schoolName;
+        } else if (type === 'organization') {
+            this.profileIncomplete = !this.profile.organizationName || !this.profile.panNumber;
+        } else {
+            this.profileIncomplete = false;
+        }
+    }
+
+    openProfileModal(): void {
+        if (this.profile) {
+            this.profileForm = {
+                name: this.profile.name || '',
+                phone: this.profile.phone || '',
+                city: this.profile.city || '',
+                age: this.profile.age || '',
+                classGrade: this.profile.classGrade || '',
+                schoolName: this.profile.schoolName || '',
+                organizationName: this.profile.organizationName || '',
+                panNumber: this.profile.panNumber || ''
+            };
+        }
+        this.showProfileModal = true;
+    }
+
+    saveProfile(): void {
+        this.isLoading = true;
+        this.api.updateProfile(this.profileForm).subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                if (res.success) {
+                    this.showProfileModal = false;
+                    this.loadProfile();
+                    // Sync localStorage user data
+                    if (this.user) {
+                        const updated = {
+                            ...this.user,
+                            name: res.data.name || this.user.name,
+                            userType: res.data.user_type || this.user.userType
+                        };
+                        localStorage.setItem('user', JSON.stringify(updated));
+                        this.user = updated;
+                    }
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
     }
 
     logout(): void {

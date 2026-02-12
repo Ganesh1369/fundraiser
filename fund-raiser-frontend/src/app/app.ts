@@ -9,5 +9,5 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.css'
 })
 export class App {
-  title = 'FundRaiser';
+  title = 'Primathon\'26';
 }

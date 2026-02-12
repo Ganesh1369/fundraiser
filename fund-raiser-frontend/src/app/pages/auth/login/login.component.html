@@ -1,49 +1,63 @@
-<div class="auth-page">
-    <div class="auth-container">
-        <div class="auth-card">
+<div class="min-h-screen flex items-center justify-center px-5 py-10 bg-cover bg-center bg-no-repeat" style="background-image: url('/vivid-blurred-colorful-background.jpg')">
+    <div class="w-full max-w-md">
+        <div class="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-elevated p-8 md:p-10">
             <!-- Header -->
-            <div class="auth-header">
-                <a routerLink="/" class="logo">
-                    <span class="logo-icon">🔥</span>
-                    <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+            <div class="text-center mb-8">
+                <a routerLink="/" class="inline-flex items-center gap-2 text-accent font-bold text-lg no-underline mb-5">
+                    <lucide-icon name="flame" class="w-5 h-5 text-primary"></lucide-icon>
+                    <span>Prima<span class="text-primary">thon'26</span></span>
                 </a>
-                <h1>Welcome Back</h1>
-                <p>Sign in to continue your giving journey</p>
+                <h1 class="text-2xl font-bold text-accent mb-1">Welcome Back</h1>
+                <p class="text-sm text-neutral-400">Sign in to continue your giving journey</p>
             </div>
 
-            <!-- Error Message -->
+            <!-- Error -->
             @if (errorMessage) {
-            <div class="error-message">
-                <span>⚠️</span>
+            <div class="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm mb-5">
+                <lucide-icon name="alert-triangle" class="w-4 h-4 shrink-0"></lucide-icon>
                 {{ errorMessage }}
             </div>
             }
 
-            <!-- Login Form -->
-            <form (ngSubmit)="onSubmit()" class="auth-form">
-                <div class="input-group">
-                    <label class="input-label">Email Address</label>
-                    <input type="email" class="input" placeholder="Enter your email" [(ngModel)]="email" name="email"
-                        required>
+            <!-- Form -->
+            <form (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Email Address</label>
+                    <input type="email"
+                        class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="you&#64;example.com" [(ngModel)]="email" name="email" required>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">Password</label>
-                    <input type="password" class="input" placeholder="Enter your password" [(ngModel)]="password"
-                        name="password" required>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Password</label>
+                    <div class="relative">
+                        <input [type]="showPassword ? 'text' : 'password'"
+                            class="w-full px-4 py-3 pr-12 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            placeholder="Enter your password" [(ngModel)]="password" name="password" required>
+                        <button type="button" (click)="showPassword = !showPassword"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                            @if (showPassword) {
+                            <lucide-icon name="eye-off" class="w-5 h-5"></lucide-icon>
+                            } @else {
+                            <lucide-icon name="eye" class="w-5 h-5"></lucide-icon>
+                            }
+                        </button>
+                    </div>
                 </div>
 
-                <div class="form-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox">
+                <div class="flex justify-between items-center text-sm">
+                    <label class="flex items-center gap-2 text-neutral-500 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 accent-primary rounded">
                         <span>Remember me</span>
                     </label>
-                    <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+                    <a routerLink="/forgot-password" class="text-primary font-medium hover:text-primary-600 no-underline">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="isLoading">
+                <button type="submit"
+                    class="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    [disabled]="isLoading">
                     @if (isLoading) {
-                    <span class="spinner"></span>
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Signing in...
                     } @else {
                     Sign In
@@ -52,20 +66,12 @@
             </form>
 
             <!-- Footer -->
-            <div class="auth-footer">
-                <p>Don't have an account? <a routerLink="/register">Sign up</a></p>
+            <div class="text-center mt-6 pt-5 border-t border-white/20">
+                <p class="text-sm text-neutral-500">Don't have an account? <a routerLink="/register" class="text-primary font-semibold no-underline hover:text-primary-600">Sign up</a></p>
             </div>
-
-            <!-- Admin Link -->
-            <div class="admin-link">
-                <a routerLink="/admin/login">Admin Login →</a>
+            <div class="text-center mt-3">
+                <a routerLink="/admin/login" class="text-xs text-neutral-500 no-underline hover:text-neutral-700 transition-colors">Admin Login &rarr;</a>
             </div>
         </div>
-    </div>
-
-    <!-- Background Decoration -->
-    <div class="auth-bg">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
     </div>
 </div>

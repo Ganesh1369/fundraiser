@@ -3,42 +3,42 @@
     <aside class="sidebar dark">
         <div class="sidebar-header">
             <a routerLink="/" class="logo">
-                <span class="logo-icon">🔥</span>
-                <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
+                <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
+                <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
             </a>
             <span class="admin-badge">Admin</span>
         </div>
 
         <nav class="sidebar-nav">
             <a class="nav-item" [class.active]="activeTab === 'dashboard'" (click)="activeTab = 'dashboard'">
-                <span class="nav-icon">📊</span>
+                <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon>
                 Dashboard
             </a>
             <a class="nav-item" routerLink="/admin/events" routerLinkActive="active">
-                <span class="nav-icon">📅</span>
+                <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon>
                 Events
             </a>
             <a class="nav-item" [class.active]="activeTab === 'registrations'" (click)="activeTab = 'registrations'">
-                <span class="nav-icon">👥</span>
+                <lucide-icon name="users" class="nav-icon w-4 h-4"></lucide-icon>
                 Registrations
             </a>
             <a class="nav-item" [class.active]="activeTab === 'donations'" (click)="activeTab = 'donations'">
-                <span class="nav-icon">💰</span>
+                <lucide-icon name="wallet" class="nav-icon w-4 h-4"></lucide-icon>
                 Donations
             </a>
             <a class="nav-item" [class.active]="activeTab === 'leaderboard'" (click)="activeTab = 'leaderboard'">
-                <span class="nav-icon">🏆</span>
+                <lucide-icon name="trophy" class="nav-icon w-4 h-4"></lucide-icon>
                 Leaderboard
             </a>
             <a class="nav-item" [class.active]="activeTab === 'certificates'" (click)="activeTab = 'certificates'">
-                <span class="nav-icon">📄</span>
+                <lucide-icon name="file-text" class="nav-icon w-4 h-4"></lucide-icon>
                 Certificates
             </a>
         </nav>
 
         <div class="sidebar-footer">
             <button class="logout-btn" (click)="logout()">
-                <span>🚪</span>
+                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon>
                 Logout
             </button>
         </div>
@@ -64,31 +64,31 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-icon">👥</span>
+                    <lucide-icon name="users" class="stat-icon w-5 h-5"></lucide-icon>
                     <span class="stat-label">Total Users</span>
                 </div>
                 <div class="stat-value">{{ stats?.users?.total || 0 }}</div>
                 <div class="stat-breakdown">
-                    <span>🎓 {{ stats?.users?.byType?.student || 0 }}</span>
-                    <span>👤 {{ stats?.users?.byType?.individual || 0 }}</span>
-                    <span>🏢 {{ stats?.users?.byType?.organization || 0 }}</span>
+                    <span class="flex items-center gap-1"><lucide-icon name="graduation-cap" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.student || 0 }}</span>
+                    <span class="flex items-center gap-1"><lucide-icon name="user" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.individual || 0 }}</span>
+                    <span class="flex items-center gap-1"><lucide-icon name="building-2" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.organization || 0 }}</span>
                 </div>
             </div>
 
             <div class="stat-card gold">
                 <div class="stat-header">
-                    <span class="stat-icon">💰</span>
+                    <lucide-icon name="wallet" class="stat-icon w-5 h-5"></lucide-icon>
                     <span class="stat-label">Total Raised</span>
                 </div>
                 <div class="stat-value">{{ formatCurrency(stats?.donations?.totalAmount || 0) }}</div>
                 <div class="stat-breakdown">
-                    <span>✅ {{ stats?.donations?.totalCount || 0 }} transactions</span>
+                    <span class="flex items-center gap-1"><lucide-icon name="circle-check" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.donations?.totalCount || 0 }} transactions</span>
                 </div>
             </div>
 
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-icon">�</span>
+                    <lucide-icon name="trending-up" class="stat-icon w-5 h-5"></lucide-icon>
                     <span class="stat-label">This Month</span>
                 </div>
                 <div class="stat-value">{{ formatCurrency(stats?.donations?.thisMonth || 0) }}</div>
@@ -99,7 +99,7 @@
 
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-icon">📄</span>
+                    <lucide-icon name="file-text" class="stat-icon w-5 h-5"></lucide-icon>
                     <span class="stat-label">Certificates</span>
                 </div>
                 <div class="stat-value">{{ stats?.certificates?.['pending'] || 0 }}</div>
@@ -168,7 +168,7 @@
             <input type="text" class="filter-input" placeholder="Search by name or email..." [(ngModel)]="searchQuery"
                 (input)="onFilterChange()">
             <button class="btn btn-primary" (click)="exportRegistrations()">
-                📥 Export Excel
+                <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
             </button>
         </div>
 
@@ -212,7 +212,7 @@
                 <option value="failed">Failed</option>
             </select>
             <button class="btn btn-primary" (click)="exportDonations()">
-                📥 Export Excel
+                <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
             </button>
         </div>
 
@@ -277,9 +277,9 @@
                         <tr [class.top-3]="i < 3">
                             <td class="rank-cell">
                                 @switch (i) {
-                                @case (0) { 🥇 }
-                                @case (1) { 🥈 }
-                                @case (2) { 🥉 }
+                                @case (0) { <span class="text-amber-500 font-bold">1</span> }
+                                @case (1) { <span class="text-neutral-400 font-bold">2</span> }
+                                @case (2) { <span class="text-amber-700 font-bold">3</span> }
                                 @default { {{ i + 1 }} }
                                 }
                             </td>
@@ -304,7 +304,7 @@
         <div class="card">
             @if (certificates.length === 0) {
             <div class="empty-state">
-                <span class="empty-icon">📄</span>
+                <lucide-icon name="file-text" class="empty-icon w-10 h-10"></lucide-icon>
                 <h3>No Certificate Requests</h3>
                 <p>When organizations request 80G certificates, they will appear here.</p>
             </div>
@@ -336,15 +336,15 @@
                             <td class="action-cell">
                                 @if (cert.status === 'pending') {
                                 <button class="btn-action approve"
-                                    (click)="updateCertificateStatus(cert.id, 'approved')">✓ Approve</button>
+                                    (click)="updateCertificateStatus(cert.id, 'approved')"><lucide-icon name="check" class="w-3.5 h-3.5 inline-block"></lucide-icon> Approve</button>
                                 <button class="btn-action reject"
-                                    (click)="updateCertificateStatus(cert.id, 'rejected')">✗ Reject</button>
+                                    (click)="updateCertificateStatus(cert.id, 'rejected')"><lucide-icon name="circle-x" class="w-3.5 h-3.5 inline-block"></lucide-icon> Reject</button>
                                 } @else if (cert.status === 'approved') {
-                                <span class="action-status approved">✓ Approved</span>
+                                <span class="action-status approved"><lucide-icon name="check" class="w-3.5 h-3.5 inline-block"></lucide-icon> Approved</span>
                                 } @else if (cert.status === 'rejected') {
-                                <span class="action-status rejected">✗ Rejected</span>
+                                <span class="action-status rejected"><lucide-icon name="circle-x" class="w-3.5 h-3.5 inline-block"></lucide-icon> Rejected</span>
                                 } @else {
-                                <span class="action-status processing">⏳ Processing</span>
+                                <span class="action-status processing"><lucide-icon name="clock" class="w-3.5 h-3.5 inline-block"></lucide-icon> Processing</span>
                                 }
                             </td>
                         </tr>

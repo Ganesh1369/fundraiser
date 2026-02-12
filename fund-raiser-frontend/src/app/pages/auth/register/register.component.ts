@@ -3,19 +3,19 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
+import { LucideAngularModule } from 'lucide-angular';
+import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
 
 interface RegistrationData {
     userType: 'student' | 'individual' | 'organization' | '';
     name: string;
-    age: number | null;
+    dateOfBirth: string;
     email: string;
     phone: string;
     password: string;
     confirmPassword: string;
     classGrade: string;
     schoolName: string;
-    area: string;
-    locality: string;
     city: string;
     organizationName: string;
     panNumber: string;
@@ -25,7 +25,7 @@ interface RegistrationData {
 @Component({
     selector: 'app-register',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule, FlatpickrDirective],
     templateUrl: './register.component.html',
     styleUrl: './register.component.css'
 })
@@ -36,6 +36,9 @@ export class RegisterComponent {
     errorMessage = '';
     successMessage = '';
     referrerName = '';
+    isEmailTaken = false;
+    showPassword = false;
+    showConfirmPassword = false;
 
     // OTP fields
     otpSent = false;
@@ -45,15 +48,13 @@ export class RegisterComponent {
     data: RegistrationData = {
         userType: '',
         name: '',
-        age: null,
+        dateOfBirth: '',
         email: '',
         phone: '',
         password: '',
         confirmPassword: '',
         classGrade: '',
         schoolName: '',
-        area: '',
-        locality: '',
         city: '',
         organizationName: '',
         panNumber: '',
@@ -121,7 +122,9 @@ export class RegisterComponent {
             },
             error: (err: any) => {
                 this.isLoading = false;
-                this.errorMessage = err.error?.message || 'Failed to send OTP';
+                const msg = err.error?.message || 'Failed to send OTP';
+                this.errorMessage = msg;
+                this.isEmailTaken = msg.toLowerCase().includes('already registered');
             }
         });
     }
@@ -160,7 +163,7 @@ export class RegisterComponent {
             case 1:
                 return !!this.data.userType;
             case 2:
-                return !!this.data.name && (this.data.userType !== 'student' || !!this.data.age);
+                return !!this.data.name && (this.data.userType !== 'student' || !!this.data.dateOfBirth);
             case 3:
                 return !!this.data.email && !!this.data.phone && !!this.data.password &&
                     this.data.password === this.data.confirmPassword && this.data.password.length >= 6;
@@ -199,6 +202,16 @@ export class RegisterComponent {
         }
     }
 
+    calculateAge(dob: string): number | null {
+        if (!dob) return null;
+        const d = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - d.getFullYear();
+        const m = today.getMonth() - d.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+        return age;
+    }
+
     onSubmit(): void {
         if (!this.canProceed()) {
             this.errorMessage = 'Please fill in all required fields';
@@ -211,14 +224,12 @@ export class RegisterComponent {
         this.api.register({
             userType: this.data.userType,
             name: this.data.name,
-            age: this.data.age,
+            age: this.calculateAge(this.data.dateOfBirth),
             email: this.data.email,
             phone: this.data.phone,
             password: this.data.password,
             classGrade: this.data.classGrade,
             schoolName: this.data.schoolName,
-            area: this.data.area,
-            locality: this.data.locality,
             city: this.data.city,
             organizationName: this.data.organizationName,
             panNumber: this.data.panNumber,
@@ -236,7 +247,9 @@ export class RegisterComponent {
             },
             error: (err: any) => {
                 this.isLoading = false;
-                this.errorMessage = err.error?.message || 'Connection error. Please try again.';
+                const msg = err.error?.message || 'Connection error. Please try again.';
+                this.errorMessage = msg;
+                this.isEmailTaken = msg.toLowerCase().includes('already registered');
             }
         });
     }

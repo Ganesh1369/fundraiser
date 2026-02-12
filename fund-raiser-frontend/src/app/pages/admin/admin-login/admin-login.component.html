@@ -3,8 +3,8 @@
         <div class="auth-card">
             <div class="auth-header">
                 <a routerLink="/" class="logo">
-                    <span class="logo-icon">🔥</span>
-                    <span class="logo-text">Fund<span class="text-gradient">Raiser</span></span>
+                    <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
+                    <span class="logo-text">ICE<span class="text-gradient"> Portal</span></span>
                 </a>
                 <div class="admin-badge">Admin Portal</div>
                 <h1>Admin Login</h1>
@@ -13,7 +13,7 @@
 
             @if (errorMessage) {
             <div class="error-message">
-                <span>⚠️</span>
+                <lucide-icon name="alert-triangle" class="w-4 h-4"></lucide-icon>
                 {{ errorMessage }}
             </div>
             }

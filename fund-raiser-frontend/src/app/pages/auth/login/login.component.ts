@@ -2,18 +2,20 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule],
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
 })
 export class LoginComponent {
     email = '';
     password = '';
+    showPassword = false;
     isLoading = false;
     errorMessage = '';
 

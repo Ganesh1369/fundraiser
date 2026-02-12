@@ -223,6 +223,19 @@ const getEventDetails = async (id) => {
 };
 
 /**
+ * Calculate age from date of birth
+ */
+const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return null;
+    const dob = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+};
+
+/**
  * Generate unique referral code (Internal Helper)
  */
 const generateReferralCode = () => {
@@ -240,7 +253,7 @@ const generateReferralCode = () => {
 const registerForEvent = async (eventId, registrationData) => {
     const {
         // User Account Fields
-        name, email, phone, password, confirmPassword,
+        name, email, phone, password, confirmPassword, user_type,
 
         // Personal Details
         date_of_birth, gender, blood_group,
@@ -296,7 +309,7 @@ const registerForEvent = async (eventId, registrationData) => {
         // New User
         isNewUser = true;
 
-        if (password !== confirmPassword) {
+        if (confirmPassword && password !== confirmPassword) {
             throw { status: 400, message: 'Passwords do not match' };
         }
 
@@ -312,14 +325,16 @@ const registerForEvent = async (eventId, registrationData) => {
         }
 
         // Create User
-        // Note: setting user_type to 'individual' by default for event registrants
+        const validTypes = ['individual', 'student', 'organization'];
+        const selectedType = validTypes.includes(user_type) ? user_type : 'individual';
+        const age = calculateAge(date_of_birth);
         const newUserResult = await db.query(
             `INSERT INTO users (
-                user_type, name, email, phone, password_hash, referral_code, 
-                city, email_verified
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+                user_type, name, email, phone, password_hash, referral_code,
+                city, age, email_verified
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
             RETURNING *`,
-            ['individual', name, email.toLowerCase(), phone, passwordHash, newReferralCode, city]
+            [selectedType, name, email.toLowerCase(), phone, passwordHash, newReferralCode, city, age]
         );
         user = newUserResult.rows[0];
         userId = user.id;
@@ -357,7 +372,8 @@ const registerForEvent = async (eventId, registrationData) => {
             name: user.name,
             email: user.email,
             userType: user.user_type,
-            referralCode: user.referral_code
+            referralCode: user.referral_code,
+            referralPoints: user.referral_points || 0
         },
         token,
         isNewUser

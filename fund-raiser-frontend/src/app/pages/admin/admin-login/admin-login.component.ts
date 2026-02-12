@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
     selector: 'app-admin-login',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule],
     templateUrl: './admin-login.component.html',
     styleUrl: './admin-login.component.css'
 })

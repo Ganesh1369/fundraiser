@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
     selector: 'app-landing',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule, RouterLink, LucideAngularModule],
     templateUrl: './landing.component.html',
     styleUrl: './landing.component.css'
 })
@@ -13,63 +14,63 @@ export class LandingComponent {
     mobileMenuOpen = false;
 
     stats = [
-        { value: '₹3.5Cr+', label: 'Raised' },
-        { value: '15K+', label: 'Donors' },
-        { value: '500+', label: 'Students Helped' },
-        { value: '98%', label: 'Success Rate' }
+        { value: '1.5+ KM', label: 'Run Distance' },
+        { value: '3', label: 'Categories' },
+        { value: '10+', label: 'Partners' },
+        { value: '14-15', label: 'Feb 2026' }
     ];
 
     features = [
         {
-            icon: '💰',
-            title: 'Easy Donations',
-            description: 'Quick and secure donations through Razorpay with multiple payment options.'
+            icon: 'heart',
+            title: 'Run for a Cause',
+            description: 'Promote a healthier, greener city through the joy of running with your community.'
         },
         {
-            icon: '🎯',
-            title: 'Track Impact',
-            description: 'See exactly how your contributions are making a difference in students\' lives.'
+            icon: 'target',
+            title: 'All Fitness Levels',
+            description: 'Minimum 1.5 KM route — open to kids, adults, and families of all experience levels.'
         },
         {
-            icon: '🎁',
-            title: 'Referral Rewards',
-            description: 'Earn points by inviting friends. 1 Rupee donated = 1 Point for you!'
+            icon: 'sparkles',
+            title: 'Sustainability Fair',
+            description: 'Join the fair on 14th Feb — workshops, competitions, quiz, and carnival games!'
         },
         {
-            icon: '📜',
-            title: '80G Tax Benefits',
-            description: 'Get 80G certificates for tax deductions on your corporate donations.'
+            icon: 'trophy',
+            title: 'Prizes & Rewards',
+            description: 'Win exciting prizes across multiple categories. Every participant gets a finisher medal.'
         },
         {
-            icon: '📊',
-            title: 'Transparent Tracking',
-            description: 'Complete visibility into your donation history and contribution impact.'
+            icon: 'users',
+            title: 'Community Event',
+            description: 'Backed by Rotary Club of Madras, Apollo Shine, and 10+ partners committed to the cause.'
         },
         {
-            icon: '🏆',
-            title: 'Leaderboard',
-            description: 'Compete with other donors and climb the ranks of top contributors.'
+            icon: 'bar-chart-3',
+            title: 'Health & Wellness',
+            description: 'Health partner Apollo Shine and wellness support from Orange Ray on-ground.'
         }
     ];
 
     testimonials = [
         {
-            name: 'Priya Sharma',
-            role: 'Regular Donor',
-            text: 'This platform made it so easy to contribute to education. The referral system is amazing!',
-            avatar: 'PS'
+            name: 'BSG',
+            role: 'Gold Sponsor',
+            text: 'Proud to support Primathon\'26 and ICE\'s mission for a sustainable future.',
+            avatar: 'BS'
         },
         {
-            name: 'Rajesh Industries',
-            role: 'Corporate Partner',
-            text: 'The 80G certificate process is seamless. Great for CSR initiatives.',
-            avatar: 'RI'
+            name: 'Kaleesuwari Foundations',
+            role: 'Silver Sponsor',
+            text: 'Committed to building healthier communities through events like Primathon.',
+            avatar: 'KF'
         },
         {
-            name: 'Ankit Kumar',
-            role: 'Student Beneficiary',
-            text: 'Thanks to generous donors, I could complete my engineering degree.',
-            avatar: 'AK'
+            name: 'Rotary Club of Madras',
+            role: 'Community Partner',
+            text: 'Together we can create lasting impact for our city and our future.',
+            avatar: 'RC'
         }
     ];
 

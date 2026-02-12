@@ -3,33 +3,35 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../../services/event.service';
+import { FlatpickrDirective } from '../../../../directives/flatpickr.directive';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-admin-event-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FlatpickrDirective, LucideAngularModule],
   template: `
     <div class="admin-dashboard">
       <!-- Sidebar -->
       <aside class="sidebar dark">
         <div class="sidebar-header">
           <a routerLink="/" class="logo">
-            <span class="logo-icon">🔥</span>
-            <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
+            <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
+            <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
           </a>
           <span class="admin-badge">Admin</span>
         </div>
         <nav class="sidebar-nav">
           <a class="nav-item" routerLink="/admin">
-            <span class="nav-icon">📊</span> Dashboard
+            <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon> Dashboard
           </a>
           <a class="nav-item active" routerLink="/admin/events">
-            <span class="nav-icon">📅</span> Events
+            <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon> Events
           </a>
         </nav>
         <div class="sidebar-footer">
           <button class="logout-btn" (click)="logout()">
-            <span>🚪</span> Logout
+            <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon> Logout
           </button>
         </div>
       </aside>
@@ -65,7 +67,7 @@ import { EventService } from '../../../../services/event.service';
               </div>
               <div class="form-group">
                 <label class="form-label">Date *</label>
-                <input type="date" formControlName="event_date" class="form-input">
+                <input type="text" formControlName="event_date" appFlatpickr [fpConfig]="{ minDate: 'today' }" class="form-input" placeholder="Select event date">
               </div>
             </div>
 

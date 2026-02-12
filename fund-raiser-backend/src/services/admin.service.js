@@ -68,7 +68,7 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
     params.push(limit, offset);
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                area, locality, city, organization_name, referral_code, referral_points, created_at
+                city, organization_name, referral_code, referral_points, created_at
          FROM users ${whereClause}
          ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
         params
@@ -100,7 +100,7 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
     const result = await db.query(
         `SELECT user_type as "User Type", name as "Name", age as "Age", email as "Email",
                 phone as "Phone", class_grade as "Class/Grade", school_name as "School Name",
-                area as "Area", locality as "Locality", city as "City",
+                city as "City",
                 organization_name as "Organization", referral_code as "Referral Code",
                 referral_points as "Points", created_at as "Registered At"
          FROM users ${whereClause} ORDER BY created_at DESC`,
@@ -185,7 +185,7 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
 const getUserAnalytics = async (userId) => {
     const userResult = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                area, locality, city, organization_name, pan_number,
+                city, organization_name, pan_number,
                 referral_code, referral_points, created_at
          FROM users WHERE id = $1`,
         [userId]

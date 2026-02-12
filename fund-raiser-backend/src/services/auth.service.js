@@ -89,7 +89,7 @@ const verifyOtp = async (email, otp, purpose = 'register') => {
 const registerUser = async (userData) => {
     const {
         userType, name, age, email, phone, password,
-        classGrade, schoolName, area, locality, city,
+        classGrade, schoolName, city,
         organizationName, panNumber, referralCode
     } = userData;
 
@@ -125,13 +125,13 @@ const registerUser = async (userData) => {
     const result = await db.query(
         `INSERT INTO users (
             user_type, name, age, email, phone, password_hash,
-            class_grade, school_name, area, locality, city,
+            class_grade, school_name, city,
             organization_name, pan_number, referral_code, referred_by, email_verified
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)
         RETURNING id, name, email, user_type, referral_code`,
         [
             userType, name, age || null, email.toLowerCase(), phone, passwordHash,
-            classGrade || null, schoolName || null, area || null, locality || null, city || null,
+            classGrade || null, schoolName || null, city || null,
             organizationName || null, panNumber || null, newReferralCode, referrerId
         ]
     );

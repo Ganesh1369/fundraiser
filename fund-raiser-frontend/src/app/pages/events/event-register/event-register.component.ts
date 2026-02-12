@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
+import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-event-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FlatpickrDirective, LucideAngularModule],
   templateUrl: './event-register.component.html',
   styleUrl: './event-register.component.css'
 })
@@ -16,6 +18,7 @@ export class EventRegisterComponent implements OnInit {
   event: any;
   submitting = false;
   errorMessage = '';
+  showPassword = false;
 
   constructor(
     private fb: FormBuilder,
@@ -25,6 +28,7 @@ export class EventRegisterComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {
     this.registerForm = this.fb.group({
+      user_type: ['individual'],
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
@@ -74,6 +78,9 @@ export class EventRegisterComponent implements OnInit {
       next: (res: any) => {
         if (res.token) {
           localStorage.setItem('token', res.token);
+        }
+        if (res.user) {
+          localStorage.setItem('user', JSON.stringify(res.user));
         }
         this.router.navigate(['/events', this.event.id, 'success']);
       },
