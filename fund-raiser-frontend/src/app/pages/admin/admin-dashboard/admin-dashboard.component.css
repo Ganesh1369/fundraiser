@@ -466,8 +466,6 @@
 /* ===== Certificate Actions ===== */
 /* ===== Certificate Actions ===== */
 .action-cell {
-    display: flex;
-    gap: var(--space-xs);
     align-items: center;
 }
 

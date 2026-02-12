@@ -117,6 +117,7 @@ export class RegisterComponent {
                 } else {
                     this.errorMessage = res.message || 'Failed to send OTP';
                 }
+                this.cdr.detectChanges();
             },
             error: (err: any) => {
                 this.isLoading = false;
