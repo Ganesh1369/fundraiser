@@ -53,11 +53,11 @@ export class EventService {
         return this.http.patch(`${this.apiUrl}/admin/events/${id}/toggle`, {}, { headers: this.getHeaders(true) });
     }
 
-    getEventRegistrations(id: string, params?: any): Observable<any> {
+    getEventRegistrations(id: string | number, params?: any): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/events/${id}/registrations`, { headers: this.getHeaders(true), params });
     }
 
-    exportEventRegistrations(id: string): string {
+    exportEventRegistrations(id: string | number): string {
         return `${this.apiUrl}/admin/events/${id}/registrations/export`;
     }
 }

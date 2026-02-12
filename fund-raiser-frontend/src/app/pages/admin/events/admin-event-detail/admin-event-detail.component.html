@@ -1,0 +1,161 @@
+<div class="admin-dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar dark">
+        <div class="sidebar-header">
+            <a routerLink="/" class="logo">
+                <span class="logo-icon">🔥</span>
+                <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
+            </a>
+            <span class="admin-badge">Admin</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="nav-item" routerLink="/admin">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a class="nav-item active" routerLink="/admin/events">
+                <span class="nav-icon">📅</span> Events
+            </a>
+            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'registrations'}">
+                <span class="nav-icon">👥</span>
+                Registrations
+            </a>
+            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'donations'}">
+                <span class="nav-icon">💰</span>
+                Donations
+            </a>
+            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'leaderboard'}">
+                <span class="nav-icon">🏆</span>
+                Leaderboard
+            </a>
+            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'certificates'}">
+                <span class="nav-icon">📄</span>
+                Certificates
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="logout-btn" (click)="logout()">
+                <span>🚪</span> Logout
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-state">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="!loading && error" class="error-state">
+            <p class="error-message">{{ error }}</p>
+            <button class="btn btn-primary" (click)="loadEvent()">Retry</button>
+        </div>
+
+        <!-- Main Content -->
+        <div *ngIf="!loading && !error && event">
+            <header class="admin-header">
+                <div class="header-row">
+                    <div>
+                        <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
+                        <h1>{{ event.event_name }}</h1>
+                    </div>
+                    <button (click)="exportData()" class="btn btn-primary" [disabled]="exporting">
+                        {{ exporting ? '⏳ Exporting...' : '📥 Export Excel' }}
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">👥</span>
+                        <span class="stat-label">Total Registrations</span>
+                    </div>
+                    <div class="stat-value">{{ event.registration_count }}</div>
+                </div>
+                <div class="stat-card" [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
+                    <div class="stat-header">
+                        <span class="stat-icon">🔓</span>
+                        <span class="stat-label">Status</span>
+                    </div>
+                    <div class="stat-value status-text">
+                        {{ event.registration_open ? 'Open' : 'Closed' }}
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">📅</span>
+                        <span class="stat-label">Date</span>
+                    </div>
+                    <div class="stat-value small">{{ formatDate(event.event_date) }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">🏷️</span>
+                        <span class="stat-label">Type</span>
+                    </div>
+                    <div class="stat-value small capitalize">{{ event.event_type }}</div>
+                </div>
+            </div>
+
+            <!-- Registrations Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Registrations</h2>
+                </div>
+
+                <!-- Registrations Error -->
+                <div *ngIf="registrationsError" class="error-state inline">
+                    <p class="error-message">{{ registrationsError }}</p>
+                    <button class="btn btn-primary" (click)="loadRegistrations()">Retry</button>
+                </div>
+
+                <div class="table-wrapper" *ngIf="!registrationsError">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Registered</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let reg of registrations">
+                                <td class="name-cell">{{ reg.name }}</td>
+                                <td>{{ reg.email }}</td>
+                                <td>{{ reg.phone }}</td>
+                                <td>{{ formatDate(reg.created_at) }}</td>
+                                <td>
+                                    <span class="status-badge" [ngClass]="'reg-' + reg.registration_status">
+                                        {{ reg.registration_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr *ngIf="registrations.length === 0">
+                                <td colspan="5" class="empty-row">No registrations yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" *ngIf="pagination.totalPages > 1">
+                    <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)"
+                        class="btn-page">
+                        Previous
+                    </button>
+                    <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+                    <button [disabled]="pagination.page === pagination.totalPages"
+                        (click)="loadRegistrations(pagination.page + 1)" class="btn-page">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -60,7 +60,7 @@ export class RegisterComponent {
         referralCode: ''
     };
 
-    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService) {
+    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef) {
         this.route.queryParams.subscribe(params => {
             if (params['ref']) {
                 this.data.referralCode = params['ref'];
@@ -141,6 +141,8 @@ export class RegisterComponent {
                     this.successMessage = 'Email verified! ✓';
                     // Auto-advance after short delay
                     setTimeout(() => this.nextStep(), 800);
+                    this.cdr.detectChanges();
+
                 } else {
                     this.errorMessage = res.message || 'Invalid OTP';
                 }

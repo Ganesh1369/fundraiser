@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
@@ -72,7 +72,8 @@ export class EventLandingComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private eventService: EventService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -82,10 +83,12 @@ export class EventLandingComponent implements OnInit {
         next: (res) => {
           this.event = res.data || res;
           this.loading = false;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Error fetching event:', err);
           this.loading = false;
+          this.cdr.detectChanges();
         }
       });
     } else {

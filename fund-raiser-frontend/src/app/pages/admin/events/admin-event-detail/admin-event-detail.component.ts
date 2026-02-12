@@ -1,218 +1,173 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { EventService } from '../../../../services/event.service';
 import { environment } from '../../../../environment';
+
+interface Event {
+  id: string | number;
+  event_name: string;
+  event_date: string;
+  event_type: string;
+  registration_open: boolean;
+  registration_count: number;
+}
+
+interface Registration {
+  name: string;
+  email: string;
+  phone: string;
+  created_at: string;
+  registration_status: string;
+}
+
+interface Pagination {
+  page: number;
+  totalPages: number;
+}
 
 @Component({
   selector: 'app-admin-event-detail',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  template: `
-    <div class="admin-dashboard">
-      <!-- Sidebar -->
-      <aside class="sidebar dark">
-        <div class="sidebar-header">
-          <a routerLink="/" class="logo">
-            <span class="logo-icon">🔥</span>
-            <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
-          </a>
-          <span class="admin-badge">Admin</span>
-        </div>
-        <nav class="sidebar-nav">
-          <a class="nav-item" routerLink="/admin">
-            <span class="nav-icon">📊</span> Dashboard
-          </a>
-          <a class="nav-item active" routerLink="/admin/events">
-            <span class="nav-icon">📅</span> Events
-          </a>
-        </nav>
-        <div class="sidebar-footer">
-          <button class="logout-btn" (click)="logout()">
-            <span>🚪</span> Logout
-          </button>
-        </div>
-      </aside>
-
-      <main class="main-content">
-        <div *ngIf="loading" class="loading-state">
-          <div class="spinner"></div>
-        </div>
-
-        <div *ngIf="!loading && event">
-        <header class="admin-header">
-          <div class="header-row">
-            <div>
-              <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
-              <h1>{{ event.event_name }}</h1>
-            </div>
-            <button (click)="exportData()" class="btn btn-primary">
-              📥 Export Excel
-            </button>
-          </div>
-        </header>
-
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-icon">👥</span>
-              <span class="stat-label">Total Registrations</span>
-            </div>
-            <div class="stat-value">{{ event.registration_count }}</div>
-          </div>
-          <div class="stat-card" [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
-            <div class="stat-header">
-              <span class="stat-icon">🔓</span>
-              <span class="stat-label">Status</span>
-            </div>
-            <div class="stat-value status-text">
-              {{ event.registration_open ? 'Open' : 'Closed' }}
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-icon">📅</span>
-              <span class="stat-label">Date</span>
-            </div>
-            <div class="stat-value small">{{ formatDate(event.event_date) }}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-icon">🏷️</span>
-              <span class="stat-label">Type</span>
-            </div>
-            <div class="stat-value small capitalize">{{ event.event_type }}</div>
-          </div>
-        </div>
-
-        <!-- Registrations Table -->
-        <div class="card">
-          <div class="card-header">
-            <h2>Registrations</h2>
-          </div>
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Registered</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let reg of registrations">
-                  <td class="name-cell">{{ reg.name }}</td>
-                  <td>{{ reg.email }}</td>
-                  <td>{{ reg.phone }}</td>
-                  <td>{{ formatDate(reg.created_at) }}</td>
-                  <td>
-                    <span class="status-badge" [ngClass]="'reg-' + reg.registration_status">
-                      {{ reg.registration_status }}
-                    </span>
-                  </td>
-                </tr>
-                <tr *ngIf="registrations.length === 0">
-                  <td colspan="5" class="empty-row">No registrations yet.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <!-- Pagination -->
-          <div class="pagination" *ngIf="pagination.totalPages > 1">
-            <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)" class="btn-page">Previous</button>
-            <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
-            <button [disabled]="pagination.page === pagination.totalPages" (click)="loadRegistrations(pagination.page + 1)" class="btn-page">Next</button>
-          </div>
-        </div>
-        </div>
-      </main>
-    </div>
-  `,
+  templateUrl: './admin-event-detail.component.html',
   styleUrl: './admin-event-detail.component.css'
 })
-export class AdminEventDetailComponent implements OnInit {
-  event: any;
-  registrations: any[] = [];
-  pagination: any = { page: 1, totalPages: 1 };
+export class AdminEventDetailComponent implements OnInit, OnDestroy {
+  event: Event | null = null;
+  registrations: Registration[] = [];
+  pagination: Pagination = { page: 1, totalPages: 1 };
   loading = true;
+  exporting = false;
+  error: string | null = null;
+  registrationsError: string | null = null;
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
-    private eventService: EventService
+    private router: Router,
+    private eventService: EventService,
+    private cdr: ChangeDetectorRef
   ) { }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadEvent();
   }
 
-  loadEvent() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) { this.loading = false; return; }
-
-    this.eventService.getEventById(id).subscribe({
-      next: (res: any) => {
-        console.log('Event detail response:', res);
-        this.event = res?.data || res;
-        this.loading = false;
-        this.loadRegistrations();
-      },
-      error: (err: any) => {
-        console.error('Event detail error:', err);
-        this.loading = false;
-      }
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  loadRegistrations(page: number = 1) {
+  loadEvent(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.error = 'Invalid event ID.';
+      this.loading = false;
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+
+    this.eventService.getEventById(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          this.event = res?.data ?? res ?? null;
+          this.loading = false;
+          if (this.event) {
+            this.loadRegistrations();
+            this.cdr.detectChanges();
+
+          } else {
+            this.error = 'Event not found.';
+          }
+        },
+        error: (err: any) => {
+          console.error('Event detail error:', err);
+          this.error = err?.error?.message || 'Failed to load event. Please try again.';
+          this.loading = false;
+        }
+      });
+
+  }
+
+  loadRegistrations(page: number = 1): void {
     if (!this.event) return;
 
-    this.eventService.getEventRegistrations(this.event.id, { page }).subscribe({
-      next: (res: any) => {
-        console.log('Registrations response:', res);
-        if (res?.data?.registrations) {
-          this.registrations = res.data.registrations;
-          this.pagination = res.data.pagination || this.pagination;
-        } else if (Array.isArray(res?.data)) {
-          this.registrations = res.data;
-        } else {
+    this.registrationsError = null;
+
+    this.eventService.getEventRegistrations(this.event.id, { page })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          if (res?.data?.registrations) {
+            this.registrations = res.data.registrations;
+            this.pagination = res.data.pagination ?? this.pagination;
+          } else if (Array.isArray(res?.data)) {
+            this.registrations = res.data;
+          } else {
+            this.registrations = [];
+          }
+        },
+        error: (err: any) => {
+          console.error('Registrations error:', err);
+          this.registrationsError = err?.error?.message || 'Failed to load registrations. Please try again.';
           this.registrations = [];
         }
-      },
-      error: (err: any) => {
-        console.error('Registrations error:', err);
-        this.registrations = [];
-      }
-    });
+      });
   }
 
-  exportData() {
-    if (!this.event) return;
+  exportData(): void {
+    if (!this.event || this.exporting) return;
+
     const token = localStorage.getItem('adminToken');
-    if (!token) return;
+    if (!token) {
+      this.router.navigate(['/admin/login']);
+      return;
+    }
+
+    this.exporting = true;
 
     fetch(`${environment.apiUrl}/admin/events/${this.event.id}/registrations/export`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).then(res => res.blob()).then(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${this.event.event_name}_registrations.xlsx`;
-      a.click();
-    }).catch(err => console.error('Export failed:', err));
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`Export failed with status ${res.status}`);
+        return res.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.event!.event_name}_registrations.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(err => {
+        console.error('Export failed:', err);
+        alert('Export failed. Please try again.');
+      })
+      .finally(() => {
+        this.exporting = false;
+      });
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    return isNaN(d.getTime())
+      ? '—'
+      : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   logout(): void {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('admin');
-    window.location.href = '/admin/login';
+    this.router.navigate(['/admin/login']);
   }
 }

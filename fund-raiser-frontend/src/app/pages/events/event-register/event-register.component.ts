@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -8,169 +8,7 @@ import { EventService } from '../../../services/event.service';
   selector: 'app-event-register',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  template: `
-    <div class="register-page" *ngIf="event" [ngClass]="'theme-' + event.event_type">
-      <!-- Compact Header -->
-      <div class="register-header">
-        <a [routerLink]="['/events', event.id]" class="back-link">&larr; Back</a>
-        <div class="header-info">
-          <span class="event-type-tag">{{ event.event_type }}</span>
-          <h1>Register for {{ event.event_name }}</h1>
-          <p>📅 {{ event.event_date | date:'fullDate' }} &bull; 📍 {{ event.event_location }}</p>
-        </div>
-      </div>
-
-      <!-- Registration Form -->
-      <div class="register-body">
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
-
-          <div *ngIf="errorMessage" class="error-banner">{{ errorMessage }}</div>
-
-          <!-- Section: Account -->
-          <div class="form-section">
-            <h3 class="section-title">Account Information</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Full Name *</label>
-                <input type="text" formControlName="name" class="form-input" placeholder="Your full name">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email *</label>
-                <input type="email" formControlName="email" class="form-input" placeholder="you@example.com">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Phone *</label>
-                <input type="tel" formControlName="phone" class="form-input" placeholder="10-digit number">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Password *</label>
-                <input type="password" formControlName="password" class="form-input" placeholder="Min 6 characters">
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Personal -->
-          <div class="form-section">
-            <h3 class="section-title">Personal Details</h3>
-            <div class="form-row three-col">
-              <div class="form-group">
-                <label class="form-label">Date of Birth *</label>
-                <input type="date" formControlName="date_of_birth" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Gender *</label>
-                <select formControlName="gender" class="form-input">
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Blood Group</label>
-                <input type="text" formControlName="blood_group" class="form-input" placeholder="e.g., O+">
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Emergency Contact -->
-          <div class="form-section">
-            <h3 class="section-title">Emergency Contact</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Contact Name *</label>
-                <input type="text" formControlName="emergency_contact_name" class="form-input" placeholder="Contact person">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Contact Phone *</label>
-                <input type="tel" formControlName="emergency_contact_phone" class="form-input" placeholder="Phone number">
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Participation -->
-          <div class="form-section">
-            <h3 class="section-title">Participation</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Experience Level</label>
-                <select formControlName="experience_level" class="form-input">
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">T-Shirt Size</label>
-                <select formControlName="tshirt_size" class="form-input">
-                  <option value="">Select</option>
-                  <option value="XS">XS</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Medical -->
-          <div class="form-section">
-            <h3 class="section-title">Medical Information</h3>
-            <div class="form-group">
-              <label class="form-label">Medical Conditions / Allergies</label>
-              <textarea formControlName="medical_conditions" rows="3" class="form-input form-textarea" placeholder="Any medical conditions we should know about..."></textarea>
-            </div>
-          </div>
-
-          <!-- Section: Address -->
-          <div class="form-section">
-            <h3 class="section-title">Address</h3>
-            <div class="form-group">
-              <label class="form-label">Full Address</label>
-              <input type="text" formControlName="address" class="form-input" placeholder="Street address">
-            </div>
-            <div class="form-row three-col">
-              <div class="form-group">
-                <label class="form-label">City</label>
-                <input type="text" formControlName="city" class="form-input" placeholder="City">
-              </div>
-              <div class="form-group">
-                <label class="form-label">State</label>
-                <input type="text" formControlName="state" class="form-input" placeholder="State">
-              </div>
-              <div class="form-group">
-                <label class="form-label">PIN Code</label>
-                <input type="text" formControlName="pincode" class="form-input" placeholder="PIN code">
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Consent -->
-          <div class="form-section consent-section">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="fitness_declaration">
-              <span>I declare that I am medically fit to participate in this event *</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="terms_accepted">
-              <span>I accept the terms and conditions *</span>
-            </label>
-          </div>
-
-          <!-- Submit -->
-          <div class="form-actions">
-            <button type="submit" [disabled]="registerForm.invalid || submitting" class="btn btn-primary btn-lg submit-btn">
-              {{ submitting ? 'Registering...' : 'Complete Registration' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `,
+  templateUrl: './event-register.component.html',
   styleUrl: './event-register.component.css'
 })
 export class EventRegisterComponent implements OnInit {
@@ -183,7 +21,8 @@ export class EventRegisterComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private eventService: EventService
+    private eventService: EventService,
+    private cdr: ChangeDetectorRef
   ) {
     this.registerForm = this.fb.group({
       name: ['', Validators.required],
@@ -216,9 +55,11 @@ export class EventRegisterComponent implements OnInit {
           if (!this.event.registration_open) {
             this.errorMessage = 'Registration for this event is currently closed.';
           }
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Error fetching event:', err);
+          this.cdr.detectChanges();
         }
       });
     }
