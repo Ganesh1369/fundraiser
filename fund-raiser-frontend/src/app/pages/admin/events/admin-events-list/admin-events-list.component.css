@@ -1,0 +1,306 @@
+/* ===== Admin Events List — ICE Theme ===== */
+.admin-dashboard {
+    display: flex;
+    min-height: 100vh;
+    background: #F8F9FA;
+}
+
+/* ===== Dark Sidebar — Midnight Blue ===== */
+.sidebar.dark {
+    width: 260px;
+    background: linear-gradient(180deg, #191970 0%, #252580 100%);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+}
+
+.sidebar-header {
+    padding: var(--space-xl);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-header .logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+}
+
+.text-gold {
+    color: #21BF99;
+}
+
+.admin-badge {
+    padding: var(--space-xs) var(--space-sm);
+    background: rgba(33, 191, 153, 0.2);
+    color: #21BF99;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.sidebar.dark .nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.sidebar.dark .nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.sidebar.dark .nav-item.active {
+    background: rgba(33, 191, 153, 0.2);
+    color: #21BF99;
+}
+
+.sidebar-footer {
+    padding: var(--space-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar.dark .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar.dark .logout-btn:hover {
+    background: rgba(234, 67, 53, 0.2);
+    border-color: rgba(234, 67, 53, 0.3);
+    color: #FF6B6B;
+}
+
+/* ===== Main Content ===== */
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    padding: var(--space-xl);
+}
+
+.admin-header {
+    margin-bottom: var(--space-xl);
+}
+
+.admin-header h1 {
+    font-size: var(--font-size-2xl);
+    margin: 0;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ===== Card & Table ===== */
+.card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: var(--space-md) var(--space-lg);
+    text-align: left;
+    font-size: var(--font-size-sm);
+}
+
+.data-table th {
+    background: #F8F9FA;
+    font-weight: 600;
+    color: var(--color-dark-gray);
+    border-bottom: 1px solid var(--color-light-gray);
+}
+
+.data-table td {
+    border-bottom: 1px solid var(--color-light-gray);
+}
+
+.data-table tr:hover {
+    background: #FAFAFA;
+}
+
+.event-name {
+    font-weight: 600;
+    color: #191970;
+}
+
+.event-location {
+    font-size: var(--font-size-xs);
+    color: var(--color-mid-gray);
+    margin-top: 2px;
+}
+
+/* ===== Badges ===== */
+.badge {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.badge.event-type {
+    background: rgba(33, 191, 153, 0.1);
+    color: #21BF99;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.status-badge.status-open {
+    background: rgba(52, 168, 83, 0.1);
+    color: #34A853;
+}
+
+.status-badge.status-closed {
+    background: rgba(234, 67, 53, 0.1);
+    color: #EA4335;
+}
+
+.count-cell {
+    font-weight: 700;
+    font-size: var(--font-size-base);
+    color: #191970;
+}
+
+/* ===== Action Buttons ===== */
+.action-cell {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.btn-action {
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-action.view {
+    background: rgba(33, 191, 153, 0.1);
+    color: #21BF99;
+}
+
+.btn-action.view:hover {
+    background: rgba(33, 191, 153, 0.2);
+}
+
+.btn-action.toggle {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+}
+
+.btn-action.toggle:hover {
+    background: rgba(255, 152, 0, 0.2);
+}
+
+/* ===== Empty & Loading ===== */
+.empty-state {
+    text-align: center;
+    padding: var(--space-3xl);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: var(--space-lg);
+}
+
+.empty-state h3 {
+    margin-bottom: var(--space-sm);
+}
+
+.empty-state p {
+    color: var(--color-dark-gray);
+}
+
+.loading-state {
+    padding: var(--space-xl);
+    display: flex;
+    justify-content: center;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-light-gray);
+    border-top-color: #21BF99;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .sidebar.dark {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+}

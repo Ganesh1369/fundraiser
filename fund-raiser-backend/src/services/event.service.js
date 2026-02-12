@@ -146,7 +146,7 @@ const getEventRegistrations = async (eventId, { page = 1, limit = 20, search }) 
 
     const countResult = await db.query(
         `SELECT COUNT(*) FROM event_registrations er 
-         JOIN users u ONer.user_id = u.id 
+         JOIN users u ON er.user_id = u.id 
          ${whereClause}`,
         params
     );

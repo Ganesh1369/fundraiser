@@ -1,42 +1,39 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 
 @Component({
-    selector: 'app-event-success',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
-    <div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
-        <div class="mb-6 flex justify-center">
-          <div class="bg-green-100 rounded-full p-4">
-            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
+  selector: 'app-event-success',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
+    <div class="success-page">
+      <div class="success-card">
+        <div class="success-icon">🎉</div>
+        <h1>Registration Successful!</h1>
+        <p class="success-message">
+          You have been successfully registered for the event. We've sent a confirmation to your email.
+        </p>
+
+        <div class="success-actions">
+          <a routerLink="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+          <a [routerLink]="['/events', eventId]" class="btn btn-outline">View Event</a>
         </div>
-        
-        <h2 class="text-3xl font-bold text-gray-800 mb-2">Registration Successful!</h2>
-        <p class="text-gray-600 mb-8">You have successfully registered for the event. A confirmation email has been sent to your registered email address.</p>
-        
-        <div class="space-y-4">
-          <button routerLink="/dashboard" class="w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-lg shadow hover:bg-indigo-700 transition duration-300">
-            Go to Dashboard
-          </button>
-          
-          <button routerLink="/events" class="w-full py-3 px-4 bg-white text-indigo-600 font-bold rounded-lg border border-indigo-200 hover:bg-indigo-50 transition duration-300">
-            Explore More Events
-          </button>
+
+        <div class="success-footer">
+          <p>Need help? Contact us at <a href="mailto:support@fundraiser.com">support&#64;fundraiser.com</a></p>
         </div>
       </div>
     </div>
-  `
+  `,
+  styleUrl: './event-success.component.css'
 })
 export class EventSuccessComponent implements OnInit {
-    constructor(private router: Router, private route: ActivatedRoute) { }
+  eventId: string | null = null;
 
-    ngOnInit() {
-        // Optional: Verify if user came from registration flow logic here
-    }
+  constructor(private route: ActivatedRoute) { }
+
+  ngOnInit() {
+    this.eventId = this.route.snapshot.paramMap.get('id');
+  }
 }

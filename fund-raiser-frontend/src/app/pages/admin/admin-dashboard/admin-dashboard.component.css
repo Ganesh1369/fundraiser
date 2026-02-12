@@ -1,14 +1,14 @@
-/* ===== Admin Dashboard Styles ===== */
+/* ===== Admin Dashboard Styles — ICE Theme ===== */
 .admin-dashboard {
     display: flex;
     min-height: 100vh;
     background: #F8F9FA;
 }
 
-/* ===== Dark Sidebar ===== */
+/* ===== Dark Sidebar — Midnight Blue ===== */
 .sidebar.dark {
     width: 260px;
-    background: linear-gradient(180deg, #081C15 0%, #1B4332 100%);
+    background: linear-gradient(180deg, #191970 0%, #252580 100%);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -37,13 +37,13 @@
 }
 
 .text-gold {
-    color: #40916C;
+    color: #21BF99;
 }
 
 .admin-badge {
     padding: var(--space-xs) var(--space-sm);
-    background: rgba(64, 145, 108, 0.2);
-    color: #40916C;
+    background: rgba(33, 191, 153, 0.2);
+    color: #21BF99;
     border-radius: var(--radius-sm);
     font-size: var(--font-size-xs);
     font-weight: 600;
@@ -76,8 +76,8 @@
 }
 
 .sidebar.dark .nav-item.active {
-    background: rgba(64, 145, 108, 0.2);
-    color: #40916C;
+    background: rgba(33, 191, 153, 0.2);
+    color: #21BF99;
 }
 
 .sidebar-footer {
@@ -138,12 +138,12 @@
 }
 
 .stat-card.gold {
-    background: linear-gradient(135deg, #081C15 0%, #1B4332 100%);
+    background: linear-gradient(135deg, #191970 0%, #252580 100%);
     color: white;
 }
 
 .stat-card.gold .stat-value {
-    color: #40916C;
+    color: #21BF99;
 }
 
 .stat-header {
@@ -349,7 +349,8 @@
 }
 
 .leader-item .rank.rank-1 {
-    background: #40916C;
+    background: #21BF99;
+    color: white;
 }
 
 .leader-item .rank.rank-2 {
@@ -358,6 +359,7 @@
 
 .leader-item .rank.rank-3 {
     background: #CD7F32;
+    color: white;
 }
 
 .leader-item .name {
@@ -387,8 +389,8 @@
 }
 
 .leaderboard-row.top-3 {
-    background: linear-gradient(135deg, rgba(45, 106, 79, 0.1) 0%, rgba(45, 106, 79, 0.05) 100%);
-    border: 1px solid rgba(45, 106, 79, 0.2);
+    background: linear-gradient(135deg, rgba(33, 191, 153, 0.1) 0%, rgba(33, 191, 153, 0.05) 100%);
+    border: 1px solid rgba(33, 191, 153, 0.2);
 }
 
 .rank-cell {
@@ -426,9 +428,10 @@
 
 .score-cell {
     text-align: center;
-    background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+    background: linear-gradient(135deg, #21BF99 0%, #191970 100%);
     padding: var(--space-md) var(--space-lg);
     border-radius: var(--radius-md);
+    color: white;
 }
 
 .score-cell .score {
@@ -458,6 +461,66 @@
 
 .empty-state p {
     color: var(--color-dark-gray);
+}
+
+/* ===== Certificate Actions ===== */
+/* ===== Certificate Actions ===== */
+.action-cell {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+}
+
+.btn-action {
+    padding: var(--space-xs) var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-action.approve {
+    background: #21BF99;
+    color: white;
+}
+
+.btn-action.approve:hover {
+    background: #1aa382;
+}
+
+.btn-action.reject {
+    background: rgba(234, 67, 53, 0.1);
+    color: #EA4335;
+}
+
+.btn-action.reject:hover {
+    background: rgba(234, 67, 53, 0.2);
+}
+
+.action-status {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-status.approved {
+    color: #21BF99;
+}
+
+.action-status.rejected {
+    color: #EA4335;
+}
+
+.action-status.processing {
+    color: #FF9800;
 }
 
 /* ===== Responsive ===== */

@@ -336,9 +336,15 @@
                             <td class="action-cell">
                                 @if (cert.status === 'pending') {
                                 <button class="btn-action approve"
-                                    (click)="updateCertificateStatus(cert.id, 'approved')">✓</button>
+                                    (click)="updateCertificateStatus(cert.id, 'approved')">✓ Approve</button>
                                 <button class="btn-action reject"
-                                    (click)="updateCertificateStatus(cert.id, 'rejected')">✗</button>
+                                    (click)="updateCertificateStatus(cert.id, 'rejected')">✗ Reject</button>
+                                } @else if (cert.status === 'approved') {
+                                <span class="action-status approved">✓ Approved</span>
+                                } @else if (cert.status === 'rejected') {
+                                <span class="action-status rejected">✗ Rejected</span>
+                                } @else {
+                                <span class="action-status processing">⏳ Processing</span>
                                 }
                             </td>
                         </tr>

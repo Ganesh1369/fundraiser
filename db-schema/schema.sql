@@ -10,6 +10,18 @@ CREATE TYPE user_type AS ENUM ('student', 'individual', 'organization');
 -- Enum for certificate request status
 CREATE TYPE certificate_status AS ENUM ('pending', 'processing', 'approved', 'rejected');
 
+-- Enum for event types
+CREATE TYPE event_type_enum AS ENUM ('marathon', 'cyclothon', 'walkathon');
+
+-- Enum for registration status
+CREATE TYPE registration_status_enum AS ENUM ('registered', 'cancelled');
+
+-- Enum for gender
+CREATE TYPE gender_enum AS ENUM ('male', 'female', 'other');
+
+-- Enum for experience level
+CREATE TYPE experience_level_enum AS ENUM ('beginner', 'intermediate', 'advanced');
+
 -- Users Table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -56,10 +68,74 @@ CREATE INDEX idx_users_referred_by ON users(referred_by);
 CREATE INDEX idx_users_user_type ON users(user_type);
 CREATE INDEX idx_users_email ON users(email);
 
+-- Events Table
+CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_name VARCHAR(150) NOT NULL,
+    event_type event_type_enum NOT NULL,
+    event_date DATE NOT NULL,
+    event_location VARCHAR(200) NOT NULL,
+    description TEXT,
+    banner_url VARCHAR(500),
+    registration_open BOOLEAN DEFAULT true,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_events_is_active ON events(is_active);
+CREATE INDEX idx_events_registration_open ON events(registration_open);
+
+-- Event Registrations Table
+CREATE TABLE event_registrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    
+    -- Personal Details
+    date_of_birth DATE NOT NULL,
+    gender gender_enum NOT NULL,
+    blood_group VARCHAR(5),
+    
+    -- Emergency Contact
+    emergency_contact_name VARCHAR(100),
+    emergency_contact_phone VARCHAR(20),
+    emergency_contact_relationship VARCHAR(50),
+    
+    -- Event Specific Details
+    experience_level experience_level_enum NOT NULL,
+    medical_conditions TEXT,
+    allergies TEXT,
+    on_medication BOOLEAN DEFAULT false,
+    
+    -- Address
+    address_line_1 VARCHAR(255),
+    address_line_2 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pin_code VARCHAR(20),
+    
+    -- Consent
+    fitness_declaration BOOLEAN DEFAULT false,
+    terms_accepted BOOLEAN DEFAULT true,
+    
+    -- Status
+    registration_status registration_status_enum DEFAULT 'registered',
+    
+    -- Metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX idx_event_registrations_unique ON event_registrations(event_id, user_id);
+CREATE INDEX idx_event_registrations_event_id ON event_registrations(event_id);
+CREATE INDEX idx_event_registrations_user_id ON event_registrations(user_id);
+CREATE INDEX idx_event_registrations_status ON event_registrations(registration_status);
+
 -- Donations Table
 CREATE TABLE donations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_id UUID REFERENCES events(id),
     
     -- Payment Details
     amount DECIMAL(12, 2) NOT NULL,
@@ -88,6 +164,7 @@ CREATE TABLE donations (
 
 -- Create indexes for donation queries
 CREATE INDEX idx_donations_user_id ON donations(user_id);
+CREATE INDEX idx_donations_event_id ON donations(event_id);
 CREATE INDEX idx_donations_referrer_id ON donations(referrer_id);
 CREATE INDEX idx_donations_created_at ON donations(created_at);
 CREATE INDEX idx_donations_status ON donations(status);
@@ -183,6 +260,9 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_donations_updated_at BEFORE UPDATE ON donations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -209,84 +289,6 @@ LEFT JOIN donations d ON u.id = d.user_id
 WHERE u.is_active = true
 GROUP BY u.id, u.name, u.email, u.city, u.user_type, u.referral_points
 ORDER BY score DESC;
-
--- Enum for event types
-CREATE TYPE event_type_enum AS ENUM ('marathon', 'cyclothon', 'walkathon');
-
--- Enum for gender
-CREATE TYPE gender_enum AS ENUM ('male', 'female', 'other');
-
--- Enum for experience level
-CREATE TYPE experience_level_enum AS ENUM ('beginner', 'intermediate', 'advanced');
-
--- Enum for registration status
-CREATE TYPE registration_status_enum AS ENUM ('registered', 'cancelled');
-
--- Events Table
-CREATE TABLE events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_name VARCHAR(150) NOT NULL,
-    event_type event_type_enum NOT NULL,
-    event_date DATE NOT NULL,
-    event_location VARCHAR(200) NOT NULL,
-    description TEXT,
-    banner_url VARCHAR(500),
-    registration_open BOOLEAN DEFAULT true,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_events_is_active ON events(is_active);
-CREATE INDEX idx_events_registration_open ON events(registration_open);
-
--- Event Registrations Table
-CREATE TABLE event_registrations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    
-    -- Personal Details
-    date_of_birth DATE NOT NULL,
-    gender gender_enum NOT NULL,
-    blood_group VARCHAR(5),
-    
-    -- Emergency Contact
-    emergency_contact_name VARCHAR(100),
-    emergency_contact_phone VARCHAR(20),
-    emergency_contact_relationship VARCHAR(50),
-    
-    -- Event Specific Details
-    experience_level experience_level_enum NOT NULL,
-    medical_conditions TEXT,
-    allergies TEXT,
-    on_medication BOOLEAN DEFAULT false,
-    
-    -- Address
-    address_line_1 VARCHAR(255),
-    address_line_2 VARCHAR(255),
-    city VARCHAR(100),
-    state VARCHAR(100),
-    pin_code VARCHAR(20),
-    
-    -- Consent
-    fitness_declaration BOOLEAN DEFAULT false,
-    terms_accepted BOOLEAN DEFAULT true,
-    
-    -- Status
-    registration_status registration_status_enum DEFAULT 'registered',
-    
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE UNIQUE INDEX idx_event_registrations_unique ON event_registrations(event_id, user_id);
-CREATE INDEX idx_event_registrations_event_id ON event_registrations(event_id);
-CREATE INDEX idx_event_registrations_user_id ON event_registrations(user_id);
-CREATE INDEX idx_event_registrations_status ON event_registrations(registration_status);
-
-CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert default admin user (password: admin123 - should be changed in production)
 -- Password hash for 'admin123' using bcrypt

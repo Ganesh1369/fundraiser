@@ -2,130 +2,217 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../../services/event.service';
+import { environment } from '../../../../environment';
 
 @Component({
-    selector: 'app-admin-event-detail',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
-    <div class="p-6" *ngIf="event">
-      <div class="mb-6 flex justify-between items-center">
-        <div>
-           <a routerLink="/admin/events" class="text-indigo-600 hover:text-indigo-800 mb-2 inline-block">&larr; Back to Events</a>
-           <h1 class="text-2xl font-bold text-gray-800">{{ event.event_name }}</h1>
+  selector: 'app-admin-event-detail',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
+    <div class="admin-dashboard">
+      <!-- Sidebar -->
+      <aside class="sidebar dark">
+        <div class="sidebar-header">
+          <a routerLink="/" class="logo">
+            <span class="logo-icon">🔥</span>
+            <span class="logo-text">Fund<span class="text-gold">Raiser</span></span>
+          </a>
+          <span class="admin-badge">Admin</span>
         </div>
-        <div class="space-x-2">
-           <button (click)="exportData()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
-             Export Excel
-           </button>
+        <nav class="sidebar-nav">
+          <a class="nav-item" routerLink="/admin">
+            <span class="nav-icon">📊</span> Dashboard
+          </a>
+          <a class="nav-item active" routerLink="/admin/events">
+            <span class="nav-icon">📅</span> Events
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="logout-btn" (click)="logout()">
+            <span>🚪</span> Logout
+          </button>
         </div>
-      </div>
+      </aside>
 
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-           <h3 class="text-gray-500 text-sm font-medium">Total Registrations</h3>
-           <p class="text-3xl font-bold text-gray-800 mt-2">{{ event.registration_count }}</p>
+      <main class="main-content">
+        <div *ngIf="loading" class="loading-state">
+          <div class="spinner"></div>
         </div>
-        <div class="bg-white rounded-lg shadow p-6">
-           <h3 class="text-gray-500 text-sm font-medium">Status</h3>
-           <p class="text-lg font-bold mt-2" [ngClass]="event.registration_open ? 'text-green-600' : 'text-red-600'">
-             {{ event.registration_open ? 'Registration Open' : 'Closed' }}
-           </p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-           <h3 class="text-gray-500 text-sm font-medium">Date</h3>
-           <p class="text-lg font-bold text-gray-800 mt-2">{{ event.event_date | date }}</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-           <h3 class="text-gray-500 text-sm font-medium">Type</h3>
-           <p class="text-lg font-bold text-gray-800 mt-2 capitalize">{{ event.event_type }}</p>
-        </div>
-      </div>
 
-      <!-- Registrations Table -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">Recent Registrations</h3>
+        <div *ngIf="!loading && event">
+        <header class="admin-header">
+          <div class="header-row">
+            <div>
+              <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
+              <h1>{{ event.event_name }}</h1>
+            </div>
+            <button (click)="exportData()" class="btn btn-primary">
+              📥 Export Excel
+            </button>
+          </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-icon">👥</span>
+              <span class="stat-label">Total Registrations</span>
+            </div>
+            <div class="stat-value">{{ event.registration_count }}</div>
+          </div>
+          <div class="stat-card" [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
+            <div class="stat-header">
+              <span class="stat-icon">🔓</span>
+              <span class="stat-label">Status</span>
+            </div>
+            <div class="stat-value status-text">
+              {{ event.registration_open ? 'Open' : 'Closed' }}
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-icon">📅</span>
+              <span class="stat-label">Date</span>
+            </div>
+            <div class="stat-value small">{{ formatDate(event.event_date) }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-icon">🏷️</span>
+              <span class="stat-label">Type</span>
+            </div>
+            <div class="stat-value small capitalize">{{ event.event_type }}</div>
+          </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr *ngFor="let reg of registrations" class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ reg.name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ reg.email }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ reg.phone }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ reg.created_at | date:'short' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{{ reg.registration_status }}</td>
-              </tr>
-              <tr *ngIf="registrations.length === 0">
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No registrations yet.</td>
-              </tr>
-            </tbody>
-          </table>
+
+        <!-- Registrations Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Registrations</h2>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Registered</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let reg of registrations">
+                  <td class="name-cell">{{ reg.name }}</td>
+                  <td>{{ reg.email }}</td>
+                  <td>{{ reg.phone }}</td>
+                  <td>{{ formatDate(reg.created_at) }}</td>
+                  <td>
+                    <span class="status-badge" [ngClass]="'reg-' + reg.registration_status">
+                      {{ reg.registration_status }}
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="registrations.length === 0">
+                  <td colspan="5" class="empty-row">No registrations yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Pagination -->
+          <div class="pagination" *ngIf="pagination.totalPages > 1">
+            <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)" class="btn-page">Previous</button>
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+            <button [disabled]="pagination.page === pagination.totalPages" (click)="loadRegistrations(pagination.page + 1)" class="btn-page">Next</button>
+          </div>
         </div>
-        <!-- Simple Pagination (Implied) -->
-        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between" *ngIf="pagination.totalPages > 1">
-           <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)" class="px-3 py-1 border rounded hover:bg-white disabled:opacity-50">Previous</button>
-           <span class="text-sm text-gray-700">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
-           <button [disabled]="pagination.page === pagination.totalPages" (click)="loadRegistrations(pagination.page + 1)" class="px-3 py-1 border rounded hover:bg-white disabled:opacity-50">Next</button>
         </div>
-      </div>
+      </main>
     </div>
-  `
+  `,
+  styleUrl: './admin-event-detail.component.css'
 })
 export class AdminEventDetailComponent implements OnInit {
-    event: any;
-    registrations: any[] = [];
-    pagination: any = { page: 1, totalPages: 1 };
-    loading = true;
+  event: any;
+  registrations: any[] = [];
+  pagination: any = { page: 1, totalPages: 1 };
+  loading = true;
 
-    constructor(
-        private route: ActivatedRoute,
-        private eventService: EventService
-    ) { }
+  constructor(
+    private route: ActivatedRoute,
+    private eventService: EventService
+  ) { }
 
-    ngOnInit() {
-        this.loadEvent();
-    }
+  ngOnInit() {
+    this.loadEvent();
+  }
 
-    loadEvent() {
-        const id = this.route.snapshot.paramMap.get('id');
-        if (!id) return;
+  loadEvent() {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) { this.loading = false; return; }
 
-        this.eventService.getEventById(id).subscribe({
-            next: (res) => {
-                this.event = res.data;
-                this.loadRegistrations();
-            },
-            error: (err) => console.error(err)
-        });
-    }
+    this.eventService.getEventById(id).subscribe({
+      next: (res: any) => {
+        console.log('Event detail response:', res);
+        this.event = res?.data || res;
+        this.loading = false;
+        this.loadRegistrations();
+      },
+      error: (err: any) => {
+        console.error('Event detail error:', err);
+        this.loading = false;
+      }
+    });
+  }
 
-    loadRegistrations(page: number = 1) {
-        if (!this.event) return;
+  loadRegistrations(page: number = 1) {
+    if (!this.event) return;
 
-        this.eventService.getEventRegistrations(this.event.id, { page }).subscribe({
-            next: (res) => {
-                this.registrations = res.data.registrations;
-                this.pagination = res.data.pagination;
-            },
-            error: (err) => console.error(err)
-        });
-    }
+    this.eventService.getEventRegistrations(this.event.id, { page }).subscribe({
+      next: (res: any) => {
+        console.log('Registrations response:', res);
+        if (res?.data?.registrations) {
+          this.registrations = res.data.registrations;
+          this.pagination = res.data.pagination || this.pagination;
+        } else if (Array.isArray(res?.data)) {
+          this.registrations = res.data;
+        } else {
+          this.registrations = [];
+        }
+      },
+      error: (err: any) => {
+        console.error('Registrations error:', err);
+        this.registrations = [];
+      }
+    });
+  }
 
-    exportData() {
-        if (!this.event) return;
-        const url = this.eventService.exportEventRegistrations(this.event.id);
-        window.location.href = url;
-    }
+  exportData() {
+    if (!this.event) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
+
+    fetch(`${environment.apiUrl}/admin/events/${this.event.id}/registrations/export`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(res => res.blob()).then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${this.event.event_name}_registrations.xlsx`;
+      a.click();
+    }).catch(err => console.error('Export failed:', err));
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    });
+  }
+
+  logout(): void {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('admin');
+    window.location.href = '/admin/login';
+  }
 }

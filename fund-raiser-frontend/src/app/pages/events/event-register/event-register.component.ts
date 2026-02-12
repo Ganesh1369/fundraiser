@@ -5,329 +5,241 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
 
 @Component({
-    selector: 'app-event-register',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
-    template: `
-    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" *ngIf="event" [ngClass]="'theme-' + event.event_type">
-      <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
-        <!-- Header -->
-        <div class="bg-indigo-600 px-8 py-6 text-white" *ngIf="event">
-          <h2 class="text-3xl font-bold">{{ event.event_name }} Registration</h2>
-          <p class="mt-2 text-indigo-100">Step closer to making a difference.</p>
+  selector: 'app-event-register',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  template: `
+    <div class="register-page" *ngIf="event" [ngClass]="'theme-' + event.event_type">
+      <!-- Compact Header -->
+      <div class="register-header">
+        <a [routerLink]="['/events', event.id]" class="back-link">&larr; Back</a>
+        <div class="header-info">
+          <span class="event-type-tag">{{ event.event_type }}</span>
+          <h1>Register for {{ event.event_name }}</h1>
+          <p>📅 {{ event.event_date | date:'fullDate' }} &bull; 📍 {{ event.event_location }}</p>
         </div>
-        <div *ngIf="loading && !event" class="p-8 text-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-        </div>
+      </div>
 
-        <!-- Form -->
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="p-8 space-y-8" *ngIf="event">
-          
-          <!-- Error Message -->
-          <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            <span class="block sm:inline">{{ errorMessage }}</span>
-          </div>
+      <!-- Registration Form -->
+      <div class="register-body">
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
 
-          <!-- Section 1: Account Details -->
-          <div>
-            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Account Details</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Full Name *</label>
-                <input type="text" formControlName="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['name'].touched && f['name'].errors?.['required']">Name is required</p>
+          <div *ngIf="errorMessage" class="error-banner">{{ errorMessage }}</div>
+
+          <!-- Section: Account -->
+          <div class="form-section">
+            <h3 class="section-title">Account Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" formControlName="name" class="form-input" placeholder="Your full name">
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Email *</label>
-                <input type="email" formControlName="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['email'].touched && f['email'].errors?.['required']">Email is required</p>
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['email'].touched && f['email'].errors?.['email']">Invalid email</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Phone *</label>
-                <input type="tel" formControlName="phone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['phone'].touched && f['phone'].errors?.['required']">Phone is required</p>
+              <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input type="email" formControlName="email" class="form-input" placeholder="you@example.com">
               </div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-               <div>
-                <label class="block text-sm font-medium text-gray-700">Password *</label>
-                <input type="password" formControlName="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                <p class="text-xs text-gray-500 mt-1">Required if you are a new user. Existing users verify with password.</p>
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['password'].touched && f['password'].errors?.['required']">Password is required</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Phone *</label>
+                <input type="tel" formControlName="phone" class="form-input" placeholder="10-digit number">
               </div>
-              <div *ngIf="!isExistingUserMode"> <!-- Logic to toggle simplified? For now standard layout -->
-                <label class="block text-sm font-medium text-gray-700">Confirm Password *</label>
-                <input type="password" formControlName="confirmPassword" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
+              <div class="form-group">
+                <label class="form-label">Password *</label>
+                <input type="password" formControlName="password" class="form-input" placeholder="Min 6 characters">
               </div>
             </div>
           </div>
 
-          <!-- Section 2: Personal Details -->
-          <div>
-            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Personal Details</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Date of Birth *</label>
-                <input type="date" formControlName="date_of_birth" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                 <p class="text-red-500 text-xs mt-1" *ngIf="f['date_of_birth'].touched && f['date_of_birth'].errors?.['required']">DOB is required</p>
+          <!-- Section: Personal -->
+          <div class="form-section">
+            <h3 class="section-title">Personal Details</h3>
+            <div class="form-row three-col">
+              <div class="form-group">
+                <label class="form-label">Date of Birth *</label>
+                <input type="date" formControlName="date_of_birth" class="form-input">
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Gender *</label>
-                <select formControlName="gender" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 bg-white">
-                  <option value="">Select Gender</option>
+              <div class="form-group">
+                <label class="form-label">Gender *</label>
+                <select formControlName="gender" class="form-input">
+                  <option value="">Select</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['gender'].touched && f['gender'].errors?.['required']">Gender is required</p>
               </div>
-               <div>
-                <label class="block text-sm font-medium text-gray-700">Blood Group *</label>
-                <select formControlName="blood_group" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 bg-white">
-                  <option value="">Select Blood Group</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                </select>
-                <p class="text-red-500 text-xs mt-1" *ngIf="f['blood_group'].touched && f['blood_group'].errors?.['required']">Blood Group is required</p>
+              <div class="form-group">
+                <label class="form-label">Blood Group</label>
+                <input type="text" formControlName="blood_group" class="form-input" placeholder="e.g., O+">
               </div>
             </div>
           </div>
 
-          <!-- Section 3: Emergency Contact -->
-          <div>
-            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Emergency Contact</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Name *</label>
-                <input type="text" formControlName="emergency_contact_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
+          <!-- Section: Emergency Contact -->
+          <div class="form-section">
+            <h3 class="section-title">Emergency Contact</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Contact Name *</label>
+                <input type="text" formControlName="emergency_contact_name" class="form-input" placeholder="Contact person">
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Phone *</label>
-                <input type="tel" formControlName="emergency_contact_phone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Relationship *</label>
-                <input type="text" formControlName="emergency_contact_relationship" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
+              <div class="form-group">
+                <label class="form-label">Contact Phone *</label>
+                <input type="tel" formControlName="emergency_contact_phone" class="form-input" placeholder="Phone number">
               </div>
             </div>
           </div>
 
-          <!-- Section 4 & 5: Event Specifics & Medical -->
-          <div>
-            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Participation Details</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div>
-                <label class="block text-sm font-medium text-gray-700">Experience Level *</label>
-                <select formControlName="experience_level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 bg-white">
+          <!-- Section: Participation -->
+          <div class="form-section">
+            <h3 class="section-title">Participation</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Experience Level</label>
+                <select formControlName="experience_level" class="form-input">
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
-               <div class="flex items-center mt-6">
-                  <input type="checkbox" formControlName="on_medication" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                  <label class="ml-2 block text-sm text-gray-900">Are you currently on any medication?</label>
-               </div>
-            </div>
-            
-            <div class="mt-4">
-                <label class="block text-sm font-medium text-gray-700">Medical Conditions (if any)</label>
-                <textarea formControlName="medical_conditions" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"></textarea>
-            </div>
-             <div class="mt-4">
-                <label class="block text-sm font-medium text-gray-700">Allergies (if any)</label>
-                <input type="text" formControlName="allergies" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-            </div>
-          </div>
-
-          <!-- Section 6: Address -->
-          <div>
-            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Address</h3>
-            <div class="space-y-4">
-               <div>
-                  <label class="block text-sm font-medium text-gray-700">Address Line 1 *</label>
-                  <input type="text" formControlName="address_line_1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-               </div>
-               <div>
-                  <label class="block text-sm font-medium text-gray-700">Address Line 2</label>
-                  <input type="text" formControlName="address_line_2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-               </div>
-               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">City *</label>
-                    <input type="text" formControlName="city" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">State *</label>
-                    <input type="text" formControlName="state" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Pin Code *</label>
-                    <input type="text" formControlName="pin_code" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2">
-                  </div>
-               </div>
+              <div class="form-group">
+                <label class="form-label">T-Shirt Size</label>
+                <select formControlName="tshirt_size" class="form-input">
+                  <option value="">Select</option>
+                  <option value="XS">XS</option>
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="XL">XL</option>
+                  <option value="XXL">XXL</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <!-- Section 7: Consent -->
-           <div>
-            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Consent</h3>
-            <div class="space-y-4">
-               <div class="flex items-start">
-                  <div class="flex items-center h-5">
-                    <input type="checkbox" formControlName="fitness_declaration" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <label class="font-medium text-gray-700">Fitness Declaration *</label>
-                    <p class="text-gray-500">I confirm that I am physically fit to participate in this event and have no medical conditions that would endanger my health.</p>
-                    <p class="text-red-500 text-xs mt-1" *ngIf="f['fitness_declaration'].touched && f['fitness_declaration'].invalid">You must declare fitness to proceed</p>
-                  </div>
-               </div>
-
-               <div class="flex items-start">
-                  <div class="flex items-center h-5">
-                    <input type="checkbox" formControlName="terms_accepted" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <label class="font-medium text-gray-700">Terms & Conditions *</label>
-                    <p class="text-gray-500">I agree to the terms and conditions set forth by the event organizers.</p>
-                     <p class="text-red-500 text-xs mt-1" *ngIf="f['terms_accepted'].touched && f['terms_accepted'].invalid">You must accept terms to proceed</p>
-                  </div>
-               </div>
+          <!-- Section: Medical -->
+          <div class="form-section">
+            <h3 class="section-title">Medical Information</h3>
+            <div class="form-group">
+              <label class="form-label">Medical Conditions / Allergies</label>
+              <textarea formControlName="medical_conditions" rows="3" class="form-input form-textarea" placeholder="Any medical conditions we should know about..."></textarea>
             </div>
           </div>
 
-          <div class="pt-6">
-            <button type="submit" 
-               [disabled]="registerForm.invalid || submitting"
-               class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out">
-              <span *ngIf="submitting">Registering...</span>
-              <span *ngIf="!submitting">Submit Registration</span>
+          <!-- Section: Address -->
+          <div class="form-section">
+            <h3 class="section-title">Address</h3>
+            <div class="form-group">
+              <label class="form-label">Full Address</label>
+              <input type="text" formControlName="address" class="form-input" placeholder="Street address">
+            </div>
+            <div class="form-row three-col">
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <input type="text" formControlName="city" class="form-input" placeholder="City">
+              </div>
+              <div class="form-group">
+                <label class="form-label">State</label>
+                <input type="text" formControlName="state" class="form-input" placeholder="State">
+              </div>
+              <div class="form-group">
+                <label class="form-label">PIN Code</label>
+                <input type="text" formControlName="pincode" class="form-input" placeholder="PIN code">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Consent -->
+          <div class="form-section consent-section">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="fitness_declaration">
+              <span>I declare that I am medically fit to participate in this event *</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="terms_accepted">
+              <span>I accept the terms and conditions *</span>
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-actions">
+            <button type="submit" [disabled]="registerForm.invalid || submitting" class="btn btn-primary btn-lg submit-btn">
+              {{ submitting ? 'Registering...' : 'Complete Registration' }}
             </button>
           </div>
         </form>
       </div>
     </div>
-  `
+  `,
+  styleUrl: './event-register.component.css'
 })
 export class EventRegisterComponent implements OnInit {
-    registerForm: FormGroup;
-    event: any;
-    loading = true;
-    submitting = false;
-    errorMessage = '';
-    isExistingUserMode = false;
+  registerForm: FormGroup;
+  event: any;
+  submitting = false;
+  errorMessage = '';
 
-    constructor(
-        private fb: FormBuilder,
-        private route: ActivatedRoute,
-        private router: Router,
-        private eventService: EventService
-    ) {
-        this.registerForm = this.fb.group({
-            // Account
-            name: ['', Validators.required],
-            email: ['', [Validators.required, Validators.email]],
-            phone: ['', Validators.required],
-            password: ['', Validators.required], // TODO: Optional if logged in? For now assume public flow mainly
-            confirmPassword: [''],
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private eventService: EventService
+  ) {
+    this.registerForm = this.fb.group({
+      name: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      date_of_birth: ['', Validators.required],
+      gender: ['', Validators.required],
+      blood_group: [''],
+      emergency_contact_name: ['', Validators.required],
+      emergency_contact_phone: ['', Validators.required],
+      experience_level: ['beginner'],
+      tshirt_size: [''],
+      medical_conditions: [''],
+      address: [''],
+      city: [''],
+      state: [''],
+      pincode: [''],
+      fitness_declaration: [false, Validators.requiredTrue],
+      terms_accepted: [false, Validators.requiredTrue]
+    });
+  }
 
-            // Personal
-            date_of_birth: ['', Validators.required],
-            gender: ['', Validators.required],
-            blood_group: ['', Validators.required],
-
-            // Emergency
-            emergency_contact_name: ['', Validators.required],
-            emergency_contact_phone: ['', Validators.required],
-            emergency_contact_relationship: ['', Validators.required],
-
-            // Experience
-            experience_level: ['beginner', Validators.required],
-
-            // Medical
-            medical_conditions: [''],
-            allergies: [''],
-            on_medication: [false],
-
-            // Address
-            address_line_1: ['', Validators.required],
-            address_line_2: [''],
-            city: ['', Validators.required],
-            state: ['', Validators.required],
-            pin_code: ['', Validators.required],
-
-            // Consent
-            fitness_declaration: [false, Validators.requiredTrue],
-            terms_accepted: [false, Validators.requiredTrue]
-        });
-    }
-
-    get f() { return this.registerForm.controls; }
-
-    ngOnInit() {
-        // If user is already logged in, we could pre-fill some data here. 
-        // For now strict implementation as per Phase request.
-
-        const id = this.route.snapshot.paramMap.get('id');
-        if (id) {
-            this.eventService.getEventDetails(id).subscribe({
-                next: (data) => {
-                    this.event = data;
-                    this.loading = false;
-                    if (!data.registration_open) {
-                        this.errorMessage = 'Registration is closed for this event.';
-                        this.registerForm.disable();
-                    }
-                },
-                error: (err) => {
-                    this.errorMessage = 'Failed to load event details.';
-                    this.loading = false;
-                }
-            });
-        } else {
-            this.errorMessage = 'Event ID mismatch.';
-            this.loading = false;
+  ngOnInit() {
+    const eventId = this.route.snapshot.paramMap.get('id');
+    if (eventId) {
+      this.eventService.getEventDetails(eventId).subscribe({
+        next: (res: any) => {
+          this.event = res.data || res;
+          if (!this.event.registration_open) {
+            this.errorMessage = 'Registration for this event is currently closed.';
+          }
+        },
+        error: (err) => {
+          console.error('Error fetching event:', err);
         }
+      });
     }
+  }
 
-    onSubmit() {
-        if (this.registerForm.invalid) {
-            this.registerForm.markAllAsTouched();
-            return;
+  onSubmit() {
+    if (this.registerForm.invalid || !this.event) return;
+
+    this.submitting = true;
+    this.errorMessage = '';
+    this.eventService.registerForEvent(this.event.id, this.registerForm.value).subscribe({
+      next: (res: any) => {
+        if (res.token) {
+          localStorage.setItem('token', res.token);
         }
-
-        // Password match check for new users
-        if (this.registerForm.value.password !== this.registerForm.value.confirmPassword) {
-            // Ideally specific error on control, for now global
-            // Or handle via validator
-        }
-
-        this.submitting = true;
-        this.errorMessage = '';
-        const eventId = this.event.id;
-
-        this.eventService.registerForEvent(eventId, this.registerForm.value).subscribe({
-            next: (res) => {
-                // Handle auto-login
-                if (res.token) {
-                    localStorage.setItem('token', res.token);
-                    // Update user state if there is a state management
-                }
-                this.router.navigate(['/events', eventId, 'success']);
-            },
-            error: (err) => {
-                this.submitting = false;
-                this.errorMessage = err.error?.message || 'Registration failed. Please try again.';
-            }
-        });
-    }
+        this.router.navigate(['/events', this.event.id, 'success']);
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Registration failed. Please try again.';
+        this.submitting = false;
+      }
+    });
+  }
 }

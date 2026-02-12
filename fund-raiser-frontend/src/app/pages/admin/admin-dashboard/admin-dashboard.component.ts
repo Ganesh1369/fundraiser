@@ -171,7 +171,18 @@ export class AdminDashboardComponent implements OnInit {
         this.api.getAdminCertificates().subscribe({
             next: (res: any) => {
                 if (res.success) {
-                    this.certificates = res.data || [];
+                    const requests = res.data?.requests || res.data || [];
+                    this.certificates = Array.isArray(requests) ? requests.map((r: any) => ({
+                        id: r.id,
+                        userName: r.user_name,
+                        userEmail: r.user_email,
+                        panNumber: r.pan_number,
+                        donationAmount: r.donation_amount,
+                        requestedAt: r.requested_at,
+                        processedAt: r.processed_at || null,
+                        status: r.status,
+                        adminNotes: r.admin_notes
+                    })) : [];
                     this.cdr.detectChanges();
                 }
             },
