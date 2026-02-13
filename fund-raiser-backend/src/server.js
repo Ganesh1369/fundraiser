@@ -16,9 +16,12 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration — supports comma-separated origins in FRONTEND_URL
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:4200')
+    .split(',')
+    .map(o => o.trim());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
     credentials: true
 }));
 

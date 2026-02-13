@@ -18,7 +18,7 @@ const verifyToken = async (req, res, next) => {
 
         // Get user from database
         const result = await db.query(
-            'SELECT id, name, email, user_type, referral_code FROM users WHERE id = $1 AND is_active = true',
+            'SELECT id, name, email, user_type, referral_code FROM users WHERE id = ? AND is_active = true',
             [decoded.userId]
         );
 
@@ -72,7 +72,7 @@ const verifyAdmin = async (req, res, next) => {
 
         // Get admin from database
         const result = await db.query(
-            'SELECT id, username, name, email FROM admin_users WHERE id = $1 AND is_active = true',
+            'SELECT id, username, name, email FROM admin_users WHERE id = ? AND is_active = true',
             [decoded.userId]
         );
 

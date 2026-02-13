@@ -1,5 +1,6 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('./email.service');
 
@@ -25,16 +26,18 @@ const createOrder = async (userId, userName, amount, request80g = false) => {
 
     const order = await razorpay.orders.create(options);
 
-    const result = await db.query(
-        `INSERT INTO donations (user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g)
-         VALUES ($1, $2, $3, $4, $5, (SELECT referred_by FROM users WHERE id = $1), $6)
-         RETURNING id`,
-        [userId, amount, 'INR', order.id, 'pending', request80g]
+    const donationId = uuidv4();
+    const referrerResult = await db.query('SELECT referred_by FROM users WHERE id = ?', [userId]);
+    const referrerId = referrerResult.rows[0]?.referred_by || null;
+    await db.query(
+        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g]
     );
 
     return {
         orderId: order.id,
-        donationId: result.rows[0].id,
+        donationId: donationId,
         amount: order.amount,
         currency: order.currency,
         keyId: process.env.RAZORPAY_KEY_ID
@@ -65,46 +68,49 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         await client.query('BEGIN');
 
         // Update donation record
-        const donationResult = await client.query(
-            `UPDATE donations 
-             SET razorpay_payment_id = $1, razorpay_signature = $2, status = 'completed', payment_method = 'razorpay'
-             WHERE razorpay_order_id = $3 AND user_id = $4
-             RETURNING id, amount, referrer_id, request_80g`,
+        const updateResult = await client.query(
+            `UPDATE donations
+             SET razorpay_payment_id = ?, razorpay_signature = ?, status = 'completed', payment_method = 'razorpay'
+             WHERE razorpay_order_id = ? AND user_id = ?`,
             [razorpayPaymentId, razorpaySignature, razorpayOrderId, userId]
         );
 
-        if (donationResult.rows.length === 0) {
+        if (updateResult.rowCount === 0) {
             await client.query('ROLLBACK');
             throw { status: 404, message: 'Donation not found' };
         }
 
+        const donationResult = await client.query(
+            'SELECT id, amount, referrer_id, request_80g FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
+            [razorpayOrderId, userId]
+        );
         const donation = donationResult.rows[0];
 
         // Award referral points
         if (donation.referrer_id) {
             const pointsToAward = Math.floor(parseFloat(donation.amount));
             await client.query(
-                'UPDATE users SET referral_points = referral_points + $1 WHERE id = $2',
+                'UPDATE users SET referral_points = referral_points + ? WHERE id = ?',
                 [pointsToAward, donation.referrer_id]
             );
             await client.query(
                 `INSERT INTO referral_points_history (user_id, donation_id, points_earned, donor_name)
-                 VALUES ($1, $2, $3, $4)`,
+                 VALUES (?, ?, ?, ?)`,
                 [donation.referrer_id, donation.id, pointsToAward, userName]
             );
-            await client.query('UPDATE donations SET points_awarded = true WHERE id = $1', [donation.id]);
+            await client.query('UPDATE donations SET points_awarded = true WHERE id = ?', [donation.id]);
         }
 
         // Auto-create 80G certificate request if requested
         if (donation.request_80g) {
             const userPan = await client.query(
-                'SELECT pan_number FROM users WHERE id = $1',
+                'SELECT pan_number FROM users WHERE id = ?',
                 [userId]
             );
             const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
             await client.query(
                 `INSERT INTO certificate_requests (user_id, donation_id, pan_number)
-                 VALUES ($1, $2, $3)`,
+                 VALUES (?, ?, ?)`,
                 [userId, donation.id, panNumber]
             );
         }
@@ -112,7 +118,7 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         await client.query('COMMIT');
 
         // Send confirmation email (non-blocking)
-        const userResult = await db.query('SELECT email FROM users WHERE id = $1', [userId]);
+        const userResult = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
         if (userResult.rows.length > 0) {
             emailService.sendDonationConfirmationEmail(
                 userResult.rows[0].email,

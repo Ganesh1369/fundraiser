@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('./email.service');
 
@@ -29,7 +30,7 @@ const generateOtp = () => {
 const sendOtp = async (email, purpose = 'register') => {
     // Block OTP for already-registered emails during registration
     if (purpose === 'register') {
-        const existing = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+        const existing = await db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
         if (existing.rows.length > 0) {
             throw { status: 400, message: 'Email already registered. Please sign in instead.' };
         }
@@ -40,13 +41,13 @@ const sendOtp = async (email, purpose = 'register') => {
 
     // Invalidate previous OTPs for this email+purpose
     await db.query(
-        `UPDATE otp_verifications SET verified = true WHERE email = $1 AND purpose = $2 AND verified = false`,
+        `UPDATE otp_verifications SET verified = true WHERE email = ? AND purpose = ? AND verified = false`,
         [email.toLowerCase(), purpose]
     );
 
     // Store new OTP
     await db.query(
-        `INSERT INTO otp_verifications (email, otp, purpose, expires_at) VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO otp_verifications (email, otp, purpose, expires_at) VALUES (?, ?, ?, ?)`,
         [email.toLowerCase(), otp, purpose, expiresAt]
     );
 
@@ -65,8 +66,8 @@ const sendOtp = async (email, purpose = 'register') => {
  */
 const verifyOtp = async (email, otp, purpose = 'register') => {
     const result = await db.query(
-        `SELECT id, otp, expires_at FROM otp_verifications 
-         WHERE email = $1 AND purpose = $2 AND verified = false 
+        `SELECT id, otp, expires_at FROM otp_verifications
+         WHERE email = ? AND purpose = ? AND verified = false
          ORDER BY created_at DESC LIMIT 1`,
         [email.toLowerCase(), purpose]
     );
@@ -86,7 +87,7 @@ const verifyOtp = async (email, otp, purpose = 'register') => {
     }
 
     // Mark as verified
-    await db.query(`UPDATE otp_verifications SET verified = true WHERE id = $1`, [record.id]);
+    await db.query(`UPDATE otp_verifications SET verified = true WHERE id = ?`, [record.id]);
 
     return { verified: true };
 };
@@ -102,7 +103,7 @@ const registerUser = async (userData) => {
     } = userData;
 
     // Check email already exists
-    const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    const existingUser = await db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
     if (existingUser.rows.length > 0) {
         throw { status: 400, message: 'Email already registered' };
     }
@@ -115,7 +116,7 @@ const registerUser = async (userData) => {
     let isUnique = false;
     while (!isUnique) {
         newReferralCode = generateReferralCode();
-        const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = $1', [newReferralCode]);
+        const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = ?', [newReferralCode]);
         if (codeCheck.rows.length === 0) isUnique = true;
     }
 
@@ -123,28 +124,29 @@ const registerUser = async (userData) => {
     let referrerId = null;
     if (referralCode) {
         const referrer = await db.query(
-            'SELECT id FROM users WHERE referral_code = $1 AND is_active = true',
+            'SELECT id FROM users WHERE referral_code = ? AND is_active = true',
             [referralCode.toUpperCase()]
         );
         if (referrer.rows.length > 0) referrerId = referrer.rows[0].id;
     }
 
     // Insert user
-    const result = await db.query(
+    const userId = uuidv4();
+    await db.query(
         `INSERT INTO users (
-            user_type, name, age, email, phone, password_hash,
+            id, user_type, name, age, email, phone, password_hash,
             class_grade, school_name, city,
             organization_name, pan_number, referral_code, referred_by, email_verified
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)
-        RETURNING id, name, email, user_type, referral_code`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true)`,
         [
-            userType, name, age || null, email.toLowerCase(), phone, passwordHash,
+            userId, userType, name, age || null, email.toLowerCase(), phone, passwordHash,
             classGrade || null, schoolName || null, city || null,
             organizationName || null, panNumber || null, newReferralCode, referrerId
         ]
     );
 
-    const user = result.rows[0];
+    const userResult = await db.query('SELECT id, name, email, user_type, referral_code FROM users WHERE id = ?', [userId]);
+    const user = userResult.rows[0];
 
     // Generate JWT token
     const token = jwt.sign(
@@ -171,7 +173,7 @@ const registerUser = async (userData) => {
 const loginUser = async (email, password) => {
     const result = await db.query(
         `SELECT id, name, email, password_hash, user_type, referral_code, referral_points
-         FROM users WHERE email = $1 AND is_active = true`,
+         FROM users WHERE email = ? AND is_active = true`,
         [email.toLowerCase()]
     );
 
@@ -209,7 +211,7 @@ const loginUser = async (email, password) => {
  */
 const adminLogin = async (username, password) => {
     const result = await db.query(
-        'SELECT id, username, password_hash, name, email FROM admin_users WHERE username = $1 AND is_active = true',
+        'SELECT id, username, password_hash, name, email FROM admin_users WHERE username = ? AND is_active = true',
         [username]
     );
 
@@ -244,7 +246,7 @@ const adminLogin = async (username, password) => {
  * Forgot password — send reset OTP
  */
 const forgotPassword = async (email) => {
-    const user = await db.query('SELECT id FROM users WHERE email = $1 AND is_active = true', [email.toLowerCase()]);
+    const user = await db.query('SELECT id FROM users WHERE email = ? AND is_active = true', [email.toLowerCase()]);
     if (user.rows.length === 0) {
         throw { status: 404, message: 'No account found with this email' };
     }
@@ -260,7 +262,7 @@ const resetPassword = async (email, otp, newPassword) => {
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
     await db.query(
-        'UPDATE users SET password_hash = $1 WHERE email = $2',
+        'UPDATE users SET password_hash = ? WHERE email = ?',
         [passwordHash, email.toLowerCase()]
     );
 
@@ -272,7 +274,7 @@ const resetPassword = async (email, otp, newPassword) => {
  */
 const validateReferralCode = async (code) => {
     const result = await db.query(
-        'SELECT name FROM users WHERE referral_code = $1 AND is_active = true',
+        'SELECT name FROM users WHERE referral_code = ? AND is_active = true',
         [code.toUpperCase()]
     );
 

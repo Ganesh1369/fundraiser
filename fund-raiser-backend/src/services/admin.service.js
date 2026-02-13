@@ -9,18 +9,18 @@ const getDashboardStats = async () => {
         `SELECT user_type, COUNT(*) as count FROM users WHERE is_active = true GROUP BY user_type`
     );
     const donationStats = await db.query(
-        `SELECT 
+        `SELECT
             COUNT(*) as total_count,
-            COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as total_amount,
-            COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '1 month'), 0) as this_month,
-            COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '7 days'), 0) as this_week
+            COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_amount,
+            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month,
+            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 7 DAY THEN amount ELSE 0 END), 0) as this_week
          FROM donations`
     );
     const certStats = await db.query(
         `SELECT status, COUNT(*) as count FROM certificate_requests GROUP BY status`
     );
     const recentUsers = await db.query(
-        `SELECT COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL '7 days'`
+        `SELECT COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL 7 DAY`
     );
 
     const usersByType = {};
@@ -51,27 +51,25 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = ['is_active = true'];
-    let paramIndex = 1;
 
-    if (userType) { whereConditions.push(`user_type = $${paramIndex++}`); params.push(userType); }
-    if (fromDate) { whereConditions.push(`created_at >= $${paramIndex++}`); params.push(fromDate); }
-    if (toDate) { whereConditions.push(`created_at <= $${paramIndex++}`); params.push(toDate); }
+    if (userType) { whereConditions.push(`user_type = ?`); params.push(userType); }
+    if (fromDate) { whereConditions.push(`created_at >= ?`); params.push(fromDate); }
+    if (toDate) { whereConditions.push(`created_at <= ?`); params.push(toDate); }
     if (search) {
-        whereConditions.push(`(name ILIKE $${paramIndex} OR email ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`);
-        params.push(`%${search}%`);
-        paramIndex++;
+        whereConditions.push(`(name LIKE ? OR email LIKE ? OR phone LIKE ?)`);
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
-    const countResult = await db.query(`SELECT COUNT(*) FROM users ${whereClause}`, params);
+    const countResult = await db.query(`SELECT COUNT(*) as count FROM users ${whereClause}`, params);
 
-    params.push(limit, offset);
+    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
                 city, organization_name, referral_code, referral_points, created_at
          FROM users ${whereClause}
-         ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-        params
+         ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        paginatedParams
     );
 
     return {
@@ -90,11 +88,10 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
 const exportRegistrations = async ({ userType, fromDate, toDate }) => {
     const params = [];
     let whereConditions = ['u.is_active = true'];
-    let paramIndex = 1;
 
-    if (userType) { whereConditions.push(`u.user_type = $${paramIndex++}`); params.push(userType); }
-    if (fromDate) { whereConditions.push(`u.created_at >= $${paramIndex++}`); params.push(fromDate); }
-    if (toDate) { whereConditions.push(`u.created_at <= $${paramIndex++}`); params.push(toDate); }
+    if (userType) { whereConditions.push(`u.user_type = ?`); params.push(userType); }
+    if (fromDate) { whereConditions.push(`u.created_at >= ?`); params.push(fromDate); }
+    if (toDate) { whereConditions.push(`u.created_at <= ?`); params.push(toDate); }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const result = await db.query(
@@ -127,24 +124,23 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
-    let paramIndex = 1;
 
-    if (status) { whereConditions.push(`d.status = $${paramIndex++}`); params.push(status); }
-    if (fromDate) { whereConditions.push(`d.created_at >= $${paramIndex++}`); params.push(fromDate); }
-    if (toDate) { whereConditions.push(`d.created_at <= $${paramIndex++}`); params.push(toDate); }
+    if (status) { whereConditions.push(`d.status = ?`); params.push(status); }
+    if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
+    if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
-    const countResult = await db.query(`SELECT COUNT(*) FROM donations d ${whereClause}`, params);
+    const countResult = await db.query(`SELECT COUNT(*) as count FROM donations d ${whereClause}`, params);
 
-    params.push(limit, offset);
+    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
                 d.razorpay_payment_id, d.created_at,
                 u.name as user_name, u.email as user_email, u.user_type
          FROM donations d JOIN users u ON u.id = d.user_id
          ${whereClause} ORDER BY d.created_at DESC
-         LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-        params
+         LIMIT ? OFFSET ?`,
+        paginatedParams
     );
 
     return {
@@ -163,11 +159,10 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
 const exportDonations = async ({ status, fromDate, toDate }) => {
     const params = [];
     let whereConditions = [];
-    let paramIndex = 1;
 
-    if (status) { whereConditions.push(`d.status = $${paramIndex++}`); params.push(status); }
-    if (fromDate) { whereConditions.push(`d.created_at >= $${paramIndex++}`); params.push(fromDate); }
-    if (toDate) { whereConditions.push(`d.created_at <= $${paramIndex++}`); params.push(toDate); }
+    if (status) { whereConditions.push(`d.status = ?`); params.push(status); }
+    if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
+    if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     const result = await db.query(
@@ -203,36 +198,36 @@ const getUserAnalytics = async (userId) => {
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
                 city, organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
-         FROM users WHERE id = $1`,
+         FROM users WHERE id = ?`,
         [userId]
     );
     if (userResult.rows.length === 0) throw { status: 404, message: 'User not found' };
 
     const donations = await db.query(
-        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = $1 ORDER BY created_at DESC`,
+        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = ? ORDER BY created_at DESC`,
         [userId]
     );
 
     const referralResult = await db.query(
         `SELECT COUNT(*) as referred_count,
-                (SELECT COUNT(*) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = $1 AND d.status = 'completed') as donations_from_referrals,
-                (SELECT COALESCE(SUM(d.amount), 0) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = $1 AND d.status = 'completed') as amount_from_referrals
-         FROM users WHERE referred_by = $1`,
-        [userId]
+                (SELECT COUNT(*) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = ? AND d.status = 'completed') as donations_from_referrals,
+                (SELECT COALESCE(SUM(d.amount), 0) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = ? AND d.status = 'completed') as amount_from_referrals
+         FROM users WHERE referred_by = ?`,
+        [userId, userId, userId]
     );
 
     const referredUsers = await db.query(
         `SELECT u.id, u.name, u.email, u.user_type, u.created_at,
-                COALESCE(SUM(d.amount) FILTER (WHERE d.status = 'completed'), 0) as total_donated
+                COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.amount ELSE 0 END), 0) as total_donated
          FROM users u LEFT JOIN donations d ON d.user_id = u.id
-         WHERE u.referred_by = $1 GROUP BY u.id ORDER BY u.created_at DESC`,
+         WHERE u.referred_by = ? GROUP BY u.id ORDER BY u.created_at DESC`,
         [userId]
     );
 
     const eventRegistrations = await db.query(
         `SELECT er.registration_status, er.created_at, e.id as event_id, e.event_name, e.event_type, e.event_date
          FROM event_registrations er JOIN events e ON e.id = er.event_id
-         WHERE er.user_id = $1 ORDER BY er.created_at DESC`,
+         WHERE er.user_id = ? ORDER BY er.created_at DESC`,
         [userId]
     );
 
@@ -240,7 +235,7 @@ const getUserAnalytics = async (userId) => {
         `SELECT cr.id, cr.pan_number, cr.status, cr.requested_at, cr.processed_at,
                 d.amount as donation_amount
          FROM certificate_requests cr LEFT JOIN donations d ON d.id = cr.donation_id
-         WHERE cr.user_id = $1 ORDER BY cr.requested_at DESC`,
+         WHERE cr.user_id = ? ORDER BY cr.requested_at DESC`,
         [userId]
     );
 
@@ -275,15 +270,14 @@ const getUserAnalytics = async (userId) => {
 const getLeaderboard = async ({ limit = 50, userType }) => {
     let query = `SELECT * FROM leaderboard`;
     const params = [];
-    let paramIndex = 1;
 
     if (userType) {
-        query += ` WHERE user_type = $${paramIndex++}`;
+        query += ` WHERE user_type = ?`;
         params.push(userType);
     }
 
     // Re-order after filtering since the view might have different order
-    query += ` ORDER BY score DESC LIMIT $${paramIndex}`;
+    query += ` ORDER BY score DESC LIMIT ?`;
     params.push(limit);
 
     const result = await db.query(query, params);
@@ -327,14 +321,13 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
-    let paramIndex = 1;
 
-    if (status) { whereConditions.push(`cr.status = $${paramIndex++}`); params.push(status); }
+    if (status) { whereConditions.push(`cr.status = ?`); params.push(status); }
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
-    const countResult = await db.query(`SELECT COUNT(*) FROM certificate_requests cr ${whereClause}`, params);
+    const countResult = await db.query(`SELECT COUNT(*) as count FROM certificate_requests cr ${whereClause}`, params);
 
-    params.push(limit, offset);
+    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT cr.id, cr.pan_number, cr.status, cr.admin_notes,
                 cr.requested_at, cr.processed_at,
@@ -345,8 +338,8 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
          LEFT JOIN donations d ON d.id = cr.donation_id
          ${whereClause}
          ORDER BY cr.requested_at DESC
-         LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-        params
+         LIMIT ? OFFSET ?`,
+        paginatedParams
     );
 
     return {
@@ -371,17 +364,18 @@ const updateCertificateStatus = async (id, { status, adminNotes, certificateUrl 
         throw { status: 400, message: 'Invalid status' };
     }
 
-    const result = await db.query(
-        `UPDATE certificate_requests 
-         SET status = COALESCE($1, status),
-             admin_notes = COALESCE($2, admin_notes),
-             certificate_url = COALESCE($3, certificate_url),
-             processed_at = CASE WHEN $1 IN ('approved', 'rejected') THEN NOW() ELSE processed_at END
-         WHERE id = $4 RETURNING *`,
-        [status, adminNotes, certificateUrl, id]
+    const updateResult = await db.query(
+        `UPDATE certificate_requests
+         SET status = COALESCE(?, status),
+             admin_notes = COALESCE(?, admin_notes),
+             certificate_url = COALESCE(?, certificate_url),
+             processed_at = CASE WHEN ? IN ('approved', 'rejected') THEN NOW() ELSE processed_at END
+         WHERE id = ?`,
+        [status, adminNotes, certificateUrl, status, id]
     );
 
-    if (result.rows.length === 0) throw { status: 404, message: 'Certificate request not found' };
+    if (updateResult.rowCount === 0) throw { status: 404, message: 'Certificate request not found' };
+    const result = await db.query('SELECT * FROM certificate_requests WHERE id = ?', [id]);
     return result.rows[0];
 };
 
@@ -390,14 +384,14 @@ const updateCertificateStatus = async (id, { status, adminNotes, certificateUrl 
  */
 const getUserBySlug = async (slug) => {
     const result = await db.query(
-        `SELECT id FROM users WHERE LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '', 'g')) = LOWER(REGEXP_REPLACE($1, '-', ' ', 'g')) AND is_active = true LIMIT 1`,
+        `SELECT id FROM users WHERE LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '')) = LOWER(REGEXP_REPLACE(?, '-', ' ')) AND is_active = true LIMIT 1`,
         [slug]
     );
     if (result.rows.length === 0) {
-        // Fallback: try ILIKE with slug converted to space-separated pattern
+        // Fallback: try LIKE with slug converted to space-separated pattern
         const namePattern = slug.replace(/-/g, ' ');
         const fallback = await db.query(
-            `SELECT id FROM users WHERE name ILIKE $1 AND is_active = true LIMIT 1`,
+            `SELECT id FROM users WHERE name LIKE ? AND is_active = true LIMIT 1`,
             [namePattern]
         );
         if (fallback.rows.length === 0) throw { status: 404, message: 'User not found' };

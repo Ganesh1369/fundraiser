@@ -2,6 +2,7 @@ const db = require('../config/db');
 const xlsx = require('xlsx');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Create a new event
@@ -12,13 +13,14 @@ const createEvent = async (eventData) => {
         description, banner_url
     } = eventData;
 
-    const result = await db.query(
-        `INSERT INTO events (event_name, event_type, event_date, event_location, description, banner_url)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [event_name, event_type, event_date, event_location, description, banner_url]
+    const eventId = uuidv4();
+    await db.query(
+        `INSERT INTO events (id, event_name, event_type, event_date, event_location, description, banner_url)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [eventId, event_name, event_type, event_date, event_location, description, banner_url]
     );
 
+    const result = await db.query('SELECT * FROM events WHERE id = ?', [eventId]);
     return result.rows[0];
 };
 
@@ -29,15 +31,14 @@ const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
-    let paramIndex = 1;
 
     if (search) {
-        whereConditions.push(`event_name ILIKE $${paramIndex++}`);
+        whereConditions.push(`event_name LIKE ?`);
         params.push(`%${search}%`);
     }
 
     if (type) {
-        whereConditions.push(`event_type = $${paramIndex++}`);
+        whereConditions.push(`event_type = ?`);
         params.push(type);
     }
 
@@ -45,15 +46,15 @@ const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
 
     const countResult = await db.query(`SELECT COUNT(*) FROM events ${whereClause}`, params);
 
-    params.push(limit, offset);
+    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
-        `SELECT e.*, 
+        `SELECT e.*,
             (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id AND er.registration_status = 'registered') as registration_count
          FROM events e
          ${whereClause}
          ORDER BY e.event_date DESC
-         LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-        params
+         LIMIT ? OFFSET ?`,
+        paginatedParams
     );
 
     return {
@@ -77,7 +78,7 @@ const getEventById = async (id) => {
     const result = await db.query(
         `SELECT e.*,
             (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id AND er.registration_status = 'registered') as registration_count
-         FROM events e WHERE e.id = $1`,
+         FROM events e WHERE e.id = ?`,
         [id]
     );
 
@@ -94,20 +95,20 @@ const updateEvent = async (id, eventData) => {
         description, banner_url
     } = eventData;
 
-    const result = await db.query(
-        `UPDATE events 
-         SET event_name = COALESCE($1, event_name),
-             event_type = COALESCE($2, event_type),
-             event_date = COALESCE($3, event_date),
-             event_location = COALESCE($4, event_location),
-             description = COALESCE($5, description),
-             banner_url = COALESCE($6, banner_url)
-         WHERE id = $7
-         RETURNING *`,
+    const updateResult = await db.query(
+        `UPDATE events
+         SET event_name = COALESCE(?, event_name),
+             event_type = COALESCE(?, event_type),
+             event_date = COALESCE(?, event_date),
+             event_location = COALESCE(?, event_location),
+             description = COALESCE(?, description),
+             banner_url = COALESCE(?, banner_url)
+         WHERE id = ?`,
         [event_name, event_type, event_date, event_location, description, banner_url, id]
     );
 
-    if (result.rows.length === 0) throw { status: 404, message: 'Event not found' };
+    if (updateResult.rowCount === 0) throw { status: 404, message: 'Event not found' };
+    const result = await db.query('SELECT * FROM events WHERE id = ?', [id]);
     return result.rows[0];
 };
 
@@ -115,15 +116,15 @@ const updateEvent = async (id, eventData) => {
  * Toggle event registration status
  */
 const toggleEventRegistration = async (id) => {
-    const result = await db.query(
-        `UPDATE events 
-         SET registration_open = NOT registration_open 
-         WHERE id = $1 
-         RETURNING *`,
+    const updateResult = await db.query(
+        `UPDATE events
+         SET registration_open = NOT registration_open
+         WHERE id = ?`,
         [id]
     );
 
-    if (result.rows.length === 0) throw { status: 404, message: 'Event not found' };
+    if (updateResult.rowCount === 0) throw { status: 404, message: 'Event not found' };
+    const result = await db.query('SELECT * FROM events WHERE id = ?', [id]);
     return result.rows[0];
 };
 
@@ -133,33 +134,31 @@ const toggleEventRegistration = async (id) => {
 const getEventRegistrations = async (eventId, { page = 1, limit = 20, search }) => {
     const offset = (page - 1) * limit;
     const params = [eventId];
-    let whereConditions = ['er.event_id = $1'];
-    let paramIndex = 2;
+    let whereConditions = ['er.event_id = ?'];
 
     if (search) {
-        whereConditions.push(`(u.name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex} OR u.phone ILIKE $${paramIndex})`);
-        params.push(`%${search}%`);
-        paramIndex++;
+        whereConditions.push(`(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)`);
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const countResult = await db.query(
-        `SELECT COUNT(*) FROM event_registrations er 
-         JOIN users u ON er.user_id = u.id 
+        `SELECT COUNT(*) FROM event_registrations er
+         JOIN users u ON er.user_id = u.id
          ${whereClause}`,
         params
     );
 
-    params.push(limit, offset);
+    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT er.*, u.name, u.email, u.phone
          FROM event_registrations er
          JOIN users u ON er.user_id = u.id
          ${whereClause}
          ORDER BY er.created_at DESC
-         LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-        params
+         LIMIT ? OFFSET ?`,
+        paginatedParams
     );
 
     return {
@@ -183,7 +182,7 @@ const exportEventRegistrations = async (eventId) => {
                 er.registration_status as "Status", er.created_at as "Registered At"
          FROM event_registrations er
          JOIN users u ON er.user_id = u.id
-         WHERE er.event_id = $1
+         WHERE er.event_id = ?
          ORDER BY er.created_at DESC`,
         [eventId]
     );
@@ -200,8 +199,8 @@ const exportEventRegistrations = async (eventId) => {
 const getActiveEvents = async () => {
     const result = await db.query(
         `SELECT id, event_name, event_type, event_date, event_location, description, banner_url
-         FROM events 
-         WHERE is_active = true AND registration_open = true 
+         FROM events
+         WHERE is_active = true AND registration_open = true
          ORDER BY event_date ASC`
     );
     return result.rows;
@@ -213,8 +212,8 @@ const getActiveEvents = async () => {
 const getEventDetails = async (id) => {
     const result = await db.query(
         `SELECT id, event_name, event_type, event_date, event_location, description, banner_url, registration_open
-         FROM events 
-         WHERE id = $1 AND is_active = true`,
+         FROM events
+         WHERE id = ? AND is_active = true`,
         [id]
     );
 
@@ -269,7 +268,7 @@ const registerForEvent = async (eventId, registrationData) => {
 
     // 1. Validate Event
     const eventCheck = await db.query(
-        'SELECT id, registration_open FROM events WHERE id = $1 AND is_active = true',
+        'SELECT id, registration_open FROM events WHERE id = ? AND is_active = true',
         [eventId]
     );
     if (eventCheck.rows.length === 0) throw { status: 404, message: 'Event not found' };
@@ -277,7 +276,7 @@ const registerForEvent = async (eventId, registrationData) => {
 
     // 2. Check User Existence
     const userCheck = await db.query(
-        'SELECT * FROM users WHERE email = $1 OR phone = $2',
+        'SELECT * FROM users WHERE email = ? OR phone = ?',
         [email.toLowerCase(), phone]
     );
 
@@ -298,7 +297,7 @@ const registerForEvent = async (eventId, registrationData) => {
 
         // Check for duplicate registration
         const dupCheck = await db.query(
-            'SELECT id FROM event_registrations WHERE event_id = $1 AND user_id = $2',
+            'SELECT id FROM event_registrations WHERE event_id = ? AND user_id = ?',
             [eventId, userId]
         );
         if (dupCheck.rows.length > 0) {
@@ -320,7 +319,7 @@ const registerForEvent = async (eventId, registrationData) => {
         let isUnique = false;
         while (!isUnique) {
             newReferralCode = generateReferralCode();
-            const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = $1', [newReferralCode]);
+            const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = ?', [newReferralCode]);
             if (codeCheck.rows.length === 0) isUnique = true;
         }
 
@@ -328,14 +327,13 @@ const registerForEvent = async (eventId, registrationData) => {
         const validTypes = ['individual', 'student', 'organization'];
         const selectedType = validTypes.includes(user_type) ? user_type : 'individual';
         const age = calculateAge(date_of_birth);
-        const newUserResult = await db.query(
-            `INSERT INTO users (
-                user_type, name, email, phone, password_hash, referral_code,
-                city, age, email_verified
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
-            RETURNING *`,
-            [selectedType, name, email.toLowerCase(), phone, passwordHash, newReferralCode, city, age]
+        const newUserId = uuidv4();
+        await db.query(
+            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, city, age, email_verified)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)`,
+            [newUserId, selectedType, name, email.toLowerCase(), phone, passwordHash, newReferralCode, city, age]
         );
+        const newUserResult = await db.query('SELECT * FROM users WHERE id = ?', [newUserId]);
         user = newUserResult.rows[0];
         userId = user.id;
     }
@@ -348,7 +346,7 @@ const registerForEvent = async (eventId, registrationData) => {
             experience_level, medical_conditions, allergies, on_medication,
             address_line_1, address_line_2, city, state, pin_code,
             fitness_declaration, terms_accepted
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             eventId, userId, date_of_birth, gender, blood_group,
             emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,

@@ -1,18 +1,15 @@
 -- Wipe all data EXCEPT admin_users
--- Run with: psql -U <user> -d <database> -f wipe-data.sql
+-- Run with: mysql -u <user> -p <database> < wipe-data.sql
 
-BEGIN;
+SET FOREIGN_KEY_CHECKS = 0;
 
--- Tables with foreign keys first (child → parent order)
-TRUNCATE TABLE
-    referral_points_history,
-    certificate_requests,
-    push_subscriptions,
-    event_registrations,
-    donations,
-    otp_verifications,
-    events,
-    users
-CASCADE;
+TRUNCATE TABLE referral_points_history;
+TRUNCATE TABLE certificate_requests;
+TRUNCATE TABLE push_subscriptions;
+TRUNCATE TABLE event_registrations;
+TRUNCATE TABLE donations;
+TRUNCATE TABLE otp_verifications;
+TRUNCATE TABLE events;
+TRUNCATE TABLE users;
 
-COMMIT;
+SET FOREIGN_KEY_CHECKS = 1;

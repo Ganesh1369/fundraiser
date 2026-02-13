@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Get user profile
@@ -8,7 +9,7 @@ const getProfile = async (userId) => {
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
                 city, organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
-         FROM users WHERE id = $1`,
+         FROM users WHERE id = ?`,
         [userId]
     );
     if (result.rows.length === 0) throw { status: 404, message: 'User not found' };
@@ -34,16 +35,17 @@ const updateProfile = async (userId, data) => {
     const validTypes = ['individual', 'student', 'organization'];
     const safeUserType = validTypes.includes(userType) ? userType : undefined;
 
-    const result = await db.query(
+    await db.query(
         `UPDATE users SET
-            name = COALESCE($1, name), age = COALESCE($2, age),
-            phone = COALESCE($3, phone), city = COALESCE($4, city),
-            school_name = COALESCE($5, school_name), class_grade = COALESCE($6, class_grade),
-            organization_name = COALESCE($7, organization_name), pan_number = COALESCE($8, pan_number),
-            user_type = COALESCE($9, user_type)
-         WHERE id = $10 RETURNING id, name, email, user_type`,
+            name = COALESCE(?, name), age = COALESCE(?, age),
+            phone = COALESCE(?, phone), city = COALESCE(?, city),
+            school_name = COALESCE(?, school_name), class_grade = COALESCE(?, class_grade),
+            organization_name = COALESCE(?, organization_name), pan_number = COALESCE(?, pan_number),
+            user_type = COALESCE(?, user_type)
+         WHERE id = ?`,
         [name, age, phone, city, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
     );
+    const result = await db.query('SELECT id, name, email, user_type FROM users WHERE id = ?', [userId]);
     return result.rows[0];
 };
 
@@ -55,19 +57,19 @@ const getDonations = async (userId, period) => {
     const params = [userId];
 
     switch (period) {
-        case 'day': dateFilter = "AND created_at >= NOW() - INTERVAL '1 day'"; break;
-        case 'week': dateFilter = "AND created_at >= NOW() - INTERVAL '1 week'"; break;
-        case 'month': dateFilter = "AND created_at >= NOW() - INTERVAL '1 month'"; break;
-        case 'year': dateFilter = "AND created_at >= NOW() - INTERVAL '1 year'"; break;
+        case 'day': dateFilter = "AND created_at >= NOW() - INTERVAL 1 DAY"; break;
+        case 'week': dateFilter = "AND created_at >= NOW() - INTERVAL 1 WEEK"; break;
+        case 'month': dateFilter = "AND created_at >= NOW() - INTERVAL 1 MONTH"; break;
+        case 'year': dateFilter = "AND created_at >= NOW() - INTERVAL 1 YEAR"; break;
     }
 
     const result = await db.query(
-        `SELECT d.id, d.amount, d.currency, d.status, d.payment_method, 
+        `SELECT d.id, d.amount, d.currency, d.status, d.payment_method,
                 d.razorpay_payment_id, d.created_at, d.request_80g,
                 cr.status as certificate_status
          FROM donations d
          LEFT JOIN certificate_requests cr ON cr.donation_id = d.id
-         WHERE d.user_id = $1 ${dateFilter}
+         WHERE d.user_id = ? ${dateFilter}
          ORDER BY d.created_at DESC`,
         params
     );
@@ -85,11 +87,11 @@ const getDonations = async (userId, period) => {
  */
 const getDonationSummary = async (userId) => {
     const result = await db.query(
-        `SELECT 
+        `SELECT
             COUNT(*) as total_count,
-            COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as total_amount,
-            COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '1 month'), 0) as this_month
-         FROM donations WHERE user_id = $1`,
+            COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_amount,
+            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month
+         FROM donations WHERE user_id = ?`,
         [userId]
     );
     const s = result.rows[0];
@@ -107,12 +109,12 @@ const getReferrals = async (userId, referralCode) => {
     const statsResult = await db.query(
         `SELECT u.referral_points, COUNT(r.id) as referral_count
          FROM users u LEFT JOIN users r ON r.referred_by = u.id
-         WHERE u.id = $1 GROUP BY u.id, u.referral_points`,
+         WHERE u.id = ? GROUP BY u.id, u.referral_points`,
         [userId]
     );
 
     const referredResult = await db.query(
-        `SELECT name, created_at FROM users WHERE referred_by = $1 ORDER BY created_at DESC LIMIT 10`,
+        `SELECT name, created_at FROM users WHERE referred_by = ? ORDER BY created_at DESC LIMIT 10`,
         [userId]
     );
 
@@ -135,7 +137,7 @@ const getReferralPointsHistory = async (userId) => {
         `SELECT rph.points_earned, rph.donor_name, rph.created_at, d.amount as donation_amount
          FROM referral_points_history rph
          JOIN donations d ON d.id = rph.donation_id
-         WHERE rph.user_id = $1 ORDER BY rph.created_at DESC LIMIT 50`,
+         WHERE rph.user_id = ? ORDER BY rph.created_at DESC LIMIT 50`,
         [userId]
     );
     return result.rows.map(r => ({
@@ -152,17 +154,19 @@ const requestCertificate = async (userId, panNumber, donationId) => {
 
     if (donationId) {
         const donationCheck = await db.query(
-            'SELECT id FROM donations WHERE id = $1 AND user_id = $2 AND status = $3',
+            'SELECT id FROM donations WHERE id = ? AND user_id = ? AND status = ?',
             [donationId, userId, 'completed']
         );
         if (donationCheck.rows.length === 0) throw { status: 400, message: 'Invalid donation' };
     }
 
-    const result = await db.query(
-        `INSERT INTO certificate_requests (user_id, donation_id, pan_number)
-         VALUES ($1, $2, $3) RETURNING id, status, requested_at`,
-        [userId, donationId || null, panNumber.toUpperCase()]
+    const certId = uuidv4();
+    await db.query(
+        `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number)
+         VALUES (?, ?, ?, ?)`,
+        [certId, userId, donationId || null, panNumber.toUpperCase()]
     );
+    const result = await db.query('SELECT id, status, requested_at FROM certificate_requests WHERE id = ?', [certId]);
     return result.rows[0];
 };
 
@@ -175,7 +179,7 @@ const getCertificateRequests = async (userId) => {
                 d.amount as donation_amount, d.created_at as donation_date
          FROM certificate_requests cr
          LEFT JOIN donations d ON d.id = cr.donation_id
-         WHERE cr.user_id = $1
+         WHERE cr.user_id = ?
          ORDER BY cr.requested_at DESC`,
         [userId]
     );
@@ -196,7 +200,7 @@ const getUserEvents = async (userId) => {
                 er.registration_status, er.created_at as registered_at
          FROM event_registrations er
          JOIN events e ON e.id = er.event_id
-         WHERE er.user_id = $1
+         WHERE er.user_id = ?
          ORDER BY e.event_date DESC`,
         [userId]
     );
@@ -207,7 +211,7 @@ const getUserEvents = async (userId) => {
  * Update profile picture path
  */
 const updateProfilePic = async (userId, profilePic) => {
-    await db.query('UPDATE users SET profile_pic = $1 WHERE id = $2', [profilePic, userId]);
+    await db.query('UPDATE users SET profile_pic = ? WHERE id = ?', [profilePic, userId]);
 };
 
 module.exports = {

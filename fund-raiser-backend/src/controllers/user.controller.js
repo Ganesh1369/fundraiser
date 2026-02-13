@@ -112,8 +112,8 @@ exports.subscribePush = async (req, res, next) => {
         const db = require('../config/db');
         await db.query(
             `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (user_id) DO UPDATE SET endpoint = EXCLUDED.endpoint, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`,
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE endpoint = VALUES(endpoint), p256dh = VALUES(p256dh), auth = VALUES(auth)`,
             [req.user.id, endpoint, keys.p256dh, keys.auth]
         );
         res.json({ success: true, message: 'Push subscription saved' });

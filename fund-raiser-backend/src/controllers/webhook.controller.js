@@ -53,21 +53,24 @@ async function handlePaymentCaptured(payment) {
         await client.query('BEGIN');
 
         // Update donation status
-        const result = await client.query(
-            `UPDATE donations 
-             SET status = 'completed', razorpay_payment_id = $1, payment_method = $2
-             WHERE razorpay_order_id = $3 AND status = 'pending'
-             RETURNING id, amount, referrer_id, user_id`,
+        const updateResult = await client.query(
+            `UPDATE donations
+             SET status = 'completed', razorpay_payment_id = ?, payment_method = ?
+             WHERE razorpay_order_id = ? AND status = 'pending'`,
             [payment.id, payment.method, payment.order_id]
         );
 
-        if (result.rows.length > 0) {
-            const donation = result.rows[0];
+        if (updateResult.rowCount > 0) {
+            const donationResult = await client.query(
+                'SELECT id, amount, referrer_id, user_id FROM donations WHERE razorpay_order_id = ?',
+                [payment.order_id]
+            );
+            const donation = donationResult.rows[0];
 
             // Award referral points if not already awarded
             if (donation.referrer_id) {
                 const checkPoints = await client.query(
-                    'SELECT points_awarded FROM donations WHERE id = $1',
+                    'SELECT points_awarded FROM donations WHERE id = ?',
                     [donation.id]
                 );
 
@@ -76,23 +79,23 @@ async function handlePaymentCaptured(payment) {
 
                     // Get donor name
                     const userResult = await client.query(
-                        'SELECT name FROM users WHERE id = $1',
+                        'SELECT name FROM users WHERE id = ?',
                         [donation.user_id]
                     );
 
                     await client.query(
-                        'UPDATE users SET referral_points = referral_points + $1 WHERE id = $2',
+                        'UPDATE users SET referral_points = referral_points + ? WHERE id = ?',
                         [pointsToAward, donation.referrer_id]
                     );
 
                     await client.query(
                         `INSERT INTO referral_points_history (user_id, donation_id, points_earned, donor_name)
-                         VALUES ($1, $2, $3, $4)`,
+                         VALUES (?, ?, ?, ?)`,
                         [donation.referrer_id, donation.id, pointsToAward, userResult.rows[0].name]
                     );
 
                     await client.query(
-                        'UPDATE donations SET points_awarded = true WHERE id = $1',
+                        'UPDATE donations SET points_awarded = true WHERE id = ?',
                         [donation.id]
                     );
                 }
@@ -113,7 +116,7 @@ async function handlePaymentCaptured(payment) {
 // Handle failed payment
 async function handlePaymentFailed(payment) {
     await db.query(
-        `UPDATE donations SET status = 'failed' WHERE razorpay_order_id = $1`,
+        `UPDATE donations SET status = 'failed' WHERE razorpay_order_id = ?`,
         [payment.order_id]
     );
     console.log(`Payment failed for order: ${payment.order_id}`);
@@ -122,7 +125,7 @@ async function handlePaymentFailed(payment) {
 // Handle refund
 async function handleRefundCreated(refund, payment) {
     await db.query(
-        `UPDATE donations SET status = 'refunded' WHERE razorpay_payment_id = $1`,
+        `UPDATE donations SET status = 'refunded' WHERE razorpay_payment_id = ?`,
         [payment.id]
     );
     console.log(`Refund created for payment: ${payment.id}`);
