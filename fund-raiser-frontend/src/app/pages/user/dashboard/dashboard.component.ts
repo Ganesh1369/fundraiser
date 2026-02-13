@@ -81,6 +81,8 @@ export class DashboardComponent implements OnInit {
 
     profile: any = null;
     profileIncomplete = false;
+    addressIncomplete = false;
+    showAddressPrompt = false;
 
     constructor(
         private router: Router,
@@ -323,6 +325,15 @@ export class DashboardComponent implements OnInit {
             this.profileIncomplete = !this.profile.organizationName || !this.profile.panNumber;
         } else {
             this.profileIncomplete = false;
+        }
+        this.addressIncomplete = !this.profile.addressLine1 || !this.profile.city || !this.profile.state || !this.profile.pincode;
+    }
+
+    onDonateClick(): void {
+        if (this.addressIncomplete) {
+            this.showAddressPrompt = true;
+        } else {
+            this.showDonateModal = true;
         }
     }
 

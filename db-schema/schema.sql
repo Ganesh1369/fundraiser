@@ -17,10 +17,13 @@ CREATE TABLE users (
     class_grade VARCHAR(50),
     school_name VARCHAR(200),
 
-    -- Location Details
+    -- Address
+    address_line_1 VARCHAR(255),
+    address_line_2 VARCHAR(255),
     area VARCHAR(100),
-    locality VARCHAR(100),
     city VARCHAR(100),
+    state VARCHAR(100),
+    pincode VARCHAR(10),
 
     -- Organization Details (for organizations)
     organization_name VARCHAR(200),

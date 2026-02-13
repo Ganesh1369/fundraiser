@@ -16,7 +16,6 @@ interface RegistrationData {
     confirmPassword: string;
     classGrade: string;
     schoolName: string;
-    city: string;
     organizationName: string;
     panNumber: string;
     referralCode: string;
@@ -31,7 +30,7 @@ interface RegistrationData {
 })
 export class RegisterComponent {
     currentStep = 1;
-    totalSteps = 6; // Added OTP step
+    totalSteps = 5;
     isLoading = false;
     errorMessage = '';
     successMessage = '';
@@ -55,7 +54,6 @@ export class RegisterComponent {
         confirmPassword: '',
         classGrade: '',
         schoolName: '',
-        city: '',
         organizationName: '',
         panNumber: '',
         referralCode: ''
@@ -76,8 +74,7 @@ export class RegisterComponent {
             case 2: return 'Personal Details';
             case 3: return 'Contact Information';
             case 4: return 'Verify Your Email';
-            case 5: return 'Location Details';
-            case 6: return 'Additional Information';
+            case 5: return 'Additional Information';
             default: return '';
         }
     }
@@ -172,8 +169,6 @@ export class RegisterComponent {
             case 4:
                 return this.otpVerified;
             case 5:
-                return !!this.data.city;
-            case 6:
                 if (this.data.userType === 'student') return !!this.data.schoolName;
                 if (this.data.userType === 'organization') return !!this.data.organizationName && !!this.data.panNumber;
                 return true;
@@ -231,7 +226,6 @@ export class RegisterComponent {
             password: this.data.password,
             classGrade: this.data.classGrade,
             schoolName: this.data.schoolName,
-            city: this.data.city,
             organizationName: this.data.organizationName,
             panNumber: this.data.panNumber,
             referralCode: this.data.referralCode

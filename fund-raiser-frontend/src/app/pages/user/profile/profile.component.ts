@@ -23,7 +23,8 @@ export class ProfileComponent implements OnInit {
     showImageViewer = false;
 
     profileForm: any = {
-        name: '', phone: '', city: '',
+        name: '', phone: '',
+        addressLine1: '', addressLine2: '', area: '', city: '', state: '', pincode: '',
         age: '', classGrade: '', schoolName: '',
         organizationName: '', panNumber: '', userType: ''
     };
@@ -78,7 +79,12 @@ export class ProfileComponent implements OnInit {
         this.profileForm = {
             name: this.profile.name || '',
             phone: this.profile.phone || '',
+            addressLine1: this.profile.addressLine1 || '',
+            addressLine2: this.profile.addressLine2 || '',
+            area: this.profile.area || '',
             city: this.profile.city || '',
+            state: this.profile.state || '',
+            pincode: this.profile.pincode || '',
             age: this.profile.age || '',
             classGrade: this.profile.classGrade || '',
             schoolName: this.profile.schoolName || '',

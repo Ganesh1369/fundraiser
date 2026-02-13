@@ -4,11 +4,11 @@
         <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-3">
             <a routerLink="/" class="flex items-center gap-2 text-lg font-bold text-accent no-underline shrink-0">
                 <img src="/ice_logo.svg" alt="ICE" class="h-6">
-                <span class="hidden sm:inline">Prima<span class="text-primary">thon'26</span></span>
+                <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
             </a>
             <div class="flex items-center gap-1.5 sm:gap-2">
                 <button class="px-3 sm:px-4 py-2 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
-                    (click)="showDonateModal = true">
+                    (click)="onDonateClick()">
                     Donate
                 </button>
                 @if (user?.userType === 'organization' || user?.userType === 'individual') {
@@ -73,7 +73,7 @@
                     </p>
                 </div>
                 <button class="shrink-0 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
-                    (click)="showDonateModal = true">
+                    (click)="onDonateClick()">
                     Contribute Now
                 </button>
             </div>
@@ -141,7 +141,7 @@
                         <div class="w-14 h-14 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="inbox" class="w-7 h-7 text-neutral-400"></lucide-icon></div>
                         <p class="text-sm text-neutral-500 mb-4">No donations yet. Start your giving journey!</p>
                         <button class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
-                            (click)="showDonateModal = true">Make First Donation</button>
+                            (click)="onDonateClick()">Make First Donation</button>
                     </div>
                     } @else {
                     <div class="flex flex-col gap-3">
@@ -261,6 +261,28 @@
             }
         </div>
     </main>
+
+    <!-- Address Incomplete Prompt -->
+    @if (showAddressPrompt) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showAddressPrompt = false">
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out] text-center" (click)="$event.stopPropagation()">
+            <div class="px-6 py-8">
+                <div class="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <lucide-icon name="map-pin" class="w-7 h-7 text-amber-500"></lucide-icon>
+                </div>
+                <h2 class="text-lg font-bold text-accent mb-2">Almost there!</h2>
+                <p class="text-sm text-neutral-500 mb-6">Please complete your address in your profile to start donating. It only takes a moment.</p>
+                <div class="flex gap-3">
+                    <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
+                        (click)="showAddressPrompt = false">Later</button>
+                    <a routerLink="/profile" class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 transition-colors text-sm no-underline flex items-center justify-center gap-1">
+                        Complete Profile <lucide-icon name="arrow-right" class="w-4 h-4"></lucide-icon>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
 
     <!-- Donate Modal -->
     @if (showDonateModal) {

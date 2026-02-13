@@ -7,7 +7,8 @@ const { v4: uuidv4 } = require('uuid');
 const getProfile = async (userId) => {
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, pan_number, profile_pic,
+                address_line_1, address_line_2, area, city, state, pincode,
+                organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
          FROM users WHERE id = ?`,
         [userId]
@@ -18,7 +19,10 @@ const getProfile = async (userId) => {
     return {
         id: u.id, userType: u.user_type, name: u.name, age: u.age,
         email: u.email, phone: u.phone, classGrade: u.class_grade,
-        schoolName: u.school_name, city: u.city, organizationName: u.organization_name,
+        schoolName: u.school_name,
+        addressLine1: u.address_line_1, addressLine2: u.address_line_2,
+        area: u.area, city: u.city, state: u.state, pincode: u.pincode,
+        organizationName: u.organization_name,
         panNumber: u.pan_number, profilePic: u.profile_pic,
         referralCode: u.referral_code,
         referralPoints: u.referral_points, createdAt: u.created_at
@@ -29,7 +33,7 @@ const getProfile = async (userId) => {
  * Update user profile
  */
 const updateProfile = async (userId, data) => {
-    const { name, age, phone, city, schoolName, classGrade, organizationName, panNumber, userType } = data;
+    const { name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, userType } = data;
 
     // Validate userType if provided
     const validTypes = ['individual', 'student', 'organization'];
@@ -38,12 +42,15 @@ const updateProfile = async (userId, data) => {
     await db.query(
         `UPDATE users SET
             name = COALESCE(?, name), age = COALESCE(?, age),
-            phone = COALESCE(?, phone), city = COALESCE(?, city),
+            phone = COALESCE(?, phone),
+            address_line_1 = COALESCE(?, address_line_1), address_line_2 = COALESCE(?, address_line_2),
+            area = COALESCE(?, area), city = COALESCE(?, city),
+            state = COALESCE(?, state), pincode = COALESCE(?, pincode),
             school_name = COALESCE(?, school_name), class_grade = COALESCE(?, class_grade),
             organization_name = COALESCE(?, organization_name), pan_number = COALESCE(?, pan_number),
             user_type = COALESCE(?, user_type)
          WHERE id = ?`,
-        [name, age, phone, city, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
+        [name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
     );
     const result = await db.query('SELECT id, name, email, user_type FROM users WHERE id = ?', [userId]);
     return result.rows[0];
