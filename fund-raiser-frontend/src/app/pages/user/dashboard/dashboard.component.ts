@@ -171,8 +171,8 @@ export class DashboardComponent implements OnInit {
                         key: res.data.keyId,
                         amount: res.data.amount,
                         currency: res.data.currency,
-                        name: 'Primathon\'26',
-                        description: 'Primathon\'26 Donation',
+                        name: 'ICE Network',
+                        description: 'ICE Network Donation',
                         order_id: res.data.orderId,
                         handler: (response: any) => {
                             this.zone.run(() => {
@@ -271,14 +271,14 @@ export class DashboardComponent implements OnInit {
 
     shareOnWhatsApp(): void {
         if (this.referralStats?.referralLink) {
-            const text = `Join me at Primathon'26 — run for a healthier, greener city! Use my referral link: ${this.referralStats.referralLink}`;
+            const text = `Join ICE Network — for a healthier, greener city! Use my referral link: ${this.referralStats.referralLink}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
     }
 
     shareOnTwitter(): void {
         if (this.referralStats?.referralLink) {
-            const text = `Join me at Primathon'26 — run for a healthier, greener city!`;
+            const text = `Join ICE Network — for a healthier, greener city!`;
             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(this.referralStats.referralLink)}`, '_blank');
         }
     }

@@ -10,5 +10,5 @@ import { ToastComponent } from './components/toast/toast.component';
   styleUrl: './app.css'
 })
 export class App {
-  title = 'Primathon\'26';
+  title = 'ICE Network';
 }

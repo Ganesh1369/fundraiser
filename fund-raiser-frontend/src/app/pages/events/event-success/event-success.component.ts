@@ -11,9 +11,9 @@ import { LucideAngularModule } from 'lucide-angular';
     <div class="min-h-screen flex items-center justify-center px-5 py-10 bg-cover bg-center bg-no-repeat" style="background-image: url('/vivid-blurred-colorful-background.jpg')">
       <div class="w-full max-w-md text-center bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-elevated p-8 md:p-10 animate-[fadeIn_0.5s_ease-out]">
         <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-5"><lucide-icon name="party-popper" class="w-10 h-10"></lucide-icon></div>
-        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-3">Welcome to Primathon'26!</h1>
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-3">Welcome to ICE Network!</h1>
         <p class="text-sm text-neutral-500 leading-relaxed mb-8">
-          You're officially registered for Primathon'26! Check your email for your runner details and event day instructions.
+          You're officially registered! Check your email for your details and event day instructions.
         </p>
 
         <div class="flex flex-col sm:flex-row gap-3 justify-center mb-8">

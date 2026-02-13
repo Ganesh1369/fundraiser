@@ -278,7 +278,7 @@ export class RegisterComponent {
             key: order.keyId,
             amount: order.amount,
             currency: order.currency,
-            name: "Primathon'26",
+            name: "ICE Network",
             description: 'Registration Fee',
             order_id: order.orderId,
             handler: (response: any) => {

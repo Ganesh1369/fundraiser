@@ -21,7 +21,7 @@ const emailWrapper = (content) => `
     <div style="font-family: 'DM Sans', 'Inter', Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 0; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e5e5; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
         <div style="background: #102a43; padding: 24px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">
-                <span style="color: #22c55e;">Primathon</span>'26
+                <span style="color: #22c55e;">ICE</span> Network
             </h1>
             <p style="color: rgba(255,255,255,0.6); margin: 4px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">ICE — Institute for Climate and Environment</p>
         </div>
@@ -39,9 +39,9 @@ const emailWrapper = (content) => `
  */
 const sendOtpEmail = async (to, otp) => {
     const mailOptions = {
-        from: `"Primathon'26" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to,
-        subject: "Verify Your Email — Primathon'26",
+        subject: "Verify Your Email — ICE Network",
         html: emailWrapper(`
             <p style="color: #525252; margin: 0 0 4px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Email Verification</p>
             <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 28px; text-align: center; margin: 20px 0;">
@@ -59,9 +59,9 @@ const sendOtpEmail = async (to, otp) => {
  */
 const sendPasswordResetEmail = async (to, otp) => {
     const mailOptions = {
-        from: `"Primathon'26" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to,
-        subject: "Reset Your Password — Primathon'26",
+        subject: "Reset Your Password — ICE Network",
         html: emailWrapper(`
             <p style="color: #525252; margin: 0 0 4px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Password Reset</p>
             <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 28px; text-align: center; margin: 20px 0;">
@@ -82,7 +82,7 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
     const formattedDate = new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const mailOptions = {
-        from: `"Primathon'26" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to,
         subject: `Thank You for Your Donation of ${formattedAmount}!`,
         html: emailWrapper(`
@@ -116,7 +116,7 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
  */
 const sendCertificateApprovedEmail = async (to, name) => {
     const mailOptions = {
-        from: `"Primathon'26" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to,
         subject: "Your 80G Certificate Request is Approved!",
         html: emailWrapper(`

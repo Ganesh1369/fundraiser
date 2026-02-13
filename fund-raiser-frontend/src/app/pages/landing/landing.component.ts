@@ -73,8 +73,8 @@ export class LandingComponent {
 
     shareEvent(): void {
         const shareData = {
-            title: "Primathon'26 — Our City · Our Future",
-            text: "Join me at Primathon'26! A marathon for a healthier, greener city. 15th Feb, 6 AM, Primrose Schools, ECR, Chennai.",
+            title: "ICE Network — Our City · Our Future",
+            text: "Join ICE Network! A movement for a healthier, greener city. 15th Feb, 6 AM, Primrose Schools, ECR, Chennai.",
             url: window.location.origin
         };
         if (navigator.share) {
