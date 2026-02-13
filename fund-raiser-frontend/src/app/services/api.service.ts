@@ -31,12 +31,18 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/auth/validate-referral/${code}`);
     }
 
-    sendOtp(email: string, purpose: string = 'register'): Observable<any> {
-        return this.http.post(`${this.apiUrl}/auth/send-otp`, { email, purpose });
+    sendOtp(identifier: string, purpose: string = 'register'): Observable<any> {
+        const body = purpose === 'register'
+            ? { phone: identifier, purpose }
+            : { email: identifier, purpose };
+        return this.http.post(`${this.apiUrl}/auth/send-otp`, body);
     }
 
-    verifyOtp(email: string, otp: string, purpose: string = 'register'): Observable<any> {
-        return this.http.post(`${this.apiUrl}/auth/verify-otp`, { email, otp, purpose });
+    verifyOtp(identifier: string, otp: string, purpose: string = 'register'): Observable<any> {
+        const body = purpose === 'register'
+            ? { phone: identifier, otp, purpose }
+            : { email: identifier, otp, purpose };
+        return this.http.post(`${this.apiUrl}/auth/verify-otp`, body);
     }
 
     forgotPassword(email: string): Observable<any> {

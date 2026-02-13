@@ -3,9 +3,15 @@ const authService = require('../services/auth.service');
 // Send OTP
 exports.sendOtp = async (req, res, next) => {
     try {
-        const { email, purpose } = req.body;
-        if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
-        const result = await authService.sendOtp(email, purpose || 'register');
+        const { phone, email, purpose } = req.body;
+        const effectivePurpose = purpose || 'register';
+        // For registration, use phone; for reset_password, use email
+        const identifier = effectivePurpose === 'register' ? phone : email;
+        if (!identifier) {
+            const field = effectivePurpose === 'register' ? 'Phone number' : 'Email';
+            return res.status(400).json({ success: false, message: `${field} is required` });
+        }
+        const result = await authService.sendOtp(identifier, effectivePurpose);
         res.json({ success: true, message: result.message });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });
@@ -16,9 +22,14 @@ exports.sendOtp = async (req, res, next) => {
 // Verify OTP
 exports.verifyOtp = async (req, res, next) => {
     try {
-        const { email, otp, purpose } = req.body;
-        if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
-        const result = await authService.verifyOtp(email, otp, purpose || 'register');
+        const { phone, email, otp, purpose } = req.body;
+        const effectivePurpose = purpose || 'register';
+        const identifier = effectivePurpose === 'register' ? phone : email;
+        if (!identifier || !otp) {
+            const field = effectivePurpose === 'register' ? 'Phone number' : 'Email';
+            return res.status(400).json({ success: false, message: `${field} and OTP are required` });
+        }
+        const result = await authService.verifyOtp(identifier, otp, effectivePurpose);
         res.json({ success: true, data: result });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });

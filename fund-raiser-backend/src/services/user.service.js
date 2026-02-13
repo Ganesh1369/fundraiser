@@ -33,16 +33,16 @@ const getProfile = async (userId) => {
  * Update user profile
  */
 const updateProfile = async (userId, data) => {
-    const { name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, userType } = data;
+    const { name, age, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, userType } = data;
 
     // Validate userType if provided
     const validTypes = ['individual', 'student', 'organization'];
     const safeUserType = validTypes.includes(userType) ? userType : undefined;
 
+    // Note: phone and email are not updatable by the user
     await db.query(
         `UPDATE users SET
             name = COALESCE(?, name), age = COALESCE(?, age),
-            phone = COALESCE(?, phone),
             address_line_1 = COALESCE(?, address_line_1), address_line_2 = COALESCE(?, address_line_2),
             area = COALESCE(?, area), city = COALESCE(?, city),
             state = COALESCE(?, state), pincode = COALESCE(?, pincode),
@@ -50,7 +50,7 @@ const updateProfile = async (userId, data) => {
             organization_name = COALESCE(?, organization_name), pan_number = COALESCE(?, pan_number),
             user_type = COALESCE(?, user_type)
          WHERE id = ?`,
-        [name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
+        [name, age, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
     );
     const result = await db.query('SELECT id, name, email, user_type FROM users WHERE id = ?', [userId]);
     return result.rows[0];

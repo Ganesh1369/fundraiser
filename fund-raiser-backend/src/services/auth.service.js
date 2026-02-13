@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('./email.service');
+const smsService = require('./sms.service');
 
 /**
  * Generate unique referral code
@@ -25,37 +26,39 @@ const generateOtp = () => {
 };
 
 /**
- * Send OTP for email verification
+ * Send OTP for verification
+ * For registration: identifier is phone number, sent via SMS
+ * For reset_password: identifier is email, sent via email
  */
-const sendOtp = async (email, purpose = 'register') => {
-    // Block OTP for already-registered emails during registration
+const sendOtp = async (identifier, purpose = 'register') => {
     if (purpose === 'register') {
-        const existing = await db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+        // identifier is phone number — check phone uniqueness
+        const existing = await db.query('SELECT id FROM users WHERE phone = ?', [identifier]);
         if (existing.rows.length > 0) {
-            throw { status: 400, message: 'Email already registered. Please sign in instead.' };
+            throw { status: 400, message: 'Phone number already registered. Please sign in instead.' };
         }
     }
 
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Invalidate previous OTPs for this email+purpose
+    // Invalidate previous OTPs for this identifier+purpose
     await db.query(
         `UPDATE otp_verifications SET verified = true WHERE email = ? AND purpose = ? AND verified = false`,
-        [email.toLowerCase(), purpose]
+        [identifier.toLowerCase(), purpose]
     );
 
-    // Store new OTP
+    // Store new OTP (email column stores phone for registration)
     await db.query(
         `INSERT INTO otp_verifications (email, otp, purpose, expires_at) VALUES (?, ?, ?, ?)`,
-        [email.toLowerCase(), otp, purpose, expiresAt]
+        [identifier.toLowerCase(), otp, purpose, expiresAt]
     );
 
-    // Send email
+    // Send OTP
     if (purpose === 'register') {
-        await emailService.sendOtpEmail(email, otp);
+        await smsService.sendOtpSms(identifier, otp);
     } else {
-        await emailService.sendPasswordResetEmail(email, otp);
+        await emailService.sendPasswordResetEmail(identifier, otp);
     }
 
     return { message: 'OTP sent successfully' };

@@ -73,7 +73,7 @@ export class RegisterComponent {
             case 1: return 'Choose Your Role';
             case 2: return 'Personal Details';
             case 3: return 'Contact Information';
-            case 4: return 'Verify Your Email';
+            case 4: return 'Verify Your Phone';
             case 5: return 'Additional Information';
             default: return '';
         }
@@ -98,20 +98,20 @@ export class RegisterComponent {
     }
 
     sendOtp(): void {
-        if (!this.data.email) {
-            this.errorMessage = 'Please enter your email first';
+        if (!this.data.phone) {
+            this.errorMessage = 'Please enter your phone number first';
             return;
         }
         this.isLoading = true;
         this.errorMessage = '';
         this.successMessage = '';
 
-        this.api.sendOtp(this.data.email, 'register').subscribe({
+        this.api.sendOtp(this.data.phone, 'register').subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
                     this.otpSent = true;
-                    this.successMessage = 'OTP sent to your email!';
+                    this.successMessage = 'OTP sent to your phone!';
                     this.currentStep = 4;
                 } else {
                     this.errorMessage = res.message || 'Failed to send OTP';
@@ -136,12 +136,12 @@ export class RegisterComponent {
         this.isLoading = true;
         this.errorMessage = '';
 
-        this.api.verifyOtp(this.data.email, this.otp, 'register').subscribe({
+        this.api.verifyOtp(this.data.phone, this.otp, 'register').subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
                     this.otpVerified = true;
-                    this.successMessage = 'Email verified! ✓';
+                    this.successMessage = 'Phone verified successfully!';
                     // Auto-advance after short delay
                     setTimeout(() => this.nextStep(), 800);
                     this.cdr.detectChanges();
