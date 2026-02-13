@@ -11,7 +11,7 @@
                     (click)="showDonateModal = true">
                     Donate
                 </button>
-                @if (user?.userType === 'organization') {
+                @if (user?.userType === 'organization' || user?.userType === 'individual') {
                 <button class="px-3 sm:px-4 py-2 border border-neutral-200 text-xs sm:text-sm font-medium text-neutral-700 rounded-xl hover:border-primary hover:text-primary transition-all"
                     (click)="openCertificateModal()">
                     <span class="sm:hidden">80G</span>
@@ -229,7 +229,7 @@
             </div>
 
             <!-- Certificate Requests (for org users) -->
-            @if (user?.userType === 'organization' && certificateRequests.length > 0) {
+            @if ((user?.userType === 'organization' || user?.userType === 'individual') && certificateRequests.length > 0) {
             <div class="lg:col-span-5 bg-white rounded-2xl shadow-soft overflow-hidden">
                 <div class="px-6 py-4 border-b border-neutral-100">
                     <h2 class="text-base font-semibold text-accent m-0">80G Certificate Requests</h2>
@@ -292,7 +292,7 @@
                         [(ngModel)]="donationAmount" min="1" placeholder="Enter amount in &#8377;">
                 </div>
 
-                @if (user?.userType === 'organization') {
+                @if (user?.userType === 'organization' || user?.userType === 'individual') {
                 <label class="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer">
                     <input type="checkbox" [(ngModel)]="request80g" class="w-4 h-4 accent-primary">
                     <span>Request 80G certificate for this donation</span>

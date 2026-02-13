@@ -116,7 +116,7 @@ export class DashboardComponent implements OnInit {
             referrals: this.api.getReferrals()
         };
 
-        if (this.user?.userType === 'organization') {
+        if (this.user?.userType === 'organization' || this.user?.userType === 'individual') {
             calls['certificates'] = this.api.getCertificateRequests();
         }
 
