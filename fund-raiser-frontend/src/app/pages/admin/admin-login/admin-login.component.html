@@ -1,39 +1,58 @@
-<div class="auth-page admin-login">
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <a routerLink="/" class="logo">
-                    <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
-                    <span class="logo-text">ICE<span class="text-gradient"> Portal</span></span>
+<div class="min-h-screen flex items-center justify-center px-5 py-10 bg-cover bg-center bg-no-repeat relative overflow-hidden" style="background-image: url('/vivid-blurred-colorful-background.jpg')">
+    <div class="w-full max-w-md relative z-10">
+        <div class="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-elevated p-8 md:p-10">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <a routerLink="/" class="inline-flex items-center gap-2 text-accent font-bold text-lg no-underline mb-4">
+                    <img src="/ice_logo.svg" alt="ICE" class="h-6">
+                    <span>ICE<span class="text-primary"> Portal</span></span>
                 </a>
-                <div class="admin-badge">Admin Portal</div>
-                <h1>Admin Login</h1>
-                <p>Access the administration panel</p>
+                <div class="mb-4">
+                    <span class="inline-block px-4 py-1.5 bg-accent text-white rounded-full text-xs font-semibold tracking-wide">Admin Portal</span>
+                </div>
+                <h1 class="text-2xl font-bold text-accent mb-1">Admin Login</h1>
+                <p class="text-sm text-neutral-400">Access the administration panel</p>
             </div>
 
+            <!-- Error -->
             @if (errorMessage) {
-            <div class="error-message">
-                <lucide-icon name="alert-triangle" class="w-4 h-4"></lucide-icon>
+            <div class="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm mb-5">
+                <lucide-icon name="alert-triangle" class="w-4 h-4 shrink-0"></lucide-icon>
                 {{ errorMessage }}
             </div>
             }
 
-            <form (ngSubmit)="onSubmit()" class="auth-form">
-                <div class="input-group">
-                    <label class="input-label">Username</label>
-                    <input type="text" class="input" placeholder="Enter admin username" [(ngModel)]="username"
-                        name="username" required>
+            <!-- Form -->
+            <form (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Username</label>
+                    <input type="text"
+                        class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Enter admin username" [(ngModel)]="username" name="username" required>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">Password</label>
-                    <input type="password" class="input" placeholder="Enter password" [(ngModel)]="password"
-                        name="password" required>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Password</label>
+                    <div class="relative">
+                        <input [type]="showPassword ? 'text' : 'password'"
+                            class="w-full px-4 py-3 pr-12 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            placeholder="Enter password" [(ngModel)]="password" name="password" required>
+                        <button type="button" (click)="showPassword = !showPassword"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                            @if (showPassword) {
+                            <lucide-icon name="eye-off" class="w-5 h-5"></lucide-icon>
+                            } @else {
+                            <lucide-icon name="eye" class="w-5 h-5"></lucide-icon>
+                            }
+                        </button>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="isLoading">
+                <button type="submit"
+                    class="w-full py-3.5 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 mt-2"
+                    [disabled]="isLoading">
                     @if (isLoading) {
-                    <span class="spinner"></span>
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Signing in...
                     } @else {
                     Access Admin Panel
@@ -41,14 +60,10 @@
                 </button>
             </form>
 
-            <div class="auth-footer">
-                <a routerLink="/login">← Back to User Login</a>
+            <!-- Footer -->
+            <div class="text-center mt-6 pt-5 border-t border-neutral-100">
+                <a routerLink="/login" class="text-sm text-neutral-500 no-underline hover:text-neutral-700 transition-colors">&larr; Back to User Login</a>
             </div>
         </div>
-    </div>
-
-    <div class="auth-bg">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
     </div>
 </div>

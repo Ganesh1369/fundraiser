@@ -53,25 +53,16 @@ export class LandingComponent {
         }
     ];
 
-    testimonials = [
-        {
-            name: 'BSG',
-            role: 'Gold Sponsor',
-            text: 'Proud to support Primathon\'26 and ICE\'s mission for a sustainable future.',
-            avatar: 'BS'
-        },
-        {
-            name: 'Kaleesuwari Foundations',
-            role: 'Silver Sponsor',
-            text: 'Committed to building healthier communities through events like Primathon.',
-            avatar: 'KF'
-        },
-        {
-            name: 'Rotary Club of Madras',
-            role: 'Community Partner',
-            text: 'Together we can create lasting impact for our city and our future.',
-            avatar: 'RC'
-        }
+    sponsors = [
+        { name: 'BG Solar', tier: 'Gold Sponsor', logo: '/sponsors/bsg.svg', url: 'https://bgsolar.co.in/' },
+        { name: 'Kaleesuwari Foundations', tier: 'Silver Sponsor', logo: '/sponsors/kaleesuwari.svg', url: 'https://kaleesuwari.com/' },
+        { name: 'Primrose Schools', tier: 'Venue Partner', logo: '/sponsors/primrose.png', url: 'https://www.primroseschools.in/' },
+        { name: 'Rotary Club of Madras', tier: 'Community Partner', logo: '/sponsors/rotary.png', url: 'https://www.rotarymadras.in/' },
+        { name: 'Apollo Shine', tier: 'Health Partner', logo: '/sponsors/apollo-shine.png', url: 'https://apolloshinefoundation.org/' },
+        { name: 'VayuJal', tier: 'Hydration Partner', logo: '/sponsors/vayujal.png', url: 'https://vayujal.com/' },
+        { name: 'Orange Ray', tier: 'Wellness Partner', logo: '/sponsors/orange-ray.jpg', url: 'https://www.orangeray.in/' },
+        { name: 'Event Partner', tier: 'Event Partner', logo: '', url: '' },
+        { name: 'Chennai Volunteers', tier: 'Volunteers Support', logo: '/sponsors/chennai-volunteers.jpg', url: 'https://chennaivolunteers.org/' },
     ];
 
     currentYear = new Date().getFullYear();
@@ -79,4 +70,22 @@ export class LandingComponent {
     toggleMobileMenu(): void {
         this.mobileMenuOpen = !this.mobileMenuOpen;
     }
+
+    shareEvent(): void {
+        const shareData = {
+            title: "Primathon'26 — Our City · Our Future",
+            text: "Join me at Primathon'26! A marathon for a healthier, greener city. 15th Feb, 6 AM, Primrose Schools, ECR, Chennai.",
+            url: window.location.origin
+        };
+        if (navigator.share) {
+            navigator.share(shareData).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`).then(() => {
+                this.shareTooltip = true;
+                setTimeout(() => this.shareTooltip = false, 2000);
+            });
+        }
+    }
+
+    shareTooltip = false;
 }

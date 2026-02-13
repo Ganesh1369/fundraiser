@@ -1,165 +1,119 @@
-<div class="admin-dashboard">
-    <!-- Sidebar -->
-    <aside class="sidebar dark">
-        <div class="sidebar-header">
-            <a routerLink="/" class="logo">
-                <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
-                <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
-            </a>
-            <span class="admin-badge">Admin</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a class="nav-item" routerLink="/admin">
-                <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon> Dashboard
-            </a>
-            <a class="nav-item active" routerLink="/admin/events">
-                <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon> Events
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'registrations'}">
-                <lucide-icon name="users" class="nav-icon w-4 h-4"></lucide-icon>
-                Registrations
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'donations'}">
-                <lucide-icon name="wallet" class="nav-icon w-4 h-4"></lucide-icon>
-                Donations
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'leaderboard'}">
-                <lucide-icon name="trophy" class="nav-icon w-4 h-4"></lucide-icon>
-                Leaderboard
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'certificates'}">
-                <lucide-icon name="file-text" class="nav-icon w-4 h-4"></lucide-icon>
-                Certificates
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <button class="logout-btn" (click)="logout()">
-                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon> Logout
+<!-- Loading State -->
+<div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="!loading && error" class="error-state">
+    <p class="error-message">{{ error }}</p>
+    <button class="btn btn-primary" (click)="loadEvent()">Retry</button>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!loading && !error && event">
+    <header class="admin-header">
+        <div class="header-row">
+            <div>
+                <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
+                <h1>{{ event.event_name }}</h1>
+            </div>
+            <button (click)="exportData()" class="btn btn-primary" [disabled]="exporting">
+                @if (exporting) {
+                <lucide-icon name="clock" class="w-4 h-4 inline-block"></lucide-icon> Exporting...
+                } @else {
+                <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
+                }
             </button>
         </div>
-    </aside>
+    </header>
 
-    <main class="main-content">
-
-        <!-- Loading State -->
-        <div *ngIf="loading" class="loading-state">
-            <div class="spinner"></div>
-        </div>
-
-        <!-- Error State -->
-        <div *ngIf="!loading && error" class="error-state">
-            <p class="error-message">{{ error }}</p>
-            <button class="btn btn-primary" (click)="loadEvent()">Retry</button>
-        </div>
-
-        <!-- Main Content -->
-        <div *ngIf="!loading && !error && event">
-            <header class="admin-header">
-                <div class="header-row">
-                    <div>
-                        <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
-                        <h1>{{ event.event_name }}</h1>
-                    </div>
-                    <button (click)="exportData()" class="btn btn-primary" [disabled]="exporting">
-                        @if (exporting) {
-                        <lucide-icon name="clock" class="w-4 h-4 inline-block"></lucide-icon> Exporting...
-                        } @else {
-                        <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
-                        }
-                    </button>
-                </div>
-            </header>
-
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <lucide-icon name="users" class="stat-icon w-5 h-5"></lucide-icon>
-                        <span class="stat-label">Total Registrations</span>
-                    </div>
-                    <div class="stat-value">{{ event.registration_count }}</div>
-                </div>
-                <div class="stat-card" [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
-                    <div class="stat-header">
-                        <lucide-icon name="lock-open" class="stat-icon w-5 h-5"></lucide-icon>
-                        <span class="stat-label">Status</span>
-                    </div>
-                    <div class="stat-value status-text">
-                        {{ event.registration_open ? 'Open' : 'Closed' }}
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <lucide-icon name="calendar" class="stat-icon w-5 h-5"></lucide-icon>
-                        <span class="stat-label">Date</span>
-                    </div>
-                    <div class="stat-value small">{{ formatDate(event.event_date) }}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <lucide-icon name="tag" class="stat-icon w-5 h-5"></lucide-icon>
-                        <span class="stat-label">Type</span>
-                    </div>
-                    <div class="stat-value small capitalize">{{ event.event_type }}</div>
-                </div>
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <lucide-icon name="users" class="stat-icon w-5 h-5"></lucide-icon>
+                <span class="stat-label">Total Registrations</span>
             </div>
-
-            <!-- Registrations Table -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Registrations</h2>
-                </div>
-
-                <!-- Registrations Error -->
-                <div *ngIf="registrationsError" class="error-state inline">
-                    <p class="error-message">{{ registrationsError }}</p>
-                    <button class="btn btn-primary" (click)="loadRegistrations()">Retry</button>
-                </div>
-
-                <div class="table-wrapper" *ngIf="!registrationsError">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Registered</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let reg of registrations">
-                                <td class="name-cell">{{ reg.name }}</td>
-                                <td>{{ reg.email }}</td>
-                                <td>{{ reg.phone }}</td>
-                                <td>{{ formatDate(reg.created_at) }}</td>
-                                <td>
-                                    <span class="status-badge" [ngClass]="'reg-' + reg.registration_status">
-                                        {{ reg.registration_status }}
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr *ngIf="registrations.length === 0">
-                                <td colspan="5" class="empty-row">No registrations yet.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="pagination" *ngIf="pagination.totalPages > 1">
-                    <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)"
-                        class="btn-page">
-                        Previous
-                    </button>
-                    <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
-                    <button [disabled]="pagination.page === pagination.totalPages"
-                        (click)="loadRegistrations(pagination.page + 1)" class="btn-page">
-                        Next
-                    </button>
-                </div>
+            <div class="stat-value">{{ event.registration_count }}</div>
+        </div>
+        <div class="stat-card" [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
+            <div class="stat-header">
+                <lucide-icon name="lock-open" class="stat-icon w-5 h-5"></lucide-icon>
+                <span class="stat-label">Status</span>
+            </div>
+            <div class="stat-value status-text">
+                {{ event.registration_open ? 'Open' : 'Closed' }}
             </div>
         </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <lucide-icon name="calendar" class="stat-icon w-5 h-5"></lucide-icon>
+                <span class="stat-label">Date</span>
+            </div>
+            <div class="stat-value small">{{ formatDate(event.event_date) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <lucide-icon name="tag" class="stat-icon w-5 h-5"></lucide-icon>
+                <span class="stat-label">Type</span>
+            </div>
+            <div class="stat-value small capitalize">{{ event.event_type }}</div>
+        </div>
+    </div>
 
-    </main>
+    <!-- Registrations Table -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Registrations</h2>
+        </div>
+
+        <!-- Registrations Error -->
+        <div *ngIf="registrationsError" class="error-state inline">
+            <p class="error-message">{{ registrationsError }}</p>
+            <button class="btn btn-primary" (click)="loadRegistrations()">Retry</button>
+        </div>
+
+        <div class="table-wrapper" *ngIf="!registrationsError">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Registered</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let reg of registrations">
+                        <td class="name-cell">{{ reg.name }}</td>
+                        <td>{{ reg.email }}</td>
+                        <td>{{ reg.phone }}</td>
+                        <td>{{ formatDate(reg.created_at) }}</td>
+                        <td>
+                            <span class="status-badge" [ngClass]="'reg-' + reg.registration_status">
+                                {{ reg.registration_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr *ngIf="registrations.length === 0">
+                        <td colspan="5" class="empty-row">No registrations yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="pagination.totalPages > 1">
+            <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)"
+                class="btn-page">
+                Previous
+            </button>
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+            <button [disabled]="pagination.page === pagination.totalPages"
+                (click)="loadRegistrations(pagination.page + 1)" class="btn-page">
+                Next
+            </button>
+        </div>
+    </div>
 </div>

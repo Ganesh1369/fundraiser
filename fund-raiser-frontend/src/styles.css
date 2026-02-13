@@ -148,6 +148,11 @@
   background: rgba(255,255,255,0.1);
 }
 
+.flatpickr-current-month .flatpickr-monthDropdown-months option {
+  color: #171717;
+  background: #fff;
+}
+
 .flatpickr-current-month .numInputWrapper span.arrowUp::after {
   border-bottom-color: #fff;
 }
@@ -157,11 +162,11 @@
 }
 
 .flatpickr-current-month .numInputWrapper:hover span.arrowUp::after {
-  border-bottom-color: #22c55e;
+  border-bottom-color: #fff;
 }
 
 .flatpickr-current-month .numInputWrapper:hover span.arrowDown::after {
-  border-top-color: #22c55e;
+  border-top-color: #fff;
 }
 
 .flatpickr-months .flatpickr-prev-month,

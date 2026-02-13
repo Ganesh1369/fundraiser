@@ -89,21 +89,28 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
  */
 const exportRegistrations = async ({ userType, fromDate, toDate }) => {
     const params = [];
-    let whereConditions = ['is_active = true'];
+    let whereConditions = ['u.is_active = true'];
     let paramIndex = 1;
 
-    if (userType) { whereConditions.push(`user_type = $${paramIndex++}`); params.push(userType); }
-    if (fromDate) { whereConditions.push(`created_at >= $${paramIndex++}`); params.push(fromDate); }
-    if (toDate) { whereConditions.push(`created_at <= $${paramIndex++}`); params.push(toDate); }
+    if (userType) { whereConditions.push(`u.user_type = $${paramIndex++}`); params.push(userType); }
+    if (fromDate) { whereConditions.push(`u.created_at >= $${paramIndex++}`); params.push(fromDate); }
+    if (toDate) { whereConditions.push(`u.created_at <= $${paramIndex++}`); params.push(toDate); }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const result = await db.query(
-        `SELECT user_type as "User Type", name as "Name", age as "Age", email as "Email",
-                phone as "Phone", class_grade as "Class/Grade", school_name as "School Name",
-                city as "City",
-                organization_name as "Organization", referral_code as "Referral Code",
-                referral_points as "Points", created_at as "Registered At"
-         FROM users ${whereClause} ORDER BY created_at DESC`,
+        `SELECT u.user_type as "User Type", u.name as "Name", u.age as "Age",
+                u.email as "Email", u.phone as "Phone",
+                u.class_grade as "Class / Grade", u.school_name as "School Name",
+                u.area as "Area", u.locality as "Locality", u.city as "City",
+                u.organization_name as "Organization Name", u.pan_number as "PAN Number",
+                u.referral_code as "Referral Code",
+                r.name as "Referred By",
+                u.referral_points as "Referral Points",
+                u.email_verified as "Email Verified",
+                u.created_at as "Registered At"
+         FROM users u
+         LEFT JOIN users r ON r.id = u.referred_by
+         ${whereClause} ORDER BY u.created_at DESC`,
         params
     );
 
@@ -131,7 +138,7 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
 
     params.push(limit, offset);
     const result = await db.query(
-        `SELECT d.id, d.amount, d.currency, d.status, d.payment_method,
+        `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
                 d.razorpay_payment_id, d.created_at,
                 u.name as user_name, u.email as user_email, u.user_type
          FROM donations d JOIN users u ON u.id = d.user_id
@@ -164,11 +171,20 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     const result = await db.query(
-        `SELECT d.amount as "Amount", d.currency as "Currency", d.status as "Status",
-                d.payment_method as "Payment Method", d.razorpay_payment_id as "Payment ID",
-                u.name as "Donor Name", u.email as "Email", u.user_type as "User Type",
-                d.created_at as "Date"
-         FROM donations d JOIN users u ON u.id = d.user_id
+        `SELECT u.name as "Donor Name", u.email as "Donor Email", u.phone as "Donor Phone",
+                u.user_type as "Donor Type", u.city as "Donor City",
+                d.amount as "Amount (INR)", d.currency as "Currency", d.status as "Payment Status",
+                d.payment_method as "Payment Method",
+                d.razorpay_order_id as "Razorpay Order ID",
+                d.razorpay_payment_id as "Razorpay Payment ID",
+                d.request_80g as "80G Certificate Requested",
+                ref.name as "Referrer Name",
+                e.event_name as "Event",
+                d.created_at as "Donation Date"
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         LEFT JOIN users ref ON ref.id = d.referrer_id
+         LEFT JOIN events e ON e.id = d.event_id
          ${whereClause} ORDER BY d.created_at DESC`,
         params
     );
@@ -185,7 +201,7 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
 const getUserAnalytics = async (userId) => {
     const userResult = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, pan_number,
+                city, organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
          FROM users WHERE id = $1`,
         [userId]
@@ -193,7 +209,7 @@ const getUserAnalytics = async (userId) => {
     if (userResult.rows.length === 0) throw { status: 404, message: 'User not found' };
 
     const donations = await db.query(
-        `SELECT id, amount, status, created_at FROM donations WHERE user_id = $1 ORDER BY created_at DESC`,
+        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = $1 ORDER BY created_at DESC`,
         [userId]
     );
 
@@ -202,6 +218,29 @@ const getUserAnalytics = async (userId) => {
                 (SELECT COUNT(*) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = $1 AND d.status = 'completed') as donations_from_referrals,
                 (SELECT COALESCE(SUM(d.amount), 0) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = $1 AND d.status = 'completed') as amount_from_referrals
          FROM users WHERE referred_by = $1`,
+        [userId]
+    );
+
+    const referredUsers = await db.query(
+        `SELECT u.id, u.name, u.email, u.user_type, u.created_at,
+                COALESCE(SUM(d.amount) FILTER (WHERE d.status = 'completed'), 0) as total_donated
+         FROM users u LEFT JOIN donations d ON d.user_id = u.id
+         WHERE u.referred_by = $1 GROUP BY u.id ORDER BY u.created_at DESC`,
+        [userId]
+    );
+
+    const eventRegistrations = await db.query(
+        `SELECT er.registration_status, er.created_at, e.id as event_id, e.event_name, e.event_type, e.event_date
+         FROM event_registrations er JOIN events e ON e.id = er.event_id
+         WHERE er.user_id = $1 ORDER BY er.created_at DESC`,
+        [userId]
+    );
+
+    const certificates = await db.query(
+        `SELECT cr.id, cr.pan_number, cr.status, cr.requested_at, cr.processed_at,
+                d.amount as donation_amount
+         FROM certificate_requests cr LEFT JOIN donations d ON d.id = cr.donation_id
+         WHERE cr.user_id = $1 ORDER BY cr.requested_at DESC`,
         [userId]
     );
 
@@ -219,8 +258,14 @@ const getUserAnalytics = async (userId) => {
             count: parseInt(referralStats.referred_count),
             donationsGenerated: parseInt(referralStats.donations_from_referrals),
             amountGenerated: parseFloat(referralStats.amount_from_referrals),
-            points: user.referral_points
-        }
+            points: user.referral_points,
+            users: referredUsers.rows.map(u => ({ ...u, total_donated: parseFloat(u.total_donated) }))
+        },
+        eventRegistrations: eventRegistrations.rows,
+        certificates: certificates.rows.map(c => ({
+            ...c,
+            donation_amount: c.donation_amount ? parseFloat(c.donation_amount) : null
+        }))
     };
 };
 
@@ -262,9 +307,9 @@ const getLeaderboard = async ({ limit = 50, userType }) => {
  */
 const exportLeaderboard = async () => {
     const result = await db.query(
-        `SELECT name as "Name", user_type as "User Type", email as "Email", city as "City",
-                total_donations as "Total Donations (₹)", referral_points as "Referral Points",
-                score as "Total Score"
+        `SELECT name as "Name", email as "Email", user_type as "User Type", city as "City",
+                total_donations as "Total Donations (INR)", donation_count as "Number of Donations",
+                referral_points as "Referral Points", score as "Total Score"
          FROM leaderboard`
     );
 
@@ -340,9 +385,31 @@ const updateCertificateStatus = async (id, { status, adminNotes, certificateUrl 
     return result.rows[0];
 };
 
+/**
+ * Get user ID by URL slug (e.g. "kamalraj-ganesan" → user ID)
+ */
+const getUserBySlug = async (slug) => {
+    const result = await db.query(
+        `SELECT id FROM users WHERE LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '', 'g')) = LOWER(REGEXP_REPLACE($1, '-', ' ', 'g')) AND is_active = true LIMIT 1`,
+        [slug]
+    );
+    if (result.rows.length === 0) {
+        // Fallback: try ILIKE with slug converted to space-separated pattern
+        const namePattern = slug.replace(/-/g, ' ');
+        const fallback = await db.query(
+            `SELECT id FROM users WHERE name ILIKE $1 AND is_active = true LIMIT 1`,
+            [namePattern]
+        );
+        if (fallback.rows.length === 0) throw { status: 404, message: 'User not found' };
+        return { id: fallback.rows[0].id };
+    }
+    return { id: result.rows[0].id };
+};
+
 module.exports = {
     getDashboardStats, getRegistrations, exportRegistrations,
     getDonations, exportDonations, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
-    getCertificateRequests, updateCertificateStatus
+    getCertificateRequests, updateCertificateStatus,
+    getUserBySlug
 };

@@ -1,9 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { RouterLink, RouterModule, Router } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
-import { environment } from '../../../environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface DashboardStats {
@@ -31,19 +29,9 @@ interface Registration {
     created_at: string;
 }
 
-interface Donation {
-    id: string;
-    user_name: string;
-    user_email: string;
-    amount: number;
-    status: string;
-    payment_method: string;
-    razorpay_payment_id: string;
-    created_at: string;
-}
-
 interface LeaderboardEntry {
     rank: number;
+    id: string;
     name: string;
     email: string;
     city: string;
@@ -54,38 +42,17 @@ interface LeaderboardEntry {
     score: number;
 }
 
-interface CertificateRequest {
-    id: string;
-    userName: string;
-    userEmail: string;
-    panNumber: string;
-    status: string;
-    requestedAt: string;
-    processedAt: string | null;
-    donationAmount: number | null;
-}
-
 @Component({
     selector: 'app-admin-dashboard',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule],
+    imports: [CommonModule, RouterLink, RouterModule, LucideAngularModule],
     templateUrl: './admin-dashboard.component.html',
     styleUrl: './admin-dashboard.component.css'
 })
 export class AdminDashboardComponent implements OnInit {
-    activeTab = 'dashboard';
     stats: DashboardStats | null = null;
     registrations: Registration[] = [];
-    donations: Donation[] = [];
     leaderboard: LeaderboardEntry[] = [];
-    certificates: CertificateRequest[] = [];
-
-    // Filters
-    userTypeFilter = '';
-    donationStatusFilter = '';
-    leaderboardUserTypeFilter = '';
-    searchQuery = '';
-
     isLoading = false;
 
     constructor(
@@ -95,15 +62,7 @@ export class AdminDashboardComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.checkAuth();
         this.loadDashboardData();
-    }
-
-    checkAuth(): void {
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            this.router.navigate(['/admin/login']);
-        }
     }
 
     loadDashboardData(): void {
@@ -114,141 +73,35 @@ export class AdminDashboardComponent implements OnInit {
                 if (res.success) { this.stats = res.data; this.cdr.detectChanges(); }
             },
             error: (err: any) => {
-                if (err.status === 401 || err.status === 403) this.logout();
+                if (err.status === 401 || err.status === 403) {
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('admin');
+                    this.router.navigate(['/admin/login']);
+                }
             }
         });
 
-        this.loadRegistrations();
-        this.loadDonations();
-        this.loadLeaderboard();
-        this.loadCertificates();
-
-        this.isLoading = false;
-    }
-
-    loadRegistrations(): void {
-        this.api.getAdminRegistrations(50, this.userTypeFilter, this.searchQuery).subscribe({
+        this.api.getAdminRegistrations(5).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.registrations = res.data.registrations || [];
                     this.cdr.detectChanges();
                 }
             },
-            error: (err: any) => {
-                if (err.status === 401 || err.status === 403) this.logout();
-            }
+            error: () => { }
         });
-    }
 
-    loadDonations(): void {
-        this.api.getAdminDonations(50, this.donationStatusFilter).subscribe({
-            next: (res: any) => {
-                if (res.success) {
-                    this.donations = res.data.donations || [];
-                    this.cdr.detectChanges();
-                }
-            },
-            error: (err: any) => {
-                if (err.status === 401 || err.status === 403) this.logout();
-            }
-        });
-    }
-
-    loadLeaderboard(): void {
-        this.api.getLeaderboard(20, this.leaderboardUserTypeFilter).subscribe({
+        this.api.getLeaderboard(5).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.leaderboard = res.data;
                     this.cdr.detectChanges();
                 }
             },
-            error: (err: any) => {
-                if (err.status === 401 || err.status === 403) this.logout();
-            }
-        });
-    }
-
-    loadCertificates(): void {
-        this.api.getAdminCertificates().subscribe({
-            next: (res: any) => {
-                if (res.success) {
-                    const requests = res.data?.requests || res.data || [];
-                    this.certificates = Array.isArray(requests) ? requests.map((r: any) => ({
-                        id: r.id,
-                        userName: r.user_name,
-                        userEmail: r.user_email,
-                        panNumber: r.pan_number,
-                        donationAmount: r.donation_amount,
-                        requestedAt: r.requested_at,
-                        processedAt: r.processed_at || null,
-                        status: r.status,
-                        adminNotes: r.admin_notes
-                    })) : [];
-                    this.cdr.detectChanges();
-                }
-            },
             error: () => { }
         });
-    }
 
-    updateCertificateStatus(certId: string, status: string): void {
-        this.api.updateCertificateStatus(certId, status).subscribe({
-            next: (res: any) => {
-                if (res.success) this.loadCertificates();
-            },
-            error: () => { }
-        });
-    }
-
-    exportRegistrations(): void {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        fetch(`${environment.apiUrl}/admin/registrations/export`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        }).then(res => res.blob()).then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'registrations.xlsx';
-            a.click();
-        }).catch(err => console.error('Export failed:', err));
-    }
-
-    exportDonations(): void {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        fetch(`${environment.apiUrl}/admin/donations/export`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        }).then(res => res.blob()).then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'donations.xlsx';
-            a.click();
-        }).catch(err => console.error('Export failed:', err));
-    }
-
-    onFilterChange(): void {
-        if (this.activeTab === 'registrations') this.loadRegistrations();
-        else if (this.activeTab === 'donations') this.loadDonations();
-        else if (this.activeTab === 'leaderboard') this.loadLeaderboard();
-    }
-
-    getCertStatusClass(status: string): string {
-        switch (status) {
-            case 'approved': return 'status-approved';
-            case 'rejected': return 'status-rejected';
-            case 'processing': return 'status-processing';
-            default: return 'status-pending';
-        }
-    }
-
-    logout(): void {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('admin');
-        this.router.navigate(['/admin/login']);
+        this.isLoading = false;
     }
 
     formatDate(dateString: string): string {
@@ -261,5 +114,9 @@ export class AdminDashboardComponent implements OnInit {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency', currency: 'INR', maximumFractionDigits: 0
         }).format(amount);
+    }
+
+    slugify(name: string): string {
+        return name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
     }
 }

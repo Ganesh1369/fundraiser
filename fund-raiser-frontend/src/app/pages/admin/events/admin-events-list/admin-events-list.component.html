@@ -1,125 +1,78 @@
-<div class="admin-dashboard">
-    <!-- Sidebar -->
-    <aside class="sidebar dark">
-        <div class="sidebar-header">
-            <a routerLink="/" class="logo">
-                <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
-                <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
-            </a>
-            <span class="admin-badge">Admin</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'dashboard'}">
-                <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon>
-                Dashboard
-            </a>
-            <a class="nav-item active" routerLink="/admin/events">
-                <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon>
-                Events
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'registrations'}">
-                <lucide-icon name="users" class="nav-icon w-4 h-4"></lucide-icon>
-                Registrations
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'donations'}">
-                <lucide-icon name="wallet" class="nav-icon w-4 h-4"></lucide-icon>
-                Donations
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'leaderboard'}">
-                <lucide-icon name="trophy" class="nav-icon w-4 h-4"></lucide-icon>
-                Leaderboard
-            </a>
-            <a class="nav-item" routerLink="/admin" [queryParams]="{tab: 'certificates'}">
-                <lucide-icon name="file-text" class="nav-icon w-4 h-4"></lucide-icon>
-                Certificates
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <button class="logout-btn" (click)="logout()">
-                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon> Logout
-            </button>
-        </div>
-    </aside>
+<header class="admin-header">
+    <div class="header-row">
+        <h1>Events Management</h1>
+        <button routerLink="/admin/events/new" class="btn btn-primary">
+            + Create New Event
+        </button>
+    </div>
+</header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <header class="admin-header">
-            <div class="header-row">
-                <h1>Events Management</h1>
-                <button routerLink="/admin/events/new" class="btn btn-primary">
-                    + Create New Event
-                </button>
-            </div>
-        </header>
+<div class="card">
+    <!-- Loading -->
+    @if (loading) {
+    <div class="loading-state">
+        <div class="spinner"></div>
+    </div>
+    }
 
-        <div class="card">
-            <!-- Loading -->
-            @if (loading) {
-            <div class="loading-state">
-                <div class="spinner"></div>
-            </div>
-            }
-
-            <!-- Table -->
-            @if (!loading) {
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Event Name</th>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Registration Link</th>
-                            <th>Registrations</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (event of events; track event.id) {
-                        <tr>
-                            <td>
-                                <div class="event-name">{{ event.event_name }}</div>
-                                <div class="event-location">{{ event.event_location }}</div>
-                            </td>
-                            <td>{{ formatDate(event.event_date) }}</td>
-                            <td><span class="badge event-type">{{ event.event_type }}</span></td>
-                            <td>
-                                <span class="status-badge"
-                                    [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
-                                    {{ event.registration_open ? 'Open' : 'Closed' }}
-                                </span>
-                            </td>
-                            <td class="link-cell">
-                                <div class="link-wrapper">
-                                    <a [href]="getRegistrationLink(event.id)" target="_blank" class="reg-link">
-                                        /events/{{ event.id }}/register
-                                    </a>
-                                    <button (click)="copyLink(event.id)" class="btn-copy" [title]="copiedEventId === event.id ? 'Copied!' : 'Copy link'">
-                                        <lucide-icon [name]="copiedEventId === event.id ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
-                                    </button>
-                                </div>
-                            </td>
-                            <td class="count-cell">{{ event.registration_count || 0 }}</td>
-                            <td class="action-cell">
-                                <a [routerLink]="['/admin/events', event.id]" class="btn-action view">View</a>
-                                <button (click)="toggleStatus(event)" class="btn-action toggle">
-                                    {{ event.registration_open ? 'Close' : 'Open' }}
-                                </button>
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-                @if (events.length === 0) {
-                <div class="empty-state">
-                    <lucide-icon name="calendar" class="empty-icon w-10 h-10"></lucide-icon>
-                    <h3>No Events Found</h3>
-                    <p>Create your first event to get started.</p>
-                </div>
+    <!-- Table -->
+    @if (!loading) {
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Event Name</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Registration Link</th>
+                    <th>Registrations</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (event of events; track event.id) {
+                <tr>
+                    <td>
+                        <div class="event-name">{{ event.event_name }}</div>
+                        <div class="event-location">{{ event.event_location }}</div>
+                    </td>
+                    <td>{{ formatDate(event.event_date) }}</td>
+                    <td><span class="badge event-type">{{ event.event_type }}</span></td>
+                    <td>
+                        <span class="status-badge"
+                            [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
+                            {{ event.registration_open ? 'Open' : 'Closed' }}
+                        </span>
+                    </td>
+                    <td class="link-cell">
+                        <div class="link-wrapper">
+                            <a [href]="getRegistrationLink(event.id)" target="_blank" class="reg-link">
+                                /events/{{ event.id }}/register
+                            </a>
+                            <button (click)="copyLink(event.id)" class="btn-copy" [title]="copiedEventId === event.id ? 'Copied!' : 'Copy link'">
+                                <lucide-icon [name]="copiedEventId === event.id ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="count-cell">{{ event.registration_count || 0 }}</td>
+                    <td class="action-cell">
+                        <a [routerLink]="['/admin/events', event.id]" class="btn-action view">View</a>
+                        <button (click)="toggleStatus(event)" class="btn-action toggle">
+                            {{ event.registration_open ? 'Close' : 'Open' }}
+                        </button>
+                    </td>
+                </tr>
                 }
-            </div>
-            }
+            </tbody>
+        </table>
+        @if (events.length === 0) {
+        <div class="empty-state">
+            <lucide-icon name="calendar" class="empty-icon w-10 h-10"></lucide-icon>
+            <h3>No Events Found</h3>
+            <p>Create your first event to get started.</p>
         </div>
-    </main>
+        }
+    </div>
+    }
 </div>

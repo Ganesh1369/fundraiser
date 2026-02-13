@@ -75,6 +75,34 @@ exports.getCertificateRequests = async (req, res, next) => {
     }
 };
 
+exports.uploadAvatar = async (req, res, next) => {
+    try {
+        if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+        const filename = req.file.filename;
+        const profilePic = `/uploads/profile/${filename}`;
+        await userService.updateProfilePic(req.user.id, profilePic);
+        res.json({ success: true, message: 'Profile picture updated', data: { profilePic } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.removeAvatar = async (req, res, next) => {
+    try {
+        const profile = await userService.getProfile(req.user.id);
+        if (profile.profilePic) {
+            const path = require('path');
+            const fs = require('fs');
+            const filePath = path.join(__dirname, '../../../fund-raiser-frontend/public', profile.profilePic);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+        await userService.updateProfilePic(req.user.id, null);
+        res.json({ success: true, message: 'Profile picture removed' });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.subscribePush = async (req, res, next) => {
     try {
         const { endpoint, keys } = req.body;

@@ -1,0 +1,52 @@
+<header class="admin-header">
+    <h1>Donation Management</h1>
+</header>
+
+<div class="filters">
+    <select class="filter-select" [(ngModel)]="donationStatusFilter" (change)="onFilterChange()">
+        <option value="">All Status</option>
+        <option value="completed">Completed</option>
+        <option value="pending">Pending</option>
+        <option value="failed">Failed</option>
+    </select>
+    <button class="btn btn-primary btn-export" (click)="exportDonations()">
+        <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Export Excel
+    </button>
+</div>
+
+<div class="card">
+    @if (donations.length === 0) {
+    <div class="empty-state">
+        <lucide-icon name="wallet" class="empty-icon w-10 h-10"></lucide-icon>
+        <h3>No donation data</h3>
+        <p>There are no donations yet.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Donor</th>
+                    <th>Email</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Payment ID</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (donation of donations; track donation.id) {
+                <tr>
+                    <td><a [routerLink]="['/admin/users', slugify(donation.user_name)]" [state]="{userId: donation.user_id}" class="user-link">{{ donation.user_name }}</a></td>
+                    <td>{{ donation.user_email }}</td>
+                    <td class="amount">{{ formatCurrency(donation.amount) }}</td>
+                    <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
+                    <td>{{ donation.razorpay_payment_id || '-' }}</td>
+                    <td>{{ formatDate(donation.created_at) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>

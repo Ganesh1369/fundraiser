@@ -1,0 +1,51 @@
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar dark">
+        <div class="sidebar-header">
+            <a routerLink="/" class="logo">
+                <img src="/ice_logo.svg" alt="ICE" class="h-6">
+                <span class="logo-text"><span class="text-gold"> Portal</span></span>
+            </a>
+            <span class="admin-badge">Admin</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item" routerLink="/admin/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+                <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon>
+                Dashboard
+            </a>
+            <a class="nav-item" routerLink="/admin/events" routerLinkActive="active">
+                <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon>
+                Events
+            </a>
+            <a class="nav-item" routerLink="/admin/registrations" routerLinkActive="active">
+                <lucide-icon name="users" class="nav-icon w-4 h-4"></lucide-icon>
+                Registrations
+            </a>
+            <a class="nav-item" routerLink="/admin/donations" routerLinkActive="active">
+                <lucide-icon name="wallet" class="nav-icon w-4 h-4"></lucide-icon>
+                Donations
+            </a>
+            <a class="nav-item" routerLink="/admin/leaderboard" routerLinkActive="active">
+                <lucide-icon name="trophy" class="nav-icon w-4 h-4"></lucide-icon>
+                Leaderboard
+            </a>
+            <a class="nav-item" routerLink="/admin/certificates" routerLinkActive="active">
+                <lucide-icon name="file-text" class="nav-icon w-4 h-4"></lucide-icon>
+                Certificates
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="logout-btn" (click)="logout()">
+                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <router-outlet></router-outlet>
+    </main>
+</div>

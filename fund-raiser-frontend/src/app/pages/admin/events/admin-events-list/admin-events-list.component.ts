@@ -14,7 +14,6 @@ import { LucideAngularModule } from 'lucide-angular';
 export class AdminEventsListComponent implements OnInit {
   events: any[] = [];
   loading = true;
-  activeTab = 'events';
   copiedEventId: number | null = null;
 
   constructor(private eventService: EventService, private cdr: ChangeDetectorRef) { }
@@ -85,9 +84,4 @@ export class AdminEventsListComponent implements OnInit {
     }, 2000);
   }
 
-  logout(): void {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('admin');
-    window.location.href = '/admin/login';
-  }
 }

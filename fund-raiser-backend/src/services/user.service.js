@@ -6,7 +6,7 @@ const db = require('../config/db');
 const getProfile = async (userId) => {
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, pan_number,
+                city, organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
          FROM users WHERE id = $1`,
         [userId]
@@ -18,7 +18,8 @@ const getProfile = async (userId) => {
         id: u.id, userType: u.user_type, name: u.name, age: u.age,
         email: u.email, phone: u.phone, classGrade: u.class_grade,
         schoolName: u.school_name, city: u.city, organizationName: u.organization_name,
-        panNumber: u.pan_number, referralCode: u.referral_code,
+        panNumber: u.pan_number, profilePic: u.profile_pic,
+        referralCode: u.referral_code,
         referralPoints: u.referral_points, createdAt: u.created_at
     };
 };
@@ -202,8 +203,15 @@ const getUserEvents = async (userId) => {
     return result.rows;
 };
 
+/**
+ * Update profile picture path
+ */
+const updateProfilePic = async (userId, profilePic) => {
+    await db.query('UPDATE users SET profile_pic = $1 WHERE id = $2', [profilePic, userId]);
+};
+
 module.exports = {
-    getProfile, updateProfile, getDonations, getDonationSummary,
+    getProfile, updateProfile, updateProfilePic, getDonations, getDonationSummary,
     getReferrals, getReferralPointsHistory, requestCertificate, getCertificateRequests,
     getUserEvents
 };

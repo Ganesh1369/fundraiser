@@ -18,6 +18,7 @@ router.get('/donations', adminController.getDonations);
 router.get('/donations/export', adminController.exportDonations);
 
 // User Analytics
+router.get('/users/by-slug/:slug', adminController.getUserBySlug);
 router.get('/users/:id', adminController.getUserAnalytics);
 
 // Leaderboard

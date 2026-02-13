@@ -1,0 +1,62 @@
+<header class="admin-header">
+    <h1>Leaderboard</h1>
+</header>
+
+<div class="filters">
+    <select class="filter-select" [(ngModel)]="leaderboardUserTypeFilter" (change)="onFilterChange()">
+        <option value="">All Types</option>
+        <option value="student">Students</option>
+        <option value="individual">Individuals</option>
+        <option value="organization">Organizations</option>
+    </select>
+</div>
+
+<div class="card">
+    @if (leaderboard.length === 0) {
+    <div class="empty-state">
+        <lucide-icon name="trophy" class="empty-icon w-10 h-10"></lucide-icon>
+        <h3>No leaderboard data</h3>
+        <p>There are no entries on the leaderboard yet.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="data-table leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>City</th>
+                    <th>Type</th>
+                    <th>Donations</th>
+                    <th># Txns</th>
+                    <th>Referral Pts</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (entry of leaderboard; track entry.name; let i = $index) {
+                <tr [class.top-3]="i < 3">
+                    <td class="rank-cell">
+                        @switch (i) {
+                        @case (0) { <span class="text-amber-500 font-bold">1</span> }
+                        @case (1) { <span class="text-neutral-400 font-bold">2</span> }
+                        @case (2) { <span class="text-amber-700 font-bold">3</span> }
+                        @default { {{ i + 1 }} }
+                        }
+                    </td>
+                    <td class="name-cell"><a [routerLink]="['/admin/users', slugify(entry.name)]" [state]="{userId: entry.id}" class="user-link">{{ entry.name }}</a></td>
+                    <td>{{ entry.email }}</td>
+                    <td>{{ entry.city || '-' }}</td>
+                    <td><span class="badge" [ngClass]="entry.userType">{{ entry.userType }}</span></td>
+                    <td class="amount">{{ formatCurrency(entry.totalDonations) }}</td>
+                    <td>{{ entry.donationCount }}</td>
+                    <td>{{ entry.referralPoints }}</td>
+                    <td class="score-cell"><strong>{{ entry.score }}</strong></td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>

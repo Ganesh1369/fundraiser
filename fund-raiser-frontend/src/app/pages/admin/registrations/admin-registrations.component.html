@@ -1,0 +1,54 @@
+<header class="admin-header">
+    <h1>User Registrations</h1>
+</header>
+
+<div class="filters">
+    <select class="filter-select" [(ngModel)]="userTypeFilter" (change)="onFilterChange()">
+        <option value="">All Types</option>
+        <option value="student">Students</option>
+        <option value="individual">Individuals</option>
+        <option value="organization">Organizations</option>
+    </select>
+    <input type="text" class="filter-input" placeholder="Search by name or email..." [(ngModel)]="searchQuery"
+        (input)="onFilterChange()">
+    <button class="btn btn-primary btn-export" (click)="exportRegistrations()">
+        <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Export Excel
+    </button>
+</div>
+
+<div class="card">
+    @if (registrations.length === 0) {
+    <div class="empty-state">
+        <lucide-icon name="users" class="empty-icon w-10 h-10"></lucide-icon>
+        <h3>No registration data</h3>
+        <p>There are no user registrations yet.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Type</th>
+                    <th>City</th>
+                    <th>Registered</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (user of registrations; track user.id) {
+                <tr>
+                    <td><a [routerLink]="['/admin/users', slugify(user.name)]" [state]="{userId: user.id}" class="user-link">{{ user.name }}</a></td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
+                    <td>{{ user.city || '-' }}</td>
+                    <td>{{ formatDate(user.created_at) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>

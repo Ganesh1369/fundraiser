@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -61,7 +61,7 @@ export class RegisterComponent {
         referralCode: ''
     };
 
-    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef) {
+    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef, private zone: NgZone) {
         this.route.queryParams.subscribe(params => {
             if (params['ref']) {
                 this.data.referralCode = params['ref'];
@@ -115,6 +115,7 @@ export class RegisterComponent {
                 if (res.success) {
                     this.otpSent = true;
                     this.successMessage = 'OTP sent to your email!';
+                    this.currentStep = 4;
                 } else {
                     this.errorMessage = res.message || 'Failed to send OTP';
                 }
@@ -125,6 +126,7 @@ export class RegisterComponent {
                 const msg = err.error?.message || 'Failed to send OTP';
                 this.errorMessage = msg;
                 this.isEmailTaken = msg.toLowerCase().includes('already registered');
+                this.cdr.detectChanges();
             }
         });
     }
@@ -182,9 +184,8 @@ export class RegisterComponent {
 
     nextStep(): void {
         if (this.currentStep < this.totalSteps) {
-            // If moving from step 3 to 4, auto-send OTP
+            // If moving from step 3 to 4, validate email first then send OTP
             if (this.currentStep === 3 && !this.otpSent) {
-                this.currentStep++;
                 this.sendOtp();
                 return;
             }
@@ -236,12 +237,12 @@ export class RegisterComponent {
             referralCode: this.data.referralCode
         }).subscribe({
             next: (result: any) => {
-                this.isLoading = false;
                 if (result.success) {
                     localStorage.setItem('token', result.data.token);
                     localStorage.setItem('user', JSON.stringify(result.data.user));
-                    this.router.navigate(['/dashboard']);
+                    this.initiatePayment();
                 } else {
+                    this.isLoading = false;
                     this.errorMessage = result.message || 'Registration failed';
                 }
             },
@@ -251,6 +252,63 @@ export class RegisterComponent {
                 this.errorMessage = msg;
                 this.isEmailTaken = msg.toLowerCase().includes('already registered');
             }
+        });
+    }
+
+    private initiatePayment(): void {
+        this.api.createOrder(300, false).subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                if (res.success) {
+                    this.openRazorpay(res.data);
+                } else {
+                    this.router.navigate(['/dashboard']);
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.isLoading = false;
+                this.router.navigate(['/dashboard']);
+            }
+        });
+    }
+
+    private openRazorpay(order: any): void {
+        const options = {
+            key: order.keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "Primathon'26",
+            description: 'Registration Fee',
+            order_id: order.orderId,
+            handler: (response: any) => {
+                this.zone.run(() => {
+                    this.verifyPayment(response, order.donationId);
+                });
+            },
+            prefill: { name: this.data.name, email: this.data.email, contact: this.data.phone },
+            theme: { color: '#22c55e' },
+            modal: {
+                ondismiss: () => {
+                    this.zone.run(() => {
+                        this.router.navigate(['/dashboard']);
+                    });
+                }
+            }
+        };
+        const razorpay = new (window as any).Razorpay(options);
+        razorpay.open();
+    }
+
+    private verifyPayment(response: any, donationId: string): void {
+        this.api.verifyPayment({
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+            donationId
+        }).subscribe({
+            next: () => this.router.navigate(['/dashboard']),
+            error: () => this.router.navigate(['/dashboard'])
         });
     }
 }

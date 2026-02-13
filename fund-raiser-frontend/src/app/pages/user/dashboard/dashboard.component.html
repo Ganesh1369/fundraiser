@@ -1,9 +1,9 @@
-<div class="min-h-screen bg-neutral-50">
+<div class="min-h-screen bg-neutral-50 bg-[url('/34665942_5_123dasa1.svg')] bg-cover bg-center bg-fixed">
     <!-- Topbar -->
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
         <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-3">
             <a routerLink="/" class="flex items-center gap-2 text-lg font-bold text-accent no-underline shrink-0">
-                <lucide-icon name="flame" class="w-5 h-5 text-primary"></lucide-icon>
+                <img src="/ice_logo.svg" alt="ICE" class="h-6">
                 <span class="hidden sm:inline">Prima<span class="text-primary">thon'26</span></span>
             </a>
             <div class="flex items-center gap-1.5 sm:gap-2">
@@ -18,6 +18,14 @@
                     <span class="hidden sm:inline">80G Certificate</span>
                 </button>
                 }
+                <button class="w-9 h-9 rounded-full overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer shrink-0"
+                    (click)="goToProfile()" title="Edit Profile">
+                    @if (profile?.profilePic) {
+                    <img [src]="profile.profilePic" alt="" class="w-full h-full object-cover">
+                    } @else {
+                    <span class="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-xs font-bold">{{ getInitials(user?.name) }}</span>
+                    }
+                </button>
                 <button class="px-2 sm:px-3 py-2 text-xs sm:text-sm text-neutral-500 hover:text-red-500 transition-colors"
                     (click)="logout()">
                     Logout
@@ -28,16 +36,49 @@
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-5 py-8">
-        <!-- Welcome -->
+        <!-- Welcome + Profile Card -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div>
-                <h1 class="text-2xl font-bold text-accent mb-1">Welcome back, {{ (user?.name || 'Guest').split(' ')[0] }}!</h1>
-                <p class="text-sm text-neutral-500 m-0">Here's your giving summary</p>
+            <div class="flex items-center gap-4">
+                <button class="w-14 h-14 rounded-full overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer shrink-0"
+                    (click)="goToProfile()" title="Edit Profile">
+                    @if (profile?.profilePic) {
+                    <img [src]="profile.profilePic" alt="" class="w-full h-full object-cover">
+                    } @else {
+                    <span class="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-lg font-bold">{{ getInitials(user?.name) }}</span>
+                    }
+                </button>
+                <div class="min-w-0">
+                    <h1 class="text-2xl font-bold text-accent mb-0.5">{{ user?.name || 'Guest' }}</h1>
+                    <div class="flex items-center gap-2 text-sm text-neutral-500 min-w-0">
+                        <span class="capitalize shrink-0">{{ user?.userType }}</span>
+                        <span class="text-neutral-300 shrink-0 hidden sm:inline">|</span>
+                        <span class="truncate hidden sm:inline">{{ user?.email }}</span>
+                        <button class="text-primary hover:text-primary-500 transition-colors shrink-0" (click)="goToProfile()" title="Edit Profile">
+                            <lucide-icon name="pencil" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <button class="hidden md:flex px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors items-center gap-2"
-                (click)="showDonateModal = true">
-                Quick Donate
-            </button>
+        </div>
+
+        <!-- ICE Mission Banner -->
+        <div class="relative overflow-hidden bg-accent rounded-2xl p-5 md:p-6 mb-8">
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center gap-4">
+                <div class="flex-1">
+                    <p class="text-sm md:text-[15px] text-neutral-300 leading-relaxed m-0">
+                        <span class="text-white font-semibold">ICE</span> is a non-profit enabling grassroots-level behavioral change through education and collaboration.
+                        Make a difference — help make our only home a
+                        <span class="text-primary font-medium">healthier, greener</span> and
+                        <span class="text-primary font-medium">happier</span> place.
+                    </p>
+                </div>
+                <button class="shrink-0 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
+                    (click)="showDonateModal = true">
+                    Contribute Now
+                </button>
+            </div>
+            <div class="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         </div>
 
         <!-- Stats Grid -->
@@ -75,7 +116,7 @@
                 </div>
             </div>
             <button class="px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-600 transition-colors whitespace-nowrap"
-                (click)="openProfileModal()">Complete Profile</button>
+                (click)="goToProfile()">Complete Profile</button>
         </div>
         }
 
@@ -231,7 +272,7 @@
                     (click)="showDonateModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
             </div>
             <div class="px-6 py-5">
-                <p class="text-sm text-neutral-500 mb-5">Every rupee helps a student succeed!</p>
+                <p class="text-sm text-neutral-500 mb-5">Help make our planet a healthier, greener and happier place.</p>
 
                 <div class="grid grid-cols-4 gap-2 mb-5">
                     @for (preset of [100, 500, 1000, 5000]; track preset) {
@@ -315,85 +356,4 @@
     </div>
     }
 
-    <!-- Profile Modal -->
-    @if (showProfileModal) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showProfileModal = false">
-        <div class="w-full max-w-lg bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
-                <h2 class="text-lg font-bold text-accent m-0">Edit Profile</h2>
-                <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
-                    (click)="showProfileModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
-            </div>
-            <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Name</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.name" placeholder="Full name">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Phone</label>
-                        <input type="tel" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.phone" placeholder="Phone number">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">City</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.city" placeholder="City">
-                    </div>
-                </div>
-
-                @if (profile?.userType === 'student') {
-                <h4 class="text-sm font-semibold text-accent mt-6 mb-4 pt-4 border-t border-neutral-100">Student Details</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Age</label>
-                        <input type="number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.age" placeholder="Age">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Class / Grade *</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.classGrade" placeholder="e.g. 10th, B.Tech">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">School / College *</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.schoolName" placeholder="School name">
-                    </div>
-                </div>
-                }
-
-                @if (profile?.userType === 'organization') {
-                <h4 class="text-sm font-semibold text-accent mt-6 mb-4 pt-4 border-t border-neutral-100">Organization Details</h4>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name *</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.organizationName" placeholder="Organization name">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
-                            [(ngModel)]="profileForm.panNumber" placeholder="PAN number" maxlength="10">
-                    </div>
-                </div>
-                }
-            </div>
-            <div class="flex gap-3 px-6 py-4 border-t border-neutral-100">
-                <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
-                    (click)="showProfileModal = false">Cancel</button>
-                <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
-                    (click)="saveProfile()" [disabled]="isLoading">
-                    @if (isLoading) {
-                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    Saving...
-                    } @else {
-                    Save Profile
-                    }
-                </button>
-            </div>
-        </div>
-    </div>
-    }
 </div>

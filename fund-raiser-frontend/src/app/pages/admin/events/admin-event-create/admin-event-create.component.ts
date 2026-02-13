@@ -11,90 +11,61 @@ import { LucideAngularModule } from 'lucide-angular';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, FlatpickrDirective, LucideAngularModule],
   template: `
-    <div class="admin-dashboard">
-      <!-- Sidebar -->
-      <aside class="sidebar dark">
-        <div class="sidebar-header">
-          <a routerLink="/" class="logo">
-            <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
-            <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
-          </a>
-          <span class="admin-badge">Admin</span>
+    <header class="admin-header">
+      <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
+      <h1>Create New Event</h1>
+    </header>
+
+    <div class="card form-card">
+      <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="event-form">
+
+        <div *ngIf="errorMessage" class="error-banner">
+          {{ errorMessage }}
         </div>
-        <nav class="sidebar-nav">
-          <a class="nav-item" routerLink="/admin">
-            <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon> Dashboard
-          </a>
-          <a class="nav-item active" routerLink="/admin/events">
-            <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon> Events
-          </a>
-        </nav>
-        <div class="sidebar-footer">
-          <button class="logout-btn" (click)="logout()">
-            <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon> Logout
+
+        <div class="form-group">
+          <label class="form-label">Event Name *</label>
+          <input type="text" formControlName="event_name" class="form-input" placeholder="e.g., Marathon 2026">
+          <p class="form-error" *ngIf="f['event_name'].touched && f['event_name'].invalid">Name is required</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Event Type *</label>
+            <select formControlName="event_type" class="form-input">
+              <option value="marathon">Marathon</option>
+              <option value="cyclothon">Cyclothon</option>
+              <option value="walkathon">Walkathon</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date *</label>
+            <input type="text" formControlName="event_date" appFlatpickr [fpConfig]="{ minDate: 'today' }" class="form-input" placeholder="Select event date">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Location *</label>
+          <input type="text" formControlName="event_location" class="form-input" placeholder="e.g., Mumbai, India">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Banner Image URL</label>
+          <input type="text" formControlName="banner_url" class="form-input" placeholder="https://example.com/banner.jpg">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea formControlName="description" rows="4" class="form-input form-textarea" placeholder="Tell participants about the event..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" routerLink="/admin/events" class="btn btn-outline">Cancel</button>
+          <button type="submit" [disabled]="eventForm.invalid || submitting" class="btn btn-primary">
+            {{ submitting ? 'Creating...' : 'Create Event' }}
           </button>
         </div>
-      </aside>
-
-      <!-- Main Content -->
-      <main class="main-content">
-        <header class="admin-header">
-          <a routerLink="/admin/events" class="back-link">&larr; Back to Events</a>
-          <h1>Create New Event</h1>
-        </header>
-
-        <div class="card form-card">
-          <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="event-form">
-
-            <div *ngIf="errorMessage" class="error-banner">
-              {{ errorMessage }}
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Event Name *</label>
-              <input type="text" formControlName="event_name" class="form-input" placeholder="e.g., Marathon 2026">
-              <p class="form-error" *ngIf="f['event_name'].touched && f['event_name'].invalid">Name is required</p>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Event Type *</label>
-                <select formControlName="event_type" class="form-input">
-                  <option value="marathon">Marathon</option>
-                  <option value="cyclothon">Cyclothon</option>
-                  <option value="walkathon">Walkathon</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Date *</label>
-                <input type="text" formControlName="event_date" appFlatpickr [fpConfig]="{ minDate: 'today' }" class="form-input" placeholder="Select event date">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Location *</label>
-              <input type="text" formControlName="event_location" class="form-input" placeholder="e.g., Mumbai, India">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Banner Image URL</label>
-              <input type="text" formControlName="banner_url" class="form-input" placeholder="https://example.com/banner.jpg">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <textarea formControlName="description" rows="4" class="form-input form-textarea" placeholder="Tell participants about the event..."></textarea>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" routerLink="/admin/events" class="btn btn-outline">Cancel</button>
-              <button type="submit" [disabled]="eventForm.invalid || submitting" class="btn btn-primary">
-                {{ submitting ? 'Creating...' : 'Create Event' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </main>
+      </form>
     </div>
   `,
   styleUrl: './admin-event-create.component.css'
@@ -135,11 +106,5 @@ export class AdminEventCreateComponent {
         this.submitting = false;
       }
     });
-  }
-
-  logout(): void {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('admin');
-    window.location.href = '/admin/login';
   }
 }

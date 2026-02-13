@@ -15,6 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
 export class AdminLoginComponent {
     username = '';
     password = '';
+    showPassword = false;
     isLoading = false;
     errorMessage = '';
 

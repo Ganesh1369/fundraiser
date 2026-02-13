@@ -9,7 +9,8 @@ import {
   ScrollText, Inbox, MessageCircle, Share2, LockOpen, Download, Tag,
   IndianRupee, Sparkles, CircleAlert, Eye, EyeOff, TrendingUp, Heart,
   ArrowRight, ChevronLeft, Menu, X, Clock, Send, ChartNoAxesCombined,
-  Smartphone, Plus, CircleX
+  Smartphone, Plus, CircleX, Pencil, Camera, ChevronRight, ArrowLeft, Trash2,
+  Phone, Receipt, Star
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -27,7 +28,8 @@ export const appConfig: ApplicationConfig = {
         ScrollText, Inbox, MessageCircle, Share2, LockOpen, Download, Tag,
         IndianRupee, Sparkles, CircleAlert, Eye, EyeOff, TrendingUp, Heart,
         ArrowRight, ChevronLeft, Menu, X, Clock, Send, ChartNoAxesCombined,
-        Smartphone, Plus, CircleX
+        Smartphone, Plus, CircleX, Pencil, Camera, ChevronRight, ArrowLeft, Trash2,
+        Phone, Receipt, Star
       })
     )
   ]

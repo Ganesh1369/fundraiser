@@ -56,6 +56,18 @@ export class ApiService {
         return this.http.put(`${this.apiUrl}/user/profile`, data, { headers: this.getHeaders() });
     }
 
+    uploadAvatar(file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const token = localStorage.getItem('token') || '';
+        const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+        return this.http.put(`${this.apiUrl}/user/profile/avatar`, formData, { headers });
+    }
+
+    removeAvatar(): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/user/profile/avatar`, { headers: this.getHeaders() });
+    }
+
     getDonations(period?: string): Observable<any> {
         const params = period && period !== 'all' ? `?period=${period}` : '';
         return this.http.get(`${this.apiUrl}/user/donations${params}`, { headers: this.getHeaders() });
@@ -108,6 +120,14 @@ export class ApiService {
         let url = `${this.apiUrl}/admin/leaderboard?limit=${limit}`;
         if (userType) url += `&userType=${userType}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
+    }
+
+    getAdminUserDetail(id: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/users/${id}`, { headers: this.getHeaders(true) });
+    }
+
+    getAdminUserBySlug(slug: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/users/by-slug/${slug}`, { headers: this.getHeaders(true) });
     }
 
     getAdminCertificates(limit: number = 20, status?: string): Observable<any> {

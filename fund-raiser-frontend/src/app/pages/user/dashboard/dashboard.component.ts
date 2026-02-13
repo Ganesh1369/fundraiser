@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
+import { ToastService } from '../../../services/toast.service';
 
 declare var Razorpay: any;
 
@@ -71,23 +72,19 @@ export class DashboardComponent implements OnInit {
     isLoading = false;
     showDonateModal = false;
     showCertificateModal = false;
-    showProfileModal = false;
     panNumber = '';
     selectedDonationId = '';
     linkCopied = false;
 
     profile: any = null;
     profileIncomplete = false;
-    profileForm: any = {
-        name: '', phone: '', city: '',
-        age: '', classGrade: '', schoolName: '',
-        organizationName: '', panNumber: ''
-    };
 
     constructor(
         private router: Router,
         private api: ApiService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private toast: ToastService,
+        private zone: NgZone
     ) { }
 
     ngOnInit(): void {
@@ -173,13 +170,23 @@ export class DashboardComponent implements OnInit {
                         amount: res.data.amount,
                         currency: res.data.currency,
                         name: 'Primathon\'26',
-                        description: 'Primathon\'26 Registration',
+                        description: 'Primathon\'26 Donation',
                         order_id: res.data.orderId,
                         handler: (response: any) => {
-                            this.verifyPayment(response, res.data.donationId);
+                            this.zone.run(() => {
+                                this.verifyPayment(response, res.data.donationId);
+                            });
                         },
                         prefill: { name: this.user?.name, email: this.user?.email },
-                        theme: { color: '#22c55e' }
+                        theme: { color: '#22c55e' },
+                        modal: {
+                            ondismiss: () => {
+                                this.zone.run(() => {
+                                    this.isLoading = false;
+                                    this.cdr.detectChanges();
+                                });
+                            }
+                        }
                     };
                     const razorpay = new Razorpay(options);
                     razorpay.open();
@@ -203,10 +210,10 @@ export class DashboardComponent implements OnInit {
             next: (res: any) => {
                 if (res.success) {
                     this.loadDashboardData();
-                    alert('Thank you for your donation!');
+                    this.toast.success('Thank you for your donation!');
                 }
             },
-            error: (err: any) => console.error('Payment verification failed:', err)
+            error: () => this.toast.error('Payment verification failed. Please contact support.')
         });
     }
 
@@ -219,16 +226,16 @@ export class DashboardComponent implements OnInit {
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
-                    alert('Certificate request submitted successfully!');
+                    this.toast.success('Certificate request submitted successfully!');
                     this.showCertificateModal = false;
                     this.panNumber = '';
                     this.selectedDonationId = '';
                     this.loadCertificates();
                 } else {
-                    alert(res.message || 'Failed to submit request');
+                    this.toast.error(res.message || 'Failed to submit request');
                 }
             },
-            error: () => { this.isLoading = false; }
+            error: () => { this.isLoading = false; this.toast.error('Failed to submit request'); }
         });
     }
 
@@ -290,48 +297,8 @@ export class DashboardComponent implements OnInit {
         }
     }
 
-    openProfileModal(): void {
-        if (this.profile) {
-            this.profileForm = {
-                name: this.profile.name || '',
-                phone: this.profile.phone || '',
-                city: this.profile.city || '',
-                age: this.profile.age || '',
-                classGrade: this.profile.classGrade || '',
-                schoolName: this.profile.schoolName || '',
-                organizationName: this.profile.organizationName || '',
-                panNumber: this.profile.panNumber || ''
-            };
-        }
-        this.showProfileModal = true;
-    }
-
-    saveProfile(): void {
-        this.isLoading = true;
-        this.api.updateProfile(this.profileForm).subscribe({
-            next: (res: any) => {
-                this.isLoading = false;
-                if (res.success) {
-                    this.showProfileModal = false;
-                    this.loadProfile();
-                    // Sync localStorage user data
-                    if (this.user) {
-                        const updated = {
-                            ...this.user,
-                            name: res.data.name || this.user.name,
-                            userType: res.data.user_type || this.user.userType
-                        };
-                        localStorage.setItem('user', JSON.stringify(updated));
-                        this.user = updated;
-                    }
-                }
-                this.cdr.detectChanges();
-            },
-            error: () => {
-                this.isLoading = false;
-                this.cdr.detectChanges();
-            }
-        });
+    goToProfile(): void {
+        this.router.navigate(['/profile']);
     }
 
     logout(): void {
@@ -350,5 +317,10 @@ export class DashboardComponent implements OnInit {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency', currency: 'INR', maximumFractionDigits: 0
         }).format(amount);
+    }
+
+    getInitials(name: string | undefined): string {
+        if (!name) return '?';
+        return name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2);
     }
 }

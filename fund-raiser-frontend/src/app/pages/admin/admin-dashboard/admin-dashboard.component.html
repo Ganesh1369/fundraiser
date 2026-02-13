@@ -1,359 +1,112 @@
-<div class="admin-dashboard">
-    <!-- Sidebar -->
-    <aside class="sidebar dark">
-        <div class="sidebar-header">
-            <a routerLink="/" class="logo">
-                <lucide-icon name="flame" class="logo-icon w-5 h-5"></lucide-icon>
-                <span class="logo-text">ICE<span class="text-gold"> Portal</span></span>
-            </a>
-            <span class="admin-badge">Admin</span>
+<header class="admin-header">
+    <h1>Dashboard Overview</h1>
+</header>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <lucide-icon name="users" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">Total Users</span>
         </div>
-
-        <nav class="sidebar-nav">
-            <a class="nav-item" [class.active]="activeTab === 'dashboard'" (click)="activeTab = 'dashboard'">
-                <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon>
-                Dashboard
-            </a>
-            <a class="nav-item" routerLink="/admin/events" routerLinkActive="active">
-                <lucide-icon name="calendar" class="nav-icon w-4 h-4"></lucide-icon>
-                Events
-            </a>
-            <a class="nav-item" [class.active]="activeTab === 'registrations'" (click)="activeTab = 'registrations'">
-                <lucide-icon name="users" class="nav-icon w-4 h-4"></lucide-icon>
-                Registrations
-            </a>
-            <a class="nav-item" [class.active]="activeTab === 'donations'" (click)="activeTab = 'donations'">
-                <lucide-icon name="wallet" class="nav-icon w-4 h-4"></lucide-icon>
-                Donations
-            </a>
-            <a class="nav-item" [class.active]="activeTab === 'leaderboard'" (click)="activeTab = 'leaderboard'">
-                <lucide-icon name="trophy" class="nav-icon w-4 h-4"></lucide-icon>
-                Leaderboard
-            </a>
-            <a class="nav-item" [class.active]="activeTab === 'certificates'" (click)="activeTab = 'certificates'">
-                <lucide-icon name="file-text" class="nav-icon w-4 h-4"></lucide-icon>
-                Certificates
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <button class="logout-btn" (click)="logout()">
-                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon>
-                Logout
-            </button>
+        <div class="stat-value">{{ stats?.users?.total || 0 }}</div>
+        <div class="stat-breakdown">
+            <span class="flex items-center gap-1"><lucide-icon name="graduation-cap" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.student || 0 }}</span>
+            <span class="flex items-center gap-1"><lucide-icon name="user" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.individual || 0 }}</span>
+            <span class="flex items-center gap-1"><lucide-icon name="building-2" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.organization || 0 }}</span>
         </div>
-    </aside>
+    </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <header class="admin-header">
-            <h1>
-                @switch (activeTab) {
-                @case ('dashboard') { Dashboard Overview }
-                @case ('registrations') { User Registrations }
-                @case ('donations') { Donation Management }
-                @case ('leaderboard') { Leaderboard }
-                @case ('certificates') { 80G Certificates }
-                }
-            </h1>
-        </header>
-
-        <!-- Dashboard Tab -->
-        @if (activeTab === 'dashboard') {
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <lucide-icon name="users" class="stat-icon w-5 h-5"></lucide-icon>
-                    <span class="stat-label">Total Users</span>
-                </div>
-                <div class="stat-value">{{ stats?.users?.total || 0 }}</div>
-                <div class="stat-breakdown">
-                    <span class="flex items-center gap-1"><lucide-icon name="graduation-cap" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.student || 0 }}</span>
-                    <span class="flex items-center gap-1"><lucide-icon name="user" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.individual || 0 }}</span>
-                    <span class="flex items-center gap-1"><lucide-icon name="building-2" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.users?.byType?.organization || 0 }}</span>
-                </div>
-            </div>
-
-            <div class="stat-card gold">
-                <div class="stat-header">
-                    <lucide-icon name="wallet" class="stat-icon w-5 h-5"></lucide-icon>
-                    <span class="stat-label">Total Raised</span>
-                </div>
-                <div class="stat-value">{{ formatCurrency(stats?.donations?.totalAmount || 0) }}</div>
-                <div class="stat-breakdown">
-                    <span class="flex items-center gap-1"><lucide-icon name="circle-check" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.donations?.totalCount || 0 }} transactions</span>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <lucide-icon name="trending-up" class="stat-icon w-5 h-5"></lucide-icon>
-                    <span class="stat-label">This Month</span>
-                </div>
-                <div class="stat-value">{{ formatCurrency(stats?.donations?.thisMonth || 0) }}</div>
-                <div class="stat-breakdown">
-                    <span>Raised</span>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <lucide-icon name="file-text" class="stat-icon w-5 h-5"></lucide-icon>
-                    <span class="stat-label">Certificates</span>
-                </div>
-                <div class="stat-value">{{ stats?.certificates?.['pending'] || 0 }}</div>
-                <div class="stat-breakdown">
-                    <span>Pending review</span>
-                </div>
-            </div>
+    <div class="stat-card gold">
+        <div class="stat-header">
+            <lucide-icon name="wallet" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">Total Raised</span>
         </div>
+        <div class="stat-value">{{ formatCurrency(stats?.donations?.totalAmount || 0) }}</div>
+        <div class="stat-breakdown">
+            <span class="flex items-center gap-1"><lucide-icon name="circle-check" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.donations?.totalCount || 0 }} transactions</span>
+        </div>
+    </div>
 
-        <!-- Quick Tables -->
-        <div class="dashboard-grid">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Recent Registrations</h2>
-                    <button class="btn btn-sm btn-outline" (click)="activeTab = 'registrations'">View All</button>
-                </div>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (user of registrations.slice(0, 5); track user.id) {
-                            <tr>
-                                <td>{{ user.name }}</td>
-                                <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
-                                <td>{{ formatDate(user.created_at) }}</td>
-                            </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <lucide-icon name="trending-up" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">This Month</span>
+        </div>
+        <div class="stat-value">{{ formatCurrency(stats?.donations?.thisMonth || 0) }}</div>
+        <div class="stat-breakdown">
+            <span>Raised</span>
+        </div>
+    </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Top Donors</h2>
-                    <button class="btn btn-sm btn-outline" (click)="activeTab = 'leaderboard'">View All</button>
-                </div>
-                <div class="leaderboard-mini">
-                    @for (entry of leaderboard.slice(0, 5); track entry.name; let i = $index) {
-                    <div class="leader-item">
-                        <span class="rank" [ngClass]="'rank-' + (i + 1)">{{ i + 1 }}</span>
-                        <span class="name">{{ entry.name }}</span>
-                        <span class="score">{{ formatCurrency(entry.totalDonations) }}</span>
-                    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <lucide-icon name="file-text" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">Certificates</span>
+        </div>
+        <div class="stat-value">{{ stats?.certificates?.['pending'] || 0 }}</div>
+        <div class="stat-breakdown">
+            <span>Pending review</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Tables -->
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent Registrations</h2>
+            <a routerLink="/admin/registrations" class="btn btn-sm btn-outline">View All</a>
+        </div>
+        @if (registrations.length === 0) {
+        <div class="empty-state">
+            <lucide-icon name="users" class="empty-icon w-10 h-10"></lucide-icon>
+            <h3>No registration data</h3>
+        </div>
+        } @else {
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (user of registrations.slice(0, 5); track user.id) {
+                    <tr>
+                        <td><a [routerLink]="['/admin/users', slugify(user.name)]" [state]="{userId: user.id}" class="user-link">{{ user.name }}</a></td>
+                        <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
+                        <td>{{ formatDate(user.created_at) }}</td>
+                    </tr>
                     }
-                </div>
-            </div>
+                </tbody>
+            </table>
         </div>
         }
+    </div>
 
-        <!-- Registrations Tab -->
-        @if (activeTab === 'registrations') {
-        <div class="filters">
-            <select class="filter-select" [(ngModel)]="userTypeFilter" (change)="onFilterChange()">
-                <option value="">All Types</option>
-                <option value="student">Students</option>
-                <option value="individual">Individuals</option>
-                <option value="organization">Organizations</option>
-            </select>
-            <input type="text" class="filter-input" placeholder="Search by name or email..." [(ngModel)]="searchQuery"
-                (input)="onFilterChange()">
-            <button class="btn btn-primary" (click)="exportRegistrations()">
-                <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
-            </button>
+    <div class="card">
+        <div class="card-header">
+            <h2>Top Donors</h2>
+            <a routerLink="/admin/leaderboard" class="btn btn-sm btn-outline">View All</a>
         </div>
-
-        <div class="card">
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Type</th>
-                            <th>City</th>
-                            <th>Registered</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (user of registrations; track user.id) {
-                        <tr>
-                            <td>{{ user.name }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.phone }}</td>
-                            <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
-                            <td>{{ user.city || '-' }}</td>
-                            <td>{{ formatDate(user.created_at) }}</td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+        @if (leaderboard.length === 0) {
+        <div class="empty-state">
+            <lucide-icon name="trophy" class="empty-icon w-10 h-10"></lucide-icon>
+            <h3>No donor data</h3>
         </div>
-        }
-
-        <!-- Donations Tab -->
-        @if (activeTab === 'donations') {
-        <div class="filters">
-            <select class="filter-select" [(ngModel)]="donationStatusFilter" (change)="onFilterChange()">
-                <option value="">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-            </select>
-            <button class="btn btn-primary" (click)="exportDonations()">
-                <lucide-icon name="download" class="w-4 h-4 inline-block"></lucide-icon> Export Excel
-            </button>
-        </div>
-
-        <div class="card">
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Donor</th>
-                            <th>Email</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Payment ID</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (donation of donations; track donation.id) {
-                        <tr>
-                            <td>{{ donation.user_name }}</td>
-                            <td>{{ donation.user_email }}</td>
-                            <td class="amount">{{ formatCurrency(donation.amount) }}</td>
-                            <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
-                            <td>{{ donation.razorpay_payment_id || '-' }}</td>
-                            <td>{{ formatDate(donation.created_at) }}</td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        }
-
-        <!-- Leaderboard Tab -->
-        @if (activeTab === 'leaderboard') {
-        <div class="filters">
-            <select class="filter-select" [(ngModel)]="leaderboardUserTypeFilter" (change)="onFilterChange()">
-                <option value="">All Types</option>
-                <option value="student">Students</option>
-                <option value="individual">Individuals</option>
-                <option value="organization">Organizations</option>
-            </select>
-        </div>
-        <div class="card">
-            <div class="table-wrapper">
-                <table class="data-table leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>City</th>
-                            <th>Type</th>
-                            <th>Donations</th>
-                            <th># Txns</th>
-                            <th>Referral Pts</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (entry of leaderboard; track entry.name; let i = $index) {
-                        <tr [class.top-3]="i < 3">
-                            <td class="rank-cell">
-                                @switch (i) {
-                                @case (0) { <span class="text-amber-500 font-bold">1</span> }
-                                @case (1) { <span class="text-neutral-400 font-bold">2</span> }
-                                @case (2) { <span class="text-amber-700 font-bold">3</span> }
-                                @default { {{ i + 1 }} }
-                                }
-                            </td>
-                            <td class="name-cell">{{ entry.name }}</td>
-                            <td>{{ entry.email }}</td>
-                            <td>{{ entry.city || '-' }}</td>
-                            <td><span class="badge" [ngClass]="entry.userType">{{ entry.userType }}</span></td>
-                            <td class="amount">{{ formatCurrency(entry.totalDonations) }}</td>
-                            <td>{{ entry.donationCount }}</td>
-                            <td>{{ entry.referralPoints }}</td>
-                            <td class="score-cell"><strong>{{ entry.score }}</strong></td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        }
-
-        <!-- Certificates Tab -->
-        @if (activeTab === 'certificates') {
-        <div class="card">
-            @if (certificates.length === 0) {
-            <div class="empty-state">
-                <lucide-icon name="file-text" class="empty-icon w-10 h-10"></lucide-icon>
-                <h3>No Certificate Requests</h3>
-                <p>When organizations request 80G certificates, they will appear here.</p>
-            </div>
-            } @else {
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>PAN</th>
-                            <th>Donation</th>
-                            <th>Requested</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (cert of certificates; track cert.id) {
-                        <tr>
-                            <td>{{ cert.userName }}</td>
-                            <td>{{ cert.userEmail }}</td>
-                            <td class="pan-cell">{{ cert.panNumber }}</td>
-                            <td class="amount">{{ cert.donationAmount ? formatCurrency(cert.donationAmount) : '-' }}
-                            </td>
-                            <td>{{ formatDate(cert.requestedAt) }}</td>
-                            <td><span class="status-badge" [ngClass]="getCertStatusClass(cert.status)">{{ cert.status
-                                    }}</span></td>
-                            <td class="action-cell">
-                                @if (cert.status === 'pending') {
-                                <button class="btn-action approve"
-                                    (click)="updateCertificateStatus(cert.id, 'approved')"><lucide-icon name="check" class="w-3.5 h-3.5 inline-block"></lucide-icon> Approve</button>
-                                <button class="btn-action reject"
-                                    (click)="updateCertificateStatus(cert.id, 'rejected')"><lucide-icon name="circle-x" class="w-3.5 h-3.5 inline-block"></lucide-icon> Reject</button>
-                                } @else if (cert.status === 'approved') {
-                                <span class="action-status approved"><lucide-icon name="check" class="w-3.5 h-3.5 inline-block"></lucide-icon> Approved</span>
-                                } @else if (cert.status === 'rejected') {
-                                <span class="action-status rejected"><lucide-icon name="circle-x" class="w-3.5 h-3.5 inline-block"></lucide-icon> Rejected</span>
-                                } @else {
-                                <span class="action-status processing"><lucide-icon name="clock" class="w-3.5 h-3.5 inline-block"></lucide-icon> Processing</span>
-                                }
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
+        } @else {
+        <div class="leaderboard-mini">
+            @for (entry of leaderboard.slice(0, 5); track entry.name; let i = $index) {
+            <div class="leader-item">
+                <span class="rank" [ngClass]="'rank-' + (i + 1)">{{ i + 1 }}</span>
+                <span class="name">{{ entry.name }}</span>
+                <span class="score">{{ formatCurrency(entry.totalDonations) }}</span>
             </div>
             }
         </div>
         }
-    </main>
+    </div>
 </div>

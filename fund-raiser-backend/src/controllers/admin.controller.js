@@ -97,3 +97,13 @@ exports.updateCertificateStatus = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getUserBySlug = async (req, res, next) => {
+    try {
+        const data = await adminService.getUserBySlug(req.params.slug);
+        res.json({ success: true, data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};

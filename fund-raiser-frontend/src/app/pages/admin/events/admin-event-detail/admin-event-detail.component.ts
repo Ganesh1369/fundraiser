@@ -166,9 +166,4 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
       : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  logout(): void {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('admin');
-    this.router.navigate(['/admin/login']);
-  }
 }

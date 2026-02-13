@@ -27,6 +27,14 @@ const generateOtp = () => {
  * Send OTP for email verification
  */
 const sendOtp = async (email, purpose = 'register') => {
+    // Block OTP for already-registered emails during registration
+    if (purpose === 'register') {
+        const existing = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+        if (existing.rows.length > 0) {
+            throw { status: 400, message: 'Email already registered. Please sign in instead.' };
+        }
+    }
+
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 

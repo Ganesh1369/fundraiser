@@ -1,8 +1,8 @@
 <!-- Navigation -->
 <nav class="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-lg border-b border-neutral-100">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <a routerLink="/" class="flex items-center gap-2 text-accent font-bold text-lg no-underline">
-            <lucide-icon name="flame" class="w-5 h-5 text-primary"></lucide-icon>
+        <a href="https://icenetwork.in/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-accent font-bold text-lg no-underline">
+            <img src="/ice_logo.svg" alt="ICE" class="h-6">
             <span>Prima<span class="text-primary">thon'26</span></span>
         </a>
         <div class="hidden md:flex items-center gap-8">
@@ -57,6 +57,12 @@
                 <a href="#highlights" class="px-7 py-3.5 border-2 border-neutral-200 text-neutral-700 font-semibold rounded-xl hover:border-primary hover:text-primary transition-all no-underline">
                     Event Details
                 </a>
+                <button (click)="shareEvent()" class="relative px-7 py-3.5 border-2 border-neutral-200 text-neutral-700 font-semibold rounded-xl hover:border-primary hover:text-primary transition-all inline-flex items-center gap-2">
+                    <lucide-icon name="share-2" class="w-4 h-4"></lucide-icon> Share
+                    @if (shareTooltip) {
+                    <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent text-white text-xs rounded-lg whitespace-nowrap">Link copied!</span>
+                    }
+                </button>
             </div>
         </div>
 
@@ -145,7 +151,7 @@
     </div>
 </section>
 
-<!-- Testimonials -->
+<!-- Sponsors -->
 <section id="sponsors" class="py-20 px-5 bg-white">
     <div class="max-w-6xl mx-auto">
         <div class="text-center max-w-lg mx-auto mb-14">
@@ -153,18 +159,22 @@
             <h2 class="text-3xl md:text-4xl font-bold">Backed by <span class="text-primary">Leaders</span></h2>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
-            @for (testimonial of testimonials; track testimonial.name) {
-            <div class="p-6 rounded-2xl bg-neutral-50">
-                <p class="text-sm text-neutral-600 leading-relaxed mb-5 italic">"{{ testimonial.text }}"</p>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-primary/10 text-primary font-semibold text-sm rounded-full flex items-center justify-center">{{ testimonial.avatar }}</div>
-                    <div>
-                        <div class="text-sm font-semibold text-accent">{{ testimonial.name }}</div>
-                        <div class="text-xs text-neutral-400">{{ testimonial.role }}</div>
-                    </div>
+        <div class="flex flex-wrap justify-center gap-5 max-w-5xl mx-auto">
+            @for (sponsor of sponsors; track sponsor.name) {
+            <a [href]="sponsor.url || null" [attr.target]="sponsor.url ? '_blank' : null" [attr.rel]="sponsor.url ? 'noopener noreferrer' : null"
+               class="flex flex-col items-center gap-3 p-5 rounded-2xl bg-neutral-50 hover:bg-white hover:shadow-card transition-all duration-300 w-[calc(50%-10px)] sm:w-[calc(20%-16px)] no-underline cursor-pointer">
+                <div class="w-full aspect-square flex items-center justify-center p-3">
+                    @if (sponsor.logo) {
+                    <img [src]="sponsor.logo" [alt]="sponsor.name" class="max-w-full max-h-full object-contain" loading="lazy">
+                    } @else {
+                    <div class="w-14 h-14 bg-primary/10 text-primary font-bold text-lg rounded-full flex items-center justify-center">{{ sponsor.name.charAt(0) }}</div>
+                    }
                 </div>
-            </div>
+                <div class="text-center">
+                    <div class="text-xs font-semibold text-accent leading-tight">{{ sponsor.name }}</div>
+                    <div class="text-[10px] text-neutral-400 mt-0.5">{{ sponsor.tier }}</div>
+                </div>
+            </a>
             }
         </div>
     </div>
@@ -185,6 +195,12 @@
                     <a routerLink="/login" class="px-7 py-3.5 border-2 border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors no-underline">
                         Sign In &rarr;
                     </a>
+                    <button (click)="shareEvent()" class="relative px-7 py-3.5 border-2 border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors inline-flex items-center gap-2">
+                        <lucide-icon name="share-2" class="w-4 h-4"></lucide-icon> Share with a Friend
+                        @if (shareTooltip) {
+                        <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-white text-xs rounded-lg whitespace-nowrap">Link copied!</span>
+                        }
+                    </button>
                 </div>
             </div>
         </div>
@@ -194,10 +210,10 @@
 <!-- Footer -->
 <footer class="bg-neutral-900 text-white pt-14 pb-8 px-5">
     <div class="max-w-6xl mx-auto">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-8 mb-10">
             <div class="col-span-2 md:col-span-1">
-                <a routerLink="/" class="flex items-center gap-2 text-white font-bold text-lg no-underline mb-3">
-                    <lucide-icon name="flame" class="w-5 h-5 text-primary"></lucide-icon>
+                <a href="https://icenetwork.in/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-white font-bold text-lg no-underline mb-3">
+                    <img src="/ice_logo.svg" alt="ICE" class="h-6">
                     <span>Prima<span class="text-primary">thon'26</span></span>
                 </a>
                 <p class="text-sm text-neutral-400 leading-relaxed max-w-xs">A marathon by ICE — Institute for Climate and Environment. Our City · Our Future.</p>
@@ -212,29 +228,19 @@
                 </div>
             </div>
             <div>
-                <h4 class="text-sm font-semibold text-white mb-4">Participants</h4>
-                <div class="flex flex-col gap-2">
-                    <a routerLink="/register" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">Student</a>
-                    <a routerLink="/register" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">Individual</a>
-                    <a routerLink="/register" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">Organization</a>
-                </div>
-            </div>
-            <div>
-                <h4 class="text-sm font-semibold text-white mb-4">Support</h4>
-                <div class="flex flex-col gap-2">
-                    <a href="#" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">Contact Us</a>
-                    <a href="#" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">FAQs</a>
-                    <a href="#" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">Privacy Policy</a>
-                    <a href="#" class="text-sm text-neutral-400 hover:text-white no-underline transition-colors">Terms</a>
+                <h4 class="text-sm font-semibold text-white mb-4">Contact Us</h4>
+                <div class="flex flex-col gap-3">
+                    <a href="tel:+919840471333" class="flex items-center gap-2 text-sm text-neutral-400 hover:text-white no-underline transition-colors">
+                        <lucide-icon name="phone" class="w-4 h-4 text-primary"></lucide-icon> +91 98404 71333
+                    </a>
+                    <a href="mailto:info@icenetwork.in" class="flex items-center gap-2 text-sm text-neutral-400 hover:text-white no-underline transition-colors">
+                        <lucide-icon name="mail" class="w-4 h-4 text-primary"></lucide-icon> info@icenetwork.in
+                    </a>
                 </div>
             </div>
         </div>
-        <div class="border-t border-neutral-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="border-t border-neutral-800 pt-6 text-center">
             <p class="text-xs text-neutral-500">&copy; {{ currentYear }} ICE — Institute for Climate and Environment. All rights reserved.</p>
-            <div class="flex gap-3">
-                <a href="#" class="w-9 h-9 bg-neutral-800 hover:bg-primary rounded-lg flex items-center justify-center text-sm text-neutral-400 hover:text-white no-underline transition-all">X</a>
-                <a href="#" class="w-9 h-9 bg-neutral-800 hover:bg-primary rounded-lg flex items-center justify-center text-sm text-neutral-400 hover:text-white no-underline transition-all">in</a>
-            </div>
         </div>
     </div>
 </footer>
