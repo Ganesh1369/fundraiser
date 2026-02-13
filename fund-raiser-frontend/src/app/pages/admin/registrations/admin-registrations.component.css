@@ -121,6 +121,24 @@
     color: #FF9800;
 }
 
+.fee-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.fee-badge.paid {
+    background: rgba(52, 168, 83, 0.1);
+    color: #22c55e;
+}
+
+.fee-badge.unpaid {
+    background: rgba(234, 67, 53, 0.1);
+    color: #EA4335;
+}
+
 .user-link {
     color: #22c55e;
     text-decoration: none;
@@ -152,4 +170,36 @@
 
 .empty-state p {
     margin: 0;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.btn-page {
+    padding: 4px 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: #F0F0F0;
+}
+
+.btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.875rem;
+    color: #9CA3AF;
 }

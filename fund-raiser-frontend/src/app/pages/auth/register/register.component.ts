@@ -256,7 +256,7 @@ export class RegisterComponent {
     }
 
     private initiatePayment(): void {
-        this.api.createOrder(300, false).subscribe({
+        this.api.createOrder(300, false, 'registration_fee').subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {

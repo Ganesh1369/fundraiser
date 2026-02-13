@@ -38,6 +38,9 @@ CREATE TABLE users (
     -- Email Verification
     email_verified BOOLEAN DEFAULT false,
 
+    -- Registration fee
+    registration_fee_paid BOOLEAN DEFAULT false,
+
     -- Metadata
     is_active BOOLEAN DEFAULT true,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -140,6 +143,9 @@ CREATE TABLE donations (
     referrer_id CHAR(36),
     points_awarded BOOLEAN DEFAULT false,
 
+    -- Purpose: 'donation' for real donations, 'registration_fee' for event registration fees
+    purpose ENUM('donation', 'registration_fee') DEFAULT 'donation',
+
     -- 80G Certificate Request Flag
     request_80g BOOLEAN DEFAULT false,
 
@@ -205,6 +211,7 @@ CREATE TABLE certificate_requests (
 
 CREATE INDEX idx_certificate_requests_user_id ON certificate_requests(user_id);
 CREATE INDEX idx_certificate_requests_status ON certificate_requests(status);
+CREATE UNIQUE INDEX idx_certificate_requests_donation ON certificate_requests(donation_id);
 
 -- Admin Users Table
 CREATE TABLE admin_users (
@@ -256,9 +263,9 @@ SELECT
     u.city,
     u.user_type,
     u.referral_points,
-    COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.amount ELSE 0 END), 0) AS total_donations,
-    SUM(CASE WHEN d.status = 'completed' THEN 1 ELSE 0 END) AS donation_count,
-    (COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.amount ELSE 0 END), 0) + u.referral_points) AS score
+    COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) AS total_donations,
+    SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN 1 ELSE 0 END) AS donation_count,
+    (COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) + u.referral_points) AS score
 FROM users u
 LEFT JOIN donations d ON u.id = d.user_id
 WHERE u.is_active = true

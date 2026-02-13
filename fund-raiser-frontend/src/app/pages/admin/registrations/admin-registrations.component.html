@@ -9,8 +9,8 @@
         <option value="individual">Individuals</option>
         <option value="organization">Organizations</option>
     </select>
-    <input type="text" class="filter-input" placeholder="Search by name or email..." [(ngModel)]="searchQuery"
-        (input)="onFilterChange()">
+    <input type="text" class="filter-input" placeholder="Search by name or email..." [value]="searchQuery"
+        (input)="onSearchInput($any($event.target).value)">
     <button class="btn btn-primary btn-export" (click)="exportRegistrations()">
         <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Export Excel
     </button>
@@ -33,6 +33,7 @@
                     <th>Phone</th>
                     <th>Type</th>
                     <th>City</th>
+                    <th>Fee</th>
                     <th>Registered</th>
                 </tr>
             </thead>
@@ -44,11 +45,23 @@
                     <td>{{ user.phone }}</td>
                     <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
                     <td>{{ user.city || '-' }}</td>
+                    <td>
+                        <span class="fee-badge" [ngClass]="user.registration_fee_paid ? 'paid' : 'unpaid'">
+                            {{ user.registration_fee_paid ? 'Paid' : 'Not Paid' }}
+                        </span>
+                    </td>
                     <td>{{ formatDate(user.created_at) }}</td>
                 </tr>
                 }
             </tbody>
         </table>
     </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="loadRegistrations(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="loadRegistrations(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
     }
 </div>

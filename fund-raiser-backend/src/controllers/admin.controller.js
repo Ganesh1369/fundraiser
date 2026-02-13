@@ -79,6 +79,17 @@ exports.exportLeaderboard = async (req, res, next) => {
     }
 };
 
+exports.exportCertificates = async (req, res, next) => {
+    try {
+        const buffer = await adminService.exportCertificates(req.query);
+        res.setHeader('Content-Disposition', 'attachment; filename=80g-certificates.xlsx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.getCertificateRequests = async (req, res, next) => {
     try {
         const data = await adminService.getCertificateRequests(req.query);

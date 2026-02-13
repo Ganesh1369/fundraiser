@@ -90,8 +90,8 @@ export class ApiService {
     }
 
     // --- Donations ---
-    createOrder(amount: number, request80g: boolean = false): Observable<any> {
-        return this.http.post(`${this.apiUrl}/donations/create-order`, { amount, request80g }, { headers: this.getHeaders() });
+    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation'): Observable<any> {
+        return this.http.post(`${this.apiUrl}/donations/create-order`, { amount, request80g, purpose }, { headers: this.getHeaders() });
     }
 
     verifyPayment(data: any): Observable<any> {
@@ -103,15 +103,15 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/admin/stats`, { headers: this.getHeaders(true) });
     }
 
-    getAdminRegistrations(limit: number = 50, userType?: string, search?: string): Observable<any> {
-        let url = `${this.apiUrl}/admin/registrations?limit=${limit}`;
+    getAdminRegistrations(limit: number = 20, page: number = 1, userType?: string, search?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/registrations?limit=${limit}&page=${page}`;
         if (userType) url += `&userType=${userType}`;
         if (search) url += `&search=${search}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
-    getAdminDonations(limit: number = 50, status?: string): Observable<any> {
-        let url = `${this.apiUrl}/admin/donations?limit=${limit}`;
+    getAdminDonations(limit: number = 20, page: number = 1, status?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/donations?limit=${limit}&page=${page}`;
         if (status) url += `&status=${status}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
@@ -130,14 +130,18 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/admin/users/by-slug/${slug}`, { headers: this.getHeaders(true) });
     }
 
-    getAdminCertificates(limit: number = 20, status?: string): Observable<any> {
-        let url = `${this.apiUrl}/admin/certificates?limit=${limit}`;
+    getAdminCertificates(limit: number = 20, page: number = 1, status?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/certificates?limit=${limit}&page=${page}`;
         if (status) url += `&status=${status}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
     updateCertificateStatus(id: string, status: string): Observable<any> {
         return this.http.patch(`${this.apiUrl}/admin/certificates/${id}`, { status }, { headers: this.getHeaders(true) });
+    }
+
+    exportCertificates(): string {
+        return `${this.apiUrl}/admin/certificates/export`;
     }
 
     exportRegistrations(): string {

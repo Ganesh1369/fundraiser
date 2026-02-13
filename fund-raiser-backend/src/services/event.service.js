@@ -28,6 +28,7 @@ const createEvent = async (eventData) => {
  * Get all events (Admin)
  */
 const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
+    page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
@@ -46,15 +47,14 @@ const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
 
     const countResult = await db.query(`SELECT COUNT(*) FROM events ${whereClause}`, params);
 
-    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT e.*,
             (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id AND er.registration_status = 'registered') as registration_count
          FROM events e
          ${whereClause}
          ORDER BY e.event_date DESC
-         LIMIT ? OFFSET ?`,
-        paginatedParams
+         LIMIT ${limit} OFFSET ${offset}`,
+        params
     );
 
     return {
@@ -132,6 +132,7 @@ const toggleEventRegistration = async (id) => {
  * Get registrations for an event (Admin)
  */
 const getEventRegistrations = async (eventId, { page = 1, limit = 20, search }) => {
+    page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [eventId];
     let whereConditions = ['er.event_id = ?'];
@@ -150,15 +151,14 @@ const getEventRegistrations = async (eventId, { page = 1, limit = 20, search }) 
         params
     );
 
-    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT er.*, u.name, u.email, u.phone
          FROM event_registrations er
          JOIN users u ON er.user_id = u.id
          ${whereClause}
          ORDER BY er.created_at DESC
-         LIMIT ? OFFSET ?`,
-        paginatedParams
+         LIMIT ${limit} OFFSET ${offset}`,
+        params
     );
 
     return {

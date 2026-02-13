@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
+import { environment } from '../../../environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface CertificateRequest {
@@ -20,10 +21,12 @@ interface CertificateRequest {
     standalone: true,
     imports: [CommonModule, RouterModule, LucideAngularModule],
     templateUrl: './admin-certificates.component.html',
-    styleUrl: './admin-certificates.component.css'
+    styleUrl: './admin-certificates.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminCertificatesComponent implements OnInit {
     certificates: CertificateRequest[] = [];
+    pagination = { page: 1, totalPages: 1, total: 0 };
 
     constructor(
         private router: Router,
@@ -35,8 +38,8 @@ export class AdminCertificatesComponent implements OnInit {
         this.loadCertificates();
     }
 
-    loadCertificates(): void {
-        this.api.getAdminCertificates().subscribe({
+    loadCertificates(page: number = 1): void {
+        this.api.getAdminCertificates(20, page).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     const requests = res.data?.requests || res.data || [];
@@ -51,6 +54,7 @@ export class AdminCertificatesComponent implements OnInit {
                         status: r.status,
                         adminNotes: r.admin_notes
                     })) : [];
+                    this.pagination = res.data?.pagination || this.pagination;
                     this.cdr.detectChanges();
                 }
             },
@@ -61,10 +65,25 @@ export class AdminCertificatesComponent implements OnInit {
     updateCertificateStatus(certId: string, status: string): void {
         this.api.updateCertificateStatus(certId, status).subscribe({
             next: (res: any) => {
-                if (res.success) this.loadCertificates();
+                if (res.success) this.loadCertificates(this.pagination.page);
             },
             error: () => { }
         });
+    }
+
+    exportCertificates(): void {
+        const token = localStorage.getItem('adminToken');
+        if (!token) return;
+
+        fetch(`${environment.apiUrl}/admin/certificates/export`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.blob()).then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '80g-certificates.xlsx';
+            a.click();
+        }).catch(err => console.error('Export failed:', err));
     }
 
     getCertStatusClass(status: string): string {

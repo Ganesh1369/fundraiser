@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterModule, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -47,7 +48,8 @@ interface LeaderboardEntry {
     standalone: true,
     imports: [CommonModule, RouterLink, RouterModule, LucideAngularModule],
     templateUrl: './admin-dashboard.component.html',
-    styleUrl: './admin-dashboard.component.css'
+    styleUrl: './admin-dashboard.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminDashboardComponent implements OnInit {
     stats: DashboardStats | null = null;
@@ -68,40 +70,28 @@ export class AdminDashboardComponent implements OnInit {
     loadDashboardData(): void {
         this.isLoading = true;
 
-        this.api.getAdminStats().subscribe({
+        forkJoin({
+            stats: this.api.getAdminStats(),
+            registrations: this.api.getAdminRegistrations(5),
+            leaderboard: this.api.getLeaderboard(5)
+        }).subscribe({
             next: (res: any) => {
-                if (res.success) { this.stats = res.data; this.cdr.detectChanges(); }
+                if (res.stats?.success) this.stats = res.stats.data;
+                if (res.registrations?.success) this.registrations = res.registrations.data.registrations || [];
+                if (res.leaderboard?.success) this.leaderboard = res.leaderboard.data;
+                this.isLoading = false;
+                this.cdr.detectChanges();
             },
             error: (err: any) => {
+                this.isLoading = false;
                 if (err.status === 401 || err.status === 403) {
                     localStorage.removeItem('adminToken');
                     localStorage.removeItem('admin');
                     this.router.navigate(['/admin/login']);
                 }
+                this.cdr.detectChanges();
             }
         });
-
-        this.api.getAdminRegistrations(5).subscribe({
-            next: (res: any) => {
-                if (res.success) {
-                    this.registrations = res.data.registrations || [];
-                    this.cdr.detectChanges();
-                }
-            },
-            error: () => { }
-        });
-
-        this.api.getLeaderboard(5).subscribe({
-            next: (res: any) => {
-                if (res.success) {
-                    this.leaderboard = res.data;
-                    this.cdr.detectChanges();
-                }
-            },
-            error: () => { }
-        });
-
-        this.isLoading = false;
     }
 
     formatDate(dateString: string): string {

@@ -2,10 +2,16 @@
     <h1>80G Certificates</h1>
 </header>
 
+<div class="filters">
+    <button class="btn btn-primary btn-export" (click)="exportCertificates()">
+        <lucide-icon name="download" [size]="16"></lucide-icon> Export Excel
+    </button>
+</div>
+
 <div class="card">
     @if (certificates.length === 0) {
     <div class="empty-state">
-        <lucide-icon name="file-text" class="empty-icon w-10 h-10"></lucide-icon>
+        <lucide-icon name="file-text" class="empty-icon" [size]="40"></lucide-icon>
         <h3>No Certificate Requests</h3>
         <p>When organizations request 80G certificates, they will appear here.</p>
     </div>
@@ -35,15 +41,15 @@
                     <td class="action-cell">
                         @if (cert.status === 'pending') {
                         <button class="btn-action approve"
-                            (click)="updateCertificateStatus(cert.id, 'approved')"><lucide-icon name="check" class="w-3.5 h-3.5 inline-block"></lucide-icon> Approve</button>
+                            (click)="updateCertificateStatus(cert.id, 'approved')"><lucide-icon name="check" [size]="14"></lucide-icon> Approve</button>
                         <button class="btn-action reject"
-                            (click)="updateCertificateStatus(cert.id, 'rejected')"><lucide-icon name="circle-x" class="w-3.5 h-3.5 inline-block"></lucide-icon> Reject</button>
+                            (click)="updateCertificateStatus(cert.id, 'rejected')"><lucide-icon name="x" [size]="14"></lucide-icon> Reject</button>
                         } @else if (cert.status === 'approved') {
-                        <span class="action-status approved"><lucide-icon name="check" class="w-3.5 h-3.5 inline-block"></lucide-icon> Approved</span>
+                        <span class="action-status approved"><lucide-icon name="check" [size]="14"></lucide-icon> Approved</span>
                         } @else if (cert.status === 'rejected') {
-                        <span class="action-status rejected"><lucide-icon name="circle-x" class="w-3.5 h-3.5 inline-block"></lucide-icon> Rejected</span>
+                        <span class="action-status rejected"><lucide-icon name="x" [size]="14"></lucide-icon> Rejected</span>
                         } @else {
-                        <span class="action-status processing"><lucide-icon name="clock" class="w-3.5 h-3.5 inline-block"></lucide-icon> Processing</span>
+                        <span class="action-status processing"><lucide-icon name="clock" [size]="14"></lucide-icon> Processing</span>
                         }
                     </td>
                 </tr>
@@ -51,5 +57,12 @@
             </tbody>
         </table>
     </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="loadCertificates(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="loadCertificates(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
     }
 </div>

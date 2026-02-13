@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
 import { ToastService } from '../../../services/toast.service';
@@ -49,6 +50,7 @@ interface CertificateRequest {
     processedAt: string | null;
     donationAmount: number | null;
     donationDate: string | null;
+    donationId: string | null;
 }
 
 @Component({
@@ -56,7 +58,8 @@ interface CertificateRequest {
     standalone: true,
     imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule],
     templateUrl: './dashboard.component.html',
-    styleUrl: './dashboard.component.css'
+    styleUrl: './dashboard.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit {
     user: User | null = null;
@@ -107,29 +110,28 @@ export class DashboardComponent implements OnInit {
     }
 
     loadDashboardData(): void {
-        this.api.getDonationSummary().subscribe({
-            next: (res: any) => {
-                if (res.success) { this.summary = res.data; this.cdr.detectChanges(); }
-            },
-            error: (err: any) => {
-                if (err.status === 401 || err.status === 403) this.logout();
-            }
-        });
-
-        this.loadDonations();
-
-        this.api.getReferrals().subscribe({
-            next: (res: any) => {
-                if (res.success) { this.referralStats = res.data; this.cdr.detectChanges(); }
-            },
-            error: (err: any) => {
-                if (err.status === 401 || err.status === 403) this.logout();
-            }
-        });
+        const calls: Record<string, any> = {
+            summary: this.api.getDonationSummary(),
+            donations: this.api.getDonations(this.selectedFilter),
+            referrals: this.api.getReferrals()
+        };
 
         if (this.user?.userType === 'organization') {
-            this.loadCertificates();
+            calls['certificates'] = this.api.getCertificateRequests();
         }
+
+        forkJoin(calls).subscribe({
+            next: (res: any) => {
+                if (res.summary?.success) this.summary = res.summary.data;
+                if (res.donations?.success) this.donations = res.donations.data;
+                if (res.referrals?.success) this.referralStats = res.referrals.data;
+                if (res.certificates?.success) this.certificateRequests = res.certificates.data;
+                this.cdr.detectChanges();
+            },
+            error: (err: any) => {
+                if (err.status === 401 || err.status === 403) this.logout();
+            }
+        });
     }
 
     loadDonations(): void {
@@ -217,12 +219,28 @@ export class DashboardComponent implements OnInit {
         });
     }
 
+    openCertificateModal(): void {
+        this.selectedDonationId = '';
+        this.panNumber = this.profile?.panNumber || '';
+        // Load all-time donations so the picker has full data
+        this.api.getDonations('all').subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.donations = res.data;
+                    this.showCertificateModal = true;
+                    this.cdr.detectChanges();
+                }
+            }
+        });
+        this.loadCertificates();
+    }
+
     requestCertificate(): void {
-        if (!this.panNumber) return;
+        if (!this.panNumber || !this.selectedDonationId) return;
 
         this.isLoading = true;
 
-        this.api.requestCertificate(this.panNumber, this.selectedDonationId || undefined).subscribe({
+        this.api.requestCertificate(this.panNumber, this.selectedDonationId).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
@@ -231,11 +249,15 @@ export class DashboardComponent implements OnInit {
                     this.panNumber = '';
                     this.selectedDonationId = '';
                     this.loadCertificates();
+                    this.loadDonations();
                 } else {
                     this.toast.error(res.message || 'Failed to submit request');
                 }
             },
-            error: () => { this.isLoading = false; this.toast.error('Failed to submit request'); }
+            error: (err: any) => {
+                this.isLoading = false;
+                this.toast.error(err.error?.message || 'Failed to submit request');
+            }
         });
     }
 
@@ -259,6 +281,13 @@ export class DashboardComponent implements OnInit {
             const text = `Join me at Primathon'26 — run for a healthier, greener city!`;
             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(this.referralStats.referralLink)}`, '_blank');
         }
+    }
+
+    get eligibleDonations(): Donation[] {
+        const certDonationIds = new Set(
+            this.certificateRequests.filter(c => c.donationId).map(c => c.donationId)
+        );
+        return this.donations.filter(d => d.status === 'completed' && !certDonationIds.has(d.id));
     }
 
     getCertStatusClass(status: string): string {

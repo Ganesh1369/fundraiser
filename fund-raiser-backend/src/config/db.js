@@ -1,14 +1,18 @@
 const mysql = require('mysql2/promise');
 
+const isDev = (process.env.NODE_ENV || 'development') === 'development';
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     database: process.env.DB_NAME || 'fundraiser_db',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '2211',
+    password: process.env.DB_PASSWORD || '',
     waitForConnections: true,
-    connectionLimit: 20,
-    queueLimit: 0,
+    connectionLimit: parseInt(process.env.DB_POOL_SIZE) || 50,
+    queueLimit: 100,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
 });
 
 // Test connection on startup
@@ -24,15 +28,13 @@ pool.getConnection()
 
 // Helper function to execute queries — returns { rows, rowCount } for pg compat
 const query = async (text, params) => {
-    const start = Date.now();
     try {
-        const [rows, fields] = await pool.execute(text, params);
-        const duration = Date.now() - start;
+        const [rows, fields] = await pool.query(text, params);
         const rowCount = Array.isArray(rows) ? rows.length : rows.affectedRows;
-        console.log('Executed query', { text: text.substring(0, 50), duration, rows: rowCount });
+        if (isDev) console.log('Query', { sql: text.substring(0, 60), rows: rowCount });
         return { rows, rowCount, fields };
     } catch (error) {
-        console.error('Query error', { text: text.substring(0, 50), error: error.message });
+        console.error('Query error', { sql: text.substring(0, 60), error: error.message });
         throw error;
     }
 };
@@ -40,10 +42,9 @@ const query = async (text, params) => {
 // Get a client (connection) from the pool for transactions
 const getClient = async () => {
     const connection = await pool.getConnection();
-    // Wrap connection.execute so it returns { rows, rowCount } like the pool wrapper
-    const originalExecute = connection.execute.bind(connection);
+    const originalQuery = connection.query.bind(connection);
     connection.query = async (text, params) => {
-        const [rows, fields] = await originalExecute(text, params);
+        const [rows, fields] = await originalQuery(text, params);
         const rowCount = Array.isArray(rows) ? rows.length : rows.affectedRows;
         return { rows, rowCount, fields };
     };

@@ -62,13 +62,18 @@ async function handlePaymentCaptured(payment) {
 
         if (updateResult.rowCount > 0) {
             const donationResult = await client.query(
-                'SELECT id, amount, referrer_id, user_id FROM donations WHERE razorpay_order_id = ?',
+                'SELECT id, amount, referrer_id, user_id, purpose FROM donations WHERE razorpay_order_id = ?',
                 [payment.order_id]
             );
             const donation = donationResult.rows[0];
 
-            // Award referral points if not already awarded
-            if (donation.referrer_id) {
+            // Mark registration fee as paid
+            if (donation.purpose === 'registration_fee') {
+                await client.query('UPDATE users SET registration_fee_paid = true WHERE id = ?', [donation.user_id]);
+            }
+
+            // Award referral points if not already awarded (skip for registration fees)
+            if (donation.referrer_id && donation.purpose !== 'registration_fee') {
                 const checkPoints = await client.query(
                     'SELECT points_awarded FROM donations WHERE id = ?',
                     [donation.id]

@@ -1,7 +1,9 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../services/api.service';
 import { environment } from '../../../environment';
 import { LucideAngularModule } from 'lucide-angular';
@@ -13,6 +15,7 @@ interface Registration {
     phone: string;
     user_type: string;
     city: string;
+    registration_fee_paid: boolean;
     created_at: string;
 }
 
@@ -21,12 +24,17 @@ interface Registration {
     standalone: true,
     imports: [CommonModule, RouterModule, FormsModule, LucideAngularModule],
     templateUrl: './admin-registrations.component.html',
-    styleUrl: './admin-registrations.component.css'
+    styleUrl: './admin-registrations.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AdminRegistrationsComponent implements OnInit {
+export class AdminRegistrationsComponent implements OnInit, OnDestroy {
     registrations: Registration[] = [];
     userTypeFilter = '';
     searchQuery = '';
+    pagination = { page: 1, totalPages: 1, total: 0 };
+
+    private searchSubject = new Subject<string>();
+    private destroy$ = new Subject<void>();
 
     constructor(
         private router: Router,
@@ -36,13 +44,28 @@ export class AdminRegistrationsComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadRegistrations();
+
+        this.searchSubject.pipe(
+            debounceTime(350),
+            distinctUntilChanged(),
+            takeUntil(this.destroy$)
+        ).subscribe(query => {
+            this.searchQuery = query;
+            this.loadRegistrations(1);
+        });
     }
 
-    loadRegistrations(): void {
-        this.api.getAdminRegistrations(50, this.userTypeFilter, this.searchQuery).subscribe({
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    loadRegistrations(page: number = 1): void {
+        this.api.getAdminRegistrations(20, page, this.userTypeFilter, this.searchQuery).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.registrations = res.data.registrations || [];
+                    this.pagination = res.data.pagination || this.pagination;
                     this.cdr.detectChanges();
                 }
             },
@@ -71,8 +94,12 @@ export class AdminRegistrationsComponent implements OnInit {
         }).catch(err => console.error('Export failed:', err));
     }
 
+    onSearchInput(value: string): void {
+        this.searchSubject.next(value);
+    }
+
     onFilterChange(): void {
-        this.loadRegistrations();
+        this.loadRegistrations(1);
     }
 
     formatDate(dateString: string): string {

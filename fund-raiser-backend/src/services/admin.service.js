@@ -1,10 +1,22 @@
 const xlsx = require('xlsx');
 const db = require('../config/db');
+const emailService = require('./email.service');
+
+// In-memory cache for expensive queries (stats, leaderboard)
+const cache = new Map();
+const cached = (key, ttlMs, fn) => async (...args) => {
+    const cacheKey = `${key}:${JSON.stringify(args)}`;
+    const entry = cache.get(cacheKey);
+    if (entry && Date.now() - entry.ts < ttlMs) return entry.data;
+    const data = await fn(...args);
+    cache.set(cacheKey, { data, ts: Date.now() });
+    return data;
+};
 
 /**
- * Get dashboard statistics
+ * Get dashboard statistics (cached 30s)
  */
-const getDashboardStats = async () => {
+const _getDashboardStats = async () => {
     const userStats = await db.query(
         `SELECT user_type, COUNT(*) as count FROM users WHERE is_active = true GROUP BY user_type`
     );
@@ -14,7 +26,7 @@ const getDashboardStats = async () => {
             COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_amount,
             COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month,
             COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 7 DAY THEN amount ELSE 0 END), 0) as this_week
-         FROM donations`
+         FROM donations WHERE purpose = 'donation'`
     );
     const certStats = await db.query(
         `SELECT status, COUNT(*) as count FROM certificate_requests GROUP BY status`
@@ -43,11 +55,13 @@ const getDashboardStats = async () => {
         certificates: certsByStatus
     };
 };
+const getDashboardStats = cached('stats', 30000, _getDashboardStats);
 
 /**
  * Get registrations with filters
  */
 const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 20, search }) => {
+    page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = ['is_active = true'];
@@ -63,13 +77,12 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
     const countResult = await db.query(`SELECT COUNT(*) as count FROM users ${whereClause}`, params);
 
-    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, referral_code, referral_points, created_at
+                city, organization_name, referral_code, referral_points, registration_fee_paid, created_at
          FROM users ${whereClause}
-         ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        paginatedParams
+         ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+        params
     );
 
     return {
@@ -104,6 +117,7 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
                 r.name as "Referred By",
                 u.referral_points as "Referral Points",
                 u.email_verified as "Email Verified",
+                u.registration_fee_paid as "Fee Paid",
                 u.created_at as "Registered At"
          FROM users u
          LEFT JOIN users r ON r.id = u.referred_by
@@ -121,26 +135,26 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
  * Get donations with filters
  */
 const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) => {
+    page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
-    let whereConditions = [];
+    let whereConditions = [`d.purpose = 'donation'`];
 
     if (status) { whereConditions.push(`d.status = ?`); params.push(status); }
     if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
-    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const countResult = await db.query(`SELECT COUNT(*) as count FROM donations d ${whereClause}`, params);
 
-    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
                 d.razorpay_payment_id, d.created_at,
                 u.name as user_name, u.email as user_email, u.user_type
          FROM donations d JOIN users u ON u.id = d.user_id
          ${whereClause} ORDER BY d.created_at DESC
-         LIMIT ? OFFSET ?`,
-        paginatedParams
+         LIMIT ${limit} OFFSET ${offset}`,
+        params
     );
 
     return {
@@ -158,12 +172,12 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
  */
 const exportDonations = async ({ status, fromDate, toDate }) => {
     const params = [];
-    let whereConditions = [];
+    let whereConditions = [`d.purpose = 'donation'`];
 
     if (status) { whereConditions.push(`d.status = ?`); params.push(status); }
     if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
-    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const result = await db.query(
         `SELECT u.name as "Donor Name", u.email as "Donor Email", u.phone as "Donor Phone",
@@ -204,21 +218,21 @@ const getUserAnalytics = async (userId) => {
     if (userResult.rows.length === 0) throw { status: 404, message: 'User not found' };
 
     const donations = await db.query(
-        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = ? ORDER BY created_at DESC`,
+        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = ? AND purpose = 'donation' ORDER BY created_at DESC`,
         [userId]
     );
 
     const referralResult = await db.query(
         `SELECT COUNT(*) as referred_count,
-                (SELECT COUNT(*) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = ? AND d.status = 'completed') as donations_from_referrals,
-                (SELECT COALESCE(SUM(d.amount), 0) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = ? AND d.status = 'completed') as amount_from_referrals
+                (SELECT COUNT(*) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = ? AND d.status = 'completed' AND d.purpose = 'donation') as donations_from_referrals,
+                (SELECT COALESCE(SUM(d.amount), 0) FROM donations d JOIN users u ON u.id = d.user_id WHERE u.referred_by = ? AND d.status = 'completed' AND d.purpose = 'donation') as amount_from_referrals
          FROM users WHERE referred_by = ?`,
         [userId, userId, userId]
     );
 
     const referredUsers = await db.query(
         `SELECT u.id, u.name, u.email, u.user_type, u.created_at,
-                COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.amount ELSE 0 END), 0) as total_donated
+                COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) as total_donated
          FROM users u LEFT JOIN donations d ON d.user_id = u.id
          WHERE u.referred_by = ? GROUP BY u.id ORDER BY u.created_at DESC`,
         [userId]
@@ -267,7 +281,8 @@ const getUserAnalytics = async (userId) => {
 /**
  * Get leaderboard with optional user type filter
  */
-const getLeaderboard = async ({ limit = 50, userType }) => {
+const _getLeaderboard = async ({ limit = 50, userType }) => {
+    limit = parseInt(limit);
     let query = `SELECT * FROM leaderboard`;
     const params = [];
 
@@ -277,8 +292,7 @@ const getLeaderboard = async ({ limit = 50, userType }) => {
     }
 
     // Re-order after filtering since the view might have different order
-    query += ` ORDER BY score DESC LIMIT ?`;
-    params.push(limit);
+    query += ` ORDER BY score DESC LIMIT ${limit}`;
 
     const result = await db.query(query, params);
 
@@ -295,6 +309,7 @@ const getLeaderboard = async ({ limit = 50, userType }) => {
         score: parseFloat(row.score)
     }));
 };
+const getLeaderboard = cached('leaderboard', 30000, _getLeaderboard);
 
 /**
  * Export leaderboard to Excel buffer
@@ -318,6 +333,7 @@ const exportLeaderboard = async () => {
  * Get certificate requests with filters
  */
 const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
+    page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
@@ -327,7 +343,6 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
 
     const countResult = await db.query(`SELECT COUNT(*) as count FROM certificate_requests cr ${whereClause}`, params);
 
-    const paginatedParams = [...params, limit, offset];
     const result = await db.query(
         `SELECT cr.id, cr.pan_number, cr.status, cr.admin_notes,
                 cr.requested_at, cr.processed_at,
@@ -338,8 +353,8 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
          LEFT JOIN donations d ON d.id = cr.donation_id
          ${whereClause}
          ORDER BY cr.requested_at DESC
-         LIMIT ? OFFSET ?`,
-        paginatedParams
+         LIMIT ${limit} OFFSET ${offset}`,
+        params
     );
 
     return {
@@ -353,6 +368,37 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
             totalPages: Math.ceil(countResult.rows[0].count / limit)
         }
     };
+};
+
+/**
+ * Export certificate requests to Excel buffer
+ */
+const exportCertificates = async ({ status }) => {
+    const params = [];
+    let whereConditions = [];
+
+    if (status) { whereConditions.push(`cr.status = ?`); params.push(status); }
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
+    const result = await db.query(
+        `SELECT u.name as "User Name", u.email as "Email", u.phone as "Phone",
+                u.user_type as "User Type", u.organization_name as "Organization",
+                cr.pan_number as "PAN Number",
+                d.amount as "Donation Amount (INR)", d.created_at as "Donation Date",
+                cr.status as "Certificate Status",
+                cr.requested_at as "Requested At", cr.processed_at as "Processed At",
+                cr.admin_notes as "Admin Notes"
+         FROM certificate_requests cr
+         JOIN users u ON u.id = cr.user_id
+         LEFT JOIN donations d ON d.id = cr.donation_id
+         ${whereClause} ORDER BY cr.requested_at DESC`,
+        params
+    );
+
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(result.rows);
+    xlsx.utils.book_append_sheet(workbook, worksheet, '80G Certificates');
+    return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 
 /**
@@ -376,6 +422,18 @@ const updateCertificateStatus = async (id, { status, adminNotes, certificateUrl 
 
     if (updateResult.rowCount === 0) throw { status: 404, message: 'Certificate request not found' };
     const result = await db.query('SELECT * FROM certificate_requests WHERE id = ?', [id]);
+
+    // Send approval email
+    if (status === 'approved') {
+        const userResult = await db.query('SELECT name, email FROM users WHERE id = ?', [result.rows[0].user_id]);
+        if (userResult.rows.length > 0) {
+            emailService.sendCertificateApprovedEmail(
+                userResult.rows[0].email,
+                userResult.rows[0].name
+            ).catch(err => console.error('Failed to send certificate approval email:', err.message));
+        }
+    }
+
     return result.rows[0];
 };
 
@@ -404,6 +462,6 @@ module.exports = {
     getDashboardStats, getRegistrations, exportRegistrations,
     getDonations, exportDonations, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
-    getCertificateRequests, updateCertificateStatus,
+    getCertificateRequests, exportCertificates, updateCertificateStatus,
     getUserBySlug
 };

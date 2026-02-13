@@ -69,7 +69,7 @@ const getDonations = async (userId, period) => {
                 cr.status as certificate_status
          FROM donations d
          LEFT JOIN certificate_requests cr ON cr.donation_id = d.id
-         WHERE d.user_id = ? ${dateFilter}
+         WHERE d.user_id = ? AND d.purpose = 'donation' ${dateFilter}
          ORDER BY d.created_at DESC`,
         params
     );
@@ -91,7 +91,7 @@ const getDonationSummary = async (userId) => {
             COUNT(*) as total_count,
             COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_amount,
             COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month
-         FROM donations WHERE user_id = ?`,
+         FROM donations WHERE user_id = ? AND purpose = 'donation'`,
         [userId]
     );
     const s = result.rows[0];
@@ -151,20 +151,26 @@ const getReferralPointsHistory = async (userId) => {
  */
 const requestCertificate = async (userId, panNumber, donationId) => {
     if (!panNumber) throw { status: 400, message: 'PAN number is required' };
+    if (!donationId) throw { status: 400, message: 'Please select a donation for the 80G certificate' };
 
-    if (donationId) {
-        const donationCheck = await db.query(
-            'SELECT id FROM donations WHERE id = ? AND user_id = ? AND status = ?',
-            [donationId, userId, 'completed']
-        );
-        if (donationCheck.rows.length === 0) throw { status: 400, message: 'Invalid donation' };
-    }
+    const donationCheck = await db.query(
+        `SELECT id FROM donations WHERE id = ? AND user_id = ? AND status = 'completed' AND purpose = 'donation'`,
+        [donationId, userId]
+    );
+    if (donationCheck.rows.length === 0) throw { status: 400, message: 'Invalid donation' };
+
+    // Check if certificate already exists for this donation
+    const existingCert = await db.query(
+        'SELECT id FROM certificate_requests WHERE donation_id = ?',
+        [donationId]
+    );
+    if (existingCert.rows.length > 0) throw { status: 400, message: '80G certificate already requested for this donation' };
 
     const certId = uuidv4();
     await db.query(
         `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number)
          VALUES (?, ?, ?, ?)`,
-        [certId, userId, donationId || null, panNumber.toUpperCase()]
+        [certId, userId, donationId, panNumber.toUpperCase()]
     );
     const result = await db.query('SELECT id, status, requested_at FROM certificate_requests WHERE id = ?', [certId]);
     return result.rows[0];
@@ -175,7 +181,7 @@ const requestCertificate = async (userId, panNumber, donationId) => {
  */
 const getCertificateRequests = async (userId) => {
     const result = await db.query(
-        `SELECT cr.id, cr.pan_number, cr.status, cr.requested_at, cr.processed_at,
+        `SELECT cr.id, cr.donation_id, cr.pan_number, cr.status, cr.requested_at, cr.processed_at,
                 d.amount as donation_amount, d.created_at as donation_date
          FROM certificate_requests cr
          LEFT JOIN donations d ON d.id = cr.donation_id
@@ -187,7 +193,8 @@ const getCertificateRequests = async (userId) => {
         id: r.id, panNumber: r.pan_number, status: r.status,
         requestedAt: r.requested_at, processedAt: r.processed_at,
         donationAmount: r.donation_amount ? parseFloat(r.donation_amount) : null,
-        donationDate: r.donation_date
+        donationDate: r.donation_date,
+        donationId: r.donation_id || null
     }));
 };
 

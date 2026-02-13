@@ -13,8 +13,8 @@ const transporter = nodemailer.createTransport({
 
 // Verify transporter on startup
 transporter.verify()
-    .then(() => console.log('✅ SMTP connection verified'))
-    .catch(err => console.warn('⚠️ SMTP not configured:', err.message));
+    .then(() => console.log('SMTP connection verified'))
+    .catch(err => console.warn('SMTP not configured:', err.message));
 
 // Shared email wrapper
 const emailWrapper = (content) => `
@@ -111,8 +111,32 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Send 80G certificate approval email
+ */
+const sendCertificateApprovedEmail = async (to, name) => {
+    const mailOptions = {
+        from: `"Primathon'26" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to,
+        subject: "Your 80G Certificate Request is Approved!",
+        html: emailWrapper(`
+            <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">80G Certificate</p>
+            <p style="color: #171717; font-size: 15px; margin: 0 0 4px;">Dear <strong>${name}</strong>,</p>
+            <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">Great news! Your 80G certificate request has been <strong style="color: #16a34a;">approved</strong>.</p>
+            <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 20px;">
+                <p style="color: #16a34a; margin: 0 0 8px; font-size: 20px; font-weight: 700;">Approved</p>
+                <p style="color: #525252; font-size: 14px; margin: 0; line-height: 1.6;">You will receive the 80G tax exemption form from us shortly. This certificate can be used for tax deduction under Section 80G of the Income Tax Act.</p>
+            </div>
+            <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">Thank you for your generous contribution to the cause. Your support truly makes a difference!</p>
+            <p style="color: #a3a3a3; font-size: 12px; text-align: center; margin: 0;">Need help? Call us at <strong style="color: #525252;">98404 71333</strong></p>
+        `)
+    };
+    return transporter.sendMail(mailOptions);
+};
+
 module.exports = {
     sendOtpEmail,
     sendPasswordResetEmail,
-    sendDonationConfirmationEmail
+    sendDonationConfirmationEmail,
+    sendCertificateApprovedEmail
 };

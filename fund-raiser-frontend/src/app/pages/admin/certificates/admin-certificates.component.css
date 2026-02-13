@@ -8,6 +8,41 @@
     margin: 0;
 }
 
+/* ===== Filters ===== */
+.filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #22c55e;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #16a34a;
+}
+
+.btn-export {
+    margin-left: auto;
+}
+
 /* ===== Card & Table ===== */
 .card {
     background: white;
@@ -87,6 +122,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    border-bottom: none !important;
 }
 
 .btn-action {
@@ -159,4 +195,36 @@
 
 .empty-state p {
     color: #6B7280;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.btn-page {
+    padding: 4px 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: #F0F0F0;
+}
+
+.btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.875rem;
+    color: #9CA3AF;
 }

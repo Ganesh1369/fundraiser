@@ -27,6 +27,7 @@ router.get('/leaderboard/export', adminController.exportLeaderboard);
 
 // 80G Certificate Management
 router.get('/certificates', adminController.getCertificateRequests);
+router.get('/certificates/export', adminController.exportCertificates);
 router.patch('/certificates/:id', adminController.updateCertificateStatus);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,11 +23,13 @@ interface Donation {
     standalone: true,
     imports: [CommonModule, RouterModule, FormsModule, LucideAngularModule],
     templateUrl: './admin-donations.component.html',
-    styleUrl: './admin-donations.component.css'
+    styleUrl: './admin-donations.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminDonationsComponent implements OnInit {
     donations: Donation[] = [];
     donationStatusFilter = '';
+    pagination = { page: 1, totalPages: 1, total: 0 };
 
     constructor(
         private router: Router,
@@ -39,11 +41,12 @@ export class AdminDonationsComponent implements OnInit {
         this.loadDonations();
     }
 
-    loadDonations(): void {
-        this.api.getAdminDonations(50, this.donationStatusFilter).subscribe({
+    loadDonations(page: number = 1): void {
+        this.api.getAdminDonations(20, page, this.donationStatusFilter).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.donations = res.data.donations || [];
+                    this.pagination = res.data.pagination || this.pagination;
                     this.cdr.detectChanges();
                 }
             },
@@ -73,7 +76,7 @@ export class AdminDonationsComponent implements OnInit {
     }
 
     onFilterChange(): void {
-        this.loadDonations();
+        this.loadDonations(1);
     }
 
     formatDate(dateString: string): string {
