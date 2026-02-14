@@ -23,7 +23,7 @@ pool.getConnection()
     })
     .catch(err => {
         console.error('Failed to connect to MariaDB:', err.message);
-        process.exit(-1);
+        console.error('Server will continue running — DB queries will fail until connection is restored');
     });
 
 // Helper function to execute queries — returns { rows, rowCount } for pg compat

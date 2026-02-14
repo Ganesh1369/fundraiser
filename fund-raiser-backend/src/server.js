@@ -81,8 +81,16 @@ app.use('/api', require('./routes/event.routes'));
 app.use('/api/webhooks', webhookRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+    let dbStatus = 'disconnected';
+    try {
+        const conn = await require('./config/db').pool.getConnection();
+        conn.release();
+        dbStatus = 'connected';
+    } catch (err) {
+        dbStatus = `error: ${err.message}`;
+    }
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), database: dbStatus });
 });
 
 // Error handling middleware
