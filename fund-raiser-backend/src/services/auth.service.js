@@ -109,7 +109,7 @@ const registerUser = async (userData) => {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, 16);
 
     // Generate unique referral code
     let newReferralCode;
@@ -260,7 +260,7 @@ const resetPassword = async (email, otp, newPassword) => {
     // Verify OTP first
     await verifyOtp(email, otp, 'reset_password');
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await bcrypt.hash(newPassword, 16);
     await db.query(
         'UPDATE users SET password_hash = ? WHERE email = ?',
         [passwordHash, email.toLowerCase()]

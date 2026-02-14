@@ -312,7 +312,7 @@ const registerForEvent = async (eventId, registrationData) => {
             throw { status: 400, message: 'Passwords do not match' };
         }
 
-        const passwordHash = await bcrypt.hash(password, 12);
+        const passwordHash = await bcrypt.hash(password, 16);
 
         // Generate Referral Code
         let newReferralCode;
