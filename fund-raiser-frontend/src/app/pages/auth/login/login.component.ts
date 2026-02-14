@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +19,7 @@ export class LoginComponent {
     isLoading = false;
     errorMessage = '';
 
-    constructor(private router: Router, private api: ApiService) { }
+    constructor(private router: Router, private api: ApiService, private cdr: ChangeDetectorRef) { }
 
     onSubmit(): void {
         if (!this.email || !this.password) {
@@ -40,10 +40,12 @@ export class LoginComponent {
                 } else {
                     this.errorMessage = data.message || 'Login failed';
                 }
+                this.cdr.detectChanges();
             },
             error: (err: any) => {
                 this.isLoading = false;
                 this.errorMessage = err.error?.message || 'Connection error. Please try again.';
+                this.cdr.detectChanges();
             }
         });
     }

@@ -51,11 +51,19 @@ const sendOtp = async (email, purpose = 'register') => {
         [email.toLowerCase(), otp, purpose, expiresAt]
     );
 
-    // Send email
-    if (purpose === 'register') {
-        await emailService.sendOtpEmail(email, otp);
-    } else {
-        await emailService.sendPasswordResetEmail(email, otp);
+    // Send email — if it fails, clean up the OTP and throw
+    try {
+        if (purpose === 'register') {
+            await emailService.sendOtpEmail(email, otp);
+        } else {
+            await emailService.sendPasswordResetEmail(email, otp);
+        }
+    } catch (err) {
+        await db.query(
+            `DELETE FROM otp_verifications WHERE email = ? AND otp = ? AND purpose = ?`,
+            [email.toLowerCase(), otp, purpose]
+        );
+        throw { status: 503, message: 'Unable to send OTP email. Please try again later.' };
     }
 
     return { message: 'OTP sent successfully' };
