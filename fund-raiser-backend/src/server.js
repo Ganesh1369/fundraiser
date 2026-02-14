@@ -4,7 +4,10 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-require('dotenv').config();
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+const envPath = path.resolve(__dirname, '..', envFile);
+const fallbackPath = path.resolve(__dirname, '..', '.env');
+require('dotenv').config({ path: require('fs').existsSync(envPath) ? envPath : fallbackPath });
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
