@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subscription } from 'rxjs';
@@ -9,7 +9,7 @@ import { Toast, ToastService } from '../../services/toast.service';
     standalone: true,
     imports: [CommonModule, LucideAngularModule],
     template: `
-        <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+        <div class="fixed top-20 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
             @for (toast of toasts; track toast.id) {
             <div class="pointer-events-auto flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl shadow-elevated border text-sm font-medium animate-[slideIn_0.25s_ease-out]"
                 [ngClass]="{
@@ -46,7 +46,7 @@ export class ToastComponent implements OnInit, OnDestroy {
     toasts: Toast[] = [];
     private subs: Subscription[] = [];
 
-    constructor(private toastService: ToastService) {}
+    constructor(private toastService: ToastService, private cdr: ChangeDetectorRef) {}
 
     ngOnInit(): void {
         this.subs.push(
@@ -61,6 +61,7 @@ export class ToastComponent implements OnInit, OnDestroy {
 
     dismiss(id: number): void {
         this.toasts = this.toasts.filter(t => t.id !== id);
+        this.cdr.detectChanges();
     }
 
     ngOnDestroy(): void {

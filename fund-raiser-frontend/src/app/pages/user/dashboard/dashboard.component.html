@@ -297,7 +297,7 @@
                 <p class="text-sm text-neutral-500 mb-5">Help make our planet a healthier, greener and happier place.</p>
 
                 <div class="grid grid-cols-4 gap-2 mb-5">
-                    @for (preset of [100, 500, 1000, 5000]; track preset) {
+                    @for (preset of [300, 500, 1000, 5000]; track preset) {
                     <button class="py-2.5 text-sm font-semibold rounded-xl border-2 transition-all"
                         [class]="donationAmount === preset
                             ? 'bg-primary text-white border-primary'
@@ -371,8 +371,22 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
-                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
-                        [(ngModel)]="panNumber" placeholder="Enter your PAN number" maxlength="10">
+                    @if (!panEditable && isValidPAN(panNumber)) {
+                    <div class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm flex items-center justify-between">
+                        <span class="font-medium text-accent tracking-wider uppercase">{{ panNumber }}</span>
+                        <button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400 transition-colors"
+                            (click)="panEditable = true" title="Edit PAN">
+                            <lucide-icon name="pencil" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                    </div>
+                    } @else {
+                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                        [ngClass]="panNumber.length > 0 && !isValidPAN(panNumber) ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
+                        [(ngModel)]="panNumber" placeholder="AAAAA9999A" maxlength="10">
+                    @if (panNumber.length > 0 && !isValidPAN(panNumber)) {
+                    <p class="text-xs text-red-500 mt-1 m-0">Format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)</p>
+                    }
+                    }
                 </div>
 
                 <div class="flex items-start gap-3 p-4 bg-blue-50 rounded-xl text-sm text-blue-700">
@@ -386,7 +400,7 @@
                     (click)="showCertificateModal = false">Cancel</button>
                 @if (eligibleDonations.length > 0) {
                 <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
-                    (click)="requestCertificate()" [disabled]="isLoading || panNumber.length !== 10 || !selectedDonationId">
+                    (click)="requestCertificate()" [disabled]="isLoading || !isValidPAN(panNumber) || !selectedDonationId">
                     @if (isLoading) {
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Submitting...

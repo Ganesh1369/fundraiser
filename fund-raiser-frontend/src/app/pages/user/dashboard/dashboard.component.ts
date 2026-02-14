@@ -76,6 +76,7 @@ export class DashboardComponent implements OnInit {
     showDonateModal = false;
     showCertificateModal = false;
     panNumber = '';
+    panEditable = false;
     selectedDonationId = '';
     linkCopied = false;
 
@@ -224,6 +225,7 @@ export class DashboardComponent implements OnInit {
     openCertificateModal(): void {
         this.selectedDonationId = '';
         this.panNumber = this.profile?.panNumber || '';
+        this.panEditable = !this.panNumber;
         // Load all-time donations so the picker has full data
         this.api.getDonations('all').subscribe({
             next: (res: any) => {
@@ -237,8 +239,16 @@ export class DashboardComponent implements OnInit {
         this.loadCertificates();
     }
 
+    isValidPAN(pan: string): boolean {
+        return /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan.toUpperCase());
+    }
+
     requestCertificate(): void {
         if (!this.panNumber || !this.selectedDonationId) return;
+        if (!this.isValidPAN(this.panNumber)) {
+            this.toast.error('Invalid PAN format. Expected: AAAAA9999A');
+            return;
+        }
 
         this.isLoading = true;
 
@@ -247,6 +257,11 @@ export class DashboardComponent implements OnInit {
                 this.isLoading = false;
                 if (res.success) {
                     this.toast.success('Certificate request submitted successfully!');
+                    // Save PAN to profile if changed
+                    if (this.profile && this.profile.panNumber !== this.panNumber.toUpperCase()) {
+                        this.profile.panNumber = this.panNumber.toUpperCase();
+                        this.api.updateProfile({ panNumber: this.panNumber.toUpperCase() }).subscribe();
+                    }
                     this.showCertificateModal = false;
                     this.panNumber = '';
                     this.selectedDonationId = '';

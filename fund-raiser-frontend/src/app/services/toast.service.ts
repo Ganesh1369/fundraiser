@@ -31,6 +31,6 @@ export class ToastService {
     private show(message: string, type: Toast['type']): void {
         const id = ++this.counter;
         this.toastSubject.next({ id, message, type });
-        setTimeout(() => this.dismissSubject.next(id), 3500);
+        setTimeout(() => this.dismissSubject.next(id), 2500);
     }
 }

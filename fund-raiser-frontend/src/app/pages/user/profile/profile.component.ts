@@ -21,6 +21,7 @@ export class ProfileComponent implements OnInit {
     isUploading = false;
     showAvatarMenu = false;
     showImageViewer = false;
+    errors: Record<string, boolean> = {};
 
     profileForm: any = {
         name: '', phone: '',
@@ -95,12 +96,24 @@ export class ProfileComponent implements OnInit {
     }
 
     saveProfile(): void {
+        const f = this.profileForm;
+        const required: Record<string, string> = { addressLine1: f.addressLine1, area: f.area, city: f.city, state: f.state, pincode: f.pincode };
+        this.errors = {};
+        for (const [key, val] of Object.entries(required)) {
+            if (!val?.trim()) this.errors[key] = true;
+        }
+        if (Object.keys(this.errors).length > 0) {
+            this.toast.error('Please fill all required address fields');
+            return;
+        }
+
         this.isSaving = true;
 
         this.api.updateProfile(this.profileForm).subscribe({
             next: (res: any) => {
                 this.isSaving = false;
                 if (res.success) {
+                    this.errors = {};
                     this.toast.success('Profile updated successfully!');
                     this.loadProfile();
                     if (this.user) {

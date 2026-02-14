@@ -113,6 +113,32 @@
     color: #6B7280;
 }
 
+.address-block {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    border: 1px solid #F3F4F6;
+}
+
+.address-icon {
+    color: #9CA3AF;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.address-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 0.875rem;
+    color: #6B7280;
+    line-height: 1.4;
+}
+
 .profile-extra {
     display: flex;
     gap: 16px;

@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const userController = require('../controllers/user.controller');
-const { verifyToken, isOrganization } = require('../middleware/auth.middleware');
+const { verifyToken } = require('../middleware/auth.middleware');
 
 // Profile pic upload config — saves to frontend public dir
 const uploadDir = path.join(__dirname, '../../../fund-raiser-frontend/public/uploads/profile');
@@ -56,11 +56,11 @@ router.get('/referrals', userController.getReferrals);
 // Get referral points history
 router.get('/referrals/history', userController.getReferralPointsHistory);
 
-// Request 80G certificate (organization only)
-router.post('/certificate-request', isOrganization, userController.requestCertificate);
+// Request 80G certificate
+router.post('/certificate-request', userController.requestCertificate);
 
 // Get certificate request status
-router.get('/certificate-requests', isOrganization, userController.getCertificateRequests);
+router.get('/certificate-requests', userController.getCertificateRequests);
 
 // Subscribe to push notifications
 router.post('/push-subscribe', userController.subscribePush);

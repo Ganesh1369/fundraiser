@@ -43,15 +43,21 @@
                 <lucide-icon name="phone" class="w-4 h-4"></lucide-icon> {{ user.phone }}
             </span>
             }
-            @if (user.city) {
-            <span class="detail-item">
-                <lucide-icon name="map-pin" class="w-4 h-4"></lucide-icon> {{ user.city }}
-            </span>
-            }
             <span class="detail-item">
                 <lucide-icon name="calendar" class="w-4 h-4"></lucide-icon> Joined {{ formatDate(user.created_at) }}
             </span>
         </div>
+        @if (user.address_line_1 || user.city) {
+        <div class="address-block">
+            <lucide-icon name="map-pin" class="w-4 h-4 address-icon"></lucide-icon>
+            <div class="address-lines">
+                @if (user.address_line_1) { <span>{{ user.address_line_1 }}</span> }
+                @if (user.address_line_2) { <span>{{ user.address_line_2 }}</span> }
+                @if (user.area || user.city) { <span>{{ user.area }}{{ user.area && user.city ? ', ' : '' }}{{ user.city }}</span> }
+                @if (user.state || user.pincode) { <span>{{ user.state }}{{ user.state && user.pincode ? ' - ' : '' }}{{ user.pincode }}</span> }
+            </div>
+        </div>
+        }
         @if (user.user_type === 'student') {
         <div class="profile-extra">
             @if (user.class_grade) { <span>Class: {{ user.class_grade }}</span> }

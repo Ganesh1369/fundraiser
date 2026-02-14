@@ -210,7 +210,8 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
 const getUserAnalytics = async (userId) => {
     const userResult = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, pan_number, profile_pic,
+                address_line_1, address_line_2, area, city, state, pincode,
+                organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
          FROM users WHERE id = ?`,
         [userId]

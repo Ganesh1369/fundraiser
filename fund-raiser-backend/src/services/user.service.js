@@ -35,6 +35,11 @@ const getProfile = async (userId) => {
 const updateProfile = async (userId, data) => {
     const { name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, userType } = data;
 
+    // Validate required address fields
+    const requiredAddress = { addressLine1, area, city, state, pincode };
+    const missing = Object.entries(requiredAddress).filter(([, v]) => v !== undefined && !String(v).trim());
+    if (missing.length > 0) throw { status: 400, message: 'Please fill all required address fields' };
+
     // Validate userType if provided
     const validTypes = ['individual', 'student', 'organization'];
     const safeUserType = validTypes.includes(userType) ? userType : undefined;
@@ -158,6 +163,7 @@ const getReferralPointsHistory = async (userId) => {
  */
 const requestCertificate = async (userId, panNumber, donationId) => {
     if (!panNumber) throw { status: 400, message: 'PAN number is required' };
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber.toUpperCase())) throw { status: 400, message: 'Invalid PAN format. Expected: AAAAA9999A' };
     if (!donationId) throw { status: 400, message: 'Please select a donation for the 80G certificate' };
 
     const donationCheck = await db.query(

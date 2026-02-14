@@ -31,7 +31,7 @@ const query = async (text, params) => {
     try {
         const [rows, fields] = await pool.query(text, params);
         const rowCount = Array.isArray(rows) ? rows.length : rows.affectedRows;
-        if (isDev) console.log('Query', { sql: text.substring(0, 60), rows: rowCount });
+        // if (isDev) console.log('Query', { sql: text.substring(0, 60), rows: rowCount });
         return { rows, rowCount, fields };
     } catch (error) {
         console.error('Query error', { sql: text.substring(0, 60), error: error.message });
