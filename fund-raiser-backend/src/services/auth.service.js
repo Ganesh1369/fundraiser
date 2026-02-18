@@ -52,6 +52,7 @@ const sendOtp = async (email, purpose = 'register') => {
     );
 
     // Send email — if it fails, clean up the OTP and throw
+    console.log('Attempting to send OTP email to:', email, 'purpose:', purpose);
     try {
         if (purpose === 'register') {
             await emailService.sendOtpEmail(email, otp);
@@ -59,6 +60,7 @@ const sendOtp = async (email, purpose = 'register') => {
             await emailService.sendPasswordResetEmail(email, otp);
         }
     } catch (err) {
+        console.error('SMTP send failed:', err.message, err.code, err.responseCode);
         await db.query(
             `DELETE FROM otp_verifications WHERE email = ? AND otp = ? AND purpose = ?`,
             [email.toLowerCase(), otp, purpose]
