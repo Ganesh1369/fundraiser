@@ -79,7 +79,7 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
 
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, referral_code, referral_points, registration_fee_paid, created_at
+                city, organization_name, referral_code, referral_points, created_at
          FROM users ${whereClause}
          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
         params
@@ -117,7 +117,6 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
                 r.name as "Referred By",
                 u.referral_points as "Referral Points",
                 u.email_verified as "Email Verified",
-                u.registration_fee_paid as "Fee Paid",
                 u.created_at as "Registered At"
          FROM users u
          LEFT JOIN users r ON r.id = u.referred_by

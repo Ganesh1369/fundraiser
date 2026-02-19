@@ -15,7 +15,6 @@ interface Registration {
     phone: string;
     user_type: string;
     city: string;
-    registration_fee_paid: boolean;
     created_at: string;
 }
 

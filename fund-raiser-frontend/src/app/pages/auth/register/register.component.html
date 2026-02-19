@@ -239,21 +239,6 @@
             </div>
             }
 
-            <!-- Registration Fee -->
-            @if (currentStep === totalSteps) {
-            <div class="bg-primary-50 border border-primary-100 rounded-xl p-4 mb-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <lucide-icon name="indian-rupee" class="w-5 h-5 text-primary"></lucide-icon>
-                        <div>
-                            <p class="text-sm font-semibold text-accent m-0">Registration Fee</p>
-                            <p class="text-xs text-neutral-500 m-0">One-time payment via Razorpay</p>
-                        </div>
-                    </div>
-                    <span class="text-xl font-bold text-primary">&#8377;300</span>
-                </div>
-            </div>
-            }
 
             <!-- Navigation Buttons -->
             @if (currentStep > 1) {
@@ -266,9 +251,14 @@
 
                 @if (currentStep < totalSteps && (currentStep !== 4 || otpVerified)) {
                 <button type="button"
-                    class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    (click)="nextStep()" [disabled]="!canProceed()">
+                    class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    (click)="nextStep()" [disabled]="isLoading || !canProceed()">
+                    @if (isLoading) {
+                    <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    Sending OTP...
+                    } @else {
                     Continue &rarr;
+                    }
                 </button>
                 }
 
@@ -280,7 +270,7 @@
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Processing...
                     } @else {
-                    Pay &#8377;300 &amp; Register
+                    Complete Registration
                     }
                 </button>
                 }

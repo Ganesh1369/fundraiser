@@ -67,13 +67,8 @@ async function handlePaymentCaptured(payment) {
             );
             const donation = donationResult.rows[0];
 
-            // Mark registration fee as paid
-            if (donation.purpose === 'registration_fee') {
-                await client.query('UPDATE users SET registration_fee_paid = true WHERE id = ?', [donation.user_id]);
-            }
-
-            // Award referral points if not already awarded (skip for registration fees)
-            if (donation.referrer_id && donation.purpose !== 'registration_fee') {
+            // Award referral points if not already awarded
+            if (donation.referrer_id) {
                 const checkPoints = await client.query(
                     'SELECT points_awarded FROM donations WHERE id = ?',
                     [donation.id]

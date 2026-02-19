@@ -86,8 +86,8 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         );
         const donation = donationResult.rows[0];
 
-        // Award referral points (skip for registration fees)
-        if (donation.referrer_id && donation.purpose !== 'registration_fee') {
+        // Award referral points
+        if (donation.referrer_id) {
             const pointsToAward = Math.floor(parseFloat(donation.amount));
             await client.query(
                 'UPDATE users SET referral_points = referral_points + ? WHERE id = ?',
@@ -99,11 +99,6 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                 [donation.referrer_id, donation.id, pointsToAward, userName]
             );
             await client.query('UPDATE donations SET points_awarded = true WHERE id = ?', [donation.id]);
-        }
-
-        // Mark registration fee as paid
-        if (donation.purpose === 'registration_fee') {
-            await client.query('UPDATE users SET registration_fee_paid = true WHERE id = ?', [userId]);
         }
 
         // Auto-create 80G certificate request if requested (skip duplicates)

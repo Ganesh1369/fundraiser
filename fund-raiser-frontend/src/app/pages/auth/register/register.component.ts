@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -59,7 +59,7 @@ export class RegisterComponent {
         referralCode: ''
     };
 
-    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef, private zone: NgZone) {
+    constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef) {
         this.route.queryParams.subscribe(params => {
             if (params['ref']) {
                 this.data.referralCode = params['ref'];
@@ -231,12 +231,12 @@ export class RegisterComponent {
             referralCode: this.data.referralCode
         }).subscribe({
             next: (result: any) => {
+                this.isLoading = false;
                 if (result.success) {
                     localStorage.setItem('token', result.data.token);
                     localStorage.setItem('user', JSON.stringify(result.data.user));
-                    this.initiatePayment();
+                    this.router.navigate(['/dashboard']);
                 } else {
-                    this.isLoading = false;
                     this.errorMessage = result.message || 'Registration failed';
                 }
             },
@@ -249,60 +249,4 @@ export class RegisterComponent {
         });
     }
 
-    private initiatePayment(): void {
-        this.api.createOrder(300, false, 'registration_fee').subscribe({
-            next: (res: any) => {
-                this.isLoading = false;
-                if (res.success) {
-                    this.openRazorpay(res.data);
-                } else {
-                    this.router.navigate(['/dashboard']);
-                }
-                this.cdr.detectChanges();
-            },
-            error: () => {
-                this.isLoading = false;
-                this.router.navigate(['/dashboard']);
-            }
-        });
-    }
-
-    private openRazorpay(order: any): void {
-        const options = {
-            key: order.keyId,
-            amount: order.amount,
-            currency: order.currency,
-            name: "ICE Network",
-            description: 'Registration Fee',
-            order_id: order.orderId,
-            handler: (response: any) => {
-                this.zone.run(() => {
-                    this.verifyPayment(response, order.donationId);
-                });
-            },
-            prefill: { name: this.data.name, email: this.data.email, contact: this.data.phone },
-            theme: { color: '#22c55e' },
-            modal: {
-                ondismiss: () => {
-                    this.zone.run(() => {
-                        this.router.navigate(['/dashboard']);
-                    });
-                }
-            }
-        };
-        const razorpay = new (window as any).Razorpay(options);
-        razorpay.open();
-    }
-
-    private verifyPayment(response: any, donationId: string): void {
-        this.api.verifyPayment({
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-            donationId
-        }).subscribe({
-            next: () => this.router.navigate(['/dashboard']),
-            error: () => this.router.navigate(['/dashboard'])
-        });
-    }
 }
