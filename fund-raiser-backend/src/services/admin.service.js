@@ -188,7 +188,7 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
                 d.request_80g as "80G Certificate Requested",
                 ref.name as "Referrer Name",
                 e.event_name as "Event",
-                d.created_at as "Donation Date"
+                d.created_at as "Contribution Date"
          FROM donations d
          JOIN users u ON u.id = d.user_id
          LEFT JOIN users ref ON ref.id = d.referrer_id
@@ -199,7 +199,7 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
 
     const workbook = xlsx.utils.book_new();
     const worksheet = xlsx.utils.json_to_sheet(result.rows);
-    xlsx.utils.book_append_sheet(workbook, worksheet, 'Donations');
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Contributions');
     return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 
@@ -317,7 +317,7 @@ const getLeaderboard = cached('leaderboard', 30000, _getLeaderboard);
 const exportLeaderboard = async () => {
     const result = await db.query(
         `SELECT name as "Name", email as "Email", user_type as "User Type", city as "City",
-                total_donations as "Total Donations (INR)", donation_count as "Number of Donations",
+                total_donations as "Total Contributions (INR)", donation_count as "Number of Contributions",
                 referral_points as "Referral Points", score as "Total Score"
          FROM leaderboard`
     );
@@ -384,7 +384,7 @@ const exportCertificates = async ({ status }) => {
         `SELECT u.name as "User Name", u.email as "Email", u.phone as "Phone",
                 u.user_type as "User Type", u.organization_name as "Organization",
                 cr.pan_number as "PAN Number",
-                d.amount as "Donation Amount (INR)", d.created_at as "Donation Date",
+                d.amount as "Contribution Amount (INR)", d.created_at as "Contribution Date",
                 cr.status as "Certificate Status",
                 cr.requested_at as "Requested At", cr.processed_at as "Processed At",
                 cr.admin_notes as "Admin Notes"

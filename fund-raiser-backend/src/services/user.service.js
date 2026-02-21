@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const getProfile = async (userId) => {
     const result = await db.query(
         `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                address_line_1, address_line_2, area, city, state, pincode,
+                address_line_1, address_line_2, area, city, state, pincode, country,
                 organization_name, pan_number, profile_pic,
                 referral_code, referral_points, created_at
          FROM users WHERE id = ?`,
@@ -21,7 +21,7 @@ const getProfile = async (userId) => {
         email: u.email, phone: u.phone, classGrade: u.class_grade,
         schoolName: u.school_name,
         addressLine1: u.address_line_1, addressLine2: u.address_line_2,
-        area: u.area, city: u.city, state: u.state, pincode: u.pincode,
+        area: u.area, city: u.city, state: u.state, pincode: u.pincode, country: u.country,
         organizationName: u.organization_name,
         panNumber: u.pan_number, profilePic: u.profile_pic,
         referralCode: u.referral_code,
@@ -33,7 +33,7 @@ const getProfile = async (userId) => {
  * Update user profile
  */
 const updateProfile = async (userId, data) => {
-    const { name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, userType } = data;
+    const { name, age, phone, addressLine1, addressLine2, area, city, state, pincode, country, schoolName, classGrade, organizationName, panNumber, userType } = data;
 
     // Validate required address fields
     const requiredAddress = { addressLine1, area, city, state, pincode };
@@ -51,11 +51,12 @@ const updateProfile = async (userId, data) => {
             address_line_1 = COALESCE(?, address_line_1), address_line_2 = COALESCE(?, address_line_2),
             area = COALESCE(?, area), city = COALESCE(?, city),
             state = COALESCE(?, state), pincode = COALESCE(?, pincode),
+            country = COALESCE(?, country),
             school_name = COALESCE(?, school_name), class_grade = COALESCE(?, class_grade),
             organization_name = COALESCE(?, organization_name), pan_number = COALESCE(?, pan_number),
             user_type = COALESCE(?, user_type)
          WHERE id = ?`,
-        [name, age, phone, addressLine1, addressLine2, area, city, state, pincode, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
+        [name, age, phone, addressLine1, addressLine2, area, city, state, pincode, country, schoolName, classGrade, organizationName, panNumber, safeUserType, userId]
     );
     const result = await db.query('SELECT id, name, email, user_type FROM users WHERE id = ?', [userId]);
     return result.rows[0];
@@ -164,20 +165,20 @@ const getReferralPointsHistory = async (userId) => {
 const requestCertificate = async (userId, panNumber, donationId) => {
     if (!panNumber) throw { status: 400, message: 'PAN number is required' };
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber.toUpperCase())) throw { status: 400, message: 'Invalid PAN format. Expected: AAAAA9999A' };
-    if (!donationId) throw { status: 400, message: 'Please select a donation for the 80G certificate' };
+    if (!donationId) throw { status: 400, message: 'Please select a contribution for the 80G certificate' };
 
     const donationCheck = await db.query(
         `SELECT id FROM donations WHERE id = ? AND user_id = ? AND status = 'completed' AND purpose = 'donation'`,
         [donationId, userId]
     );
-    if (donationCheck.rows.length === 0) throw { status: 400, message: 'Invalid donation' };
+    if (donationCheck.rows.length === 0) throw { status: 400, message: 'Invalid contribution' };
 
     // Check if certificate already exists for this donation
     const existingCert = await db.query(
         'SELECT id FROM certificate_requests WHERE donation_id = ?',
         [donationId]
     );
-    if (existingCert.rows.length > 0) throw { status: 400, message: '80G certificate already requested for this donation' };
+    if (existingCert.rows.length > 0) throw { status: 400, message: '80G certificate already requested for this contribution' };
 
     const certId = uuidv4();
     await db.query(

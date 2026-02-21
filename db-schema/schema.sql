@@ -24,6 +24,7 @@ CREATE TABLE users (
     city VARCHAR(100),
     state VARCHAR(100),
     pincode VARCHAR(10),
+    country VARCHAR(100) DEFAULT 'India',
 
     -- Organization Details (for organizations)
     organization_name VARCHAR(200),
@@ -104,6 +105,7 @@ CREATE TABLE event_registrations (
     city VARCHAR(100),
     state VARCHAR(100),
     pin_code VARCHAR(20),
+    country VARCHAR(100) DEFAULT 'India',
 
     -- Consent
     fitness_declaration BOOLEAN DEFAULT false,

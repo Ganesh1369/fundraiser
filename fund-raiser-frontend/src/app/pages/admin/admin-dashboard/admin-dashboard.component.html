@@ -89,13 +89,13 @@
 
     <div class="card">
         <div class="card-header">
-            <h2>Top Donors</h2>
+            <h2>Top Contributors</h2>
             <a routerLink="/admin/leaderboard" class="btn btn-sm btn-outline">View All</a>
         </div>
         @if (leaderboard.length === 0) {
         <div class="empty-state">
             <lucide-icon name="trophy" class="empty-icon w-10 h-10"></lucide-icon>
-            <h3>No donor data</h3>
+            <h3>No contributor data</h3>
         </div>
         } @else {
         <div class="leaderboard-mini">

@@ -160,25 +160,53 @@
                                 [(ngModel)]="profileForm.area" placeholder="Area / Locality" required>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">City <span class="text-red-500">*</span></label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                [ngClass]="errors['city'] ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
-                                [(ngModel)]="profileForm.city" placeholder="City" required>
+                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">Country</label>
+                            <select class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.country" (ngModelChange)="onCountryChange()">
+                                <option value="" disabled>Select Country</option>
+                                @for (c of countries; track c.iso2) {
+                                <option [value]="c.name">{{ c.name }}</option>
+                                }
+                            </select>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-neutral-600 mb-1.5">State <span class="text-red-500">*</span></label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            <select class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm text-neutral-700 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                 [ngClass]="errors['state'] ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
-                                [(ngModel)]="profileForm.state" placeholder="State" required>
+                                [(ngModel)]="profileForm.state" (ngModelChange)="onStateChange()">
+                                @if (loadingStates) {
+                                <option value="" disabled selected>Loading...</option>
+                                } @else {
+                                <option value="" disabled>Select State</option>
+                                @for (s of states; track s.iso2) {
+                                <option [value]="s.name">{{ s.name }}</option>
+                                }
+                                }
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">Pincode <span class="text-red-500">*</span></label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                [ngClass]="errors['pincode'] ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
-                                [(ngModel)]="profileForm.pincode" placeholder="Pincode" maxlength="6" required>
+                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">City <span class="text-red-500">*</span></label>
+                            <select class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm text-neutral-700 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [ngClass]="errors['city'] ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
+                                [(ngModel)]="profileForm.city">
+                                @if (loadingCities) {
+                                <option value="" disabled selected>Loading...</option>
+                                } @else {
+                                <option value="" disabled>Select City</option>
+                                @for (c of cities; track c.id) {
+                                <option [value]="c.name">{{ c.name }}</option>
+                                }
+                                }
+                            </select>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Pincode <span class="text-red-500">*</span></label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [ngClass]="errors['pincode'] ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
+                            [(ngModel)]="profileForm.pincode" placeholder="Pincode" maxlength="6" required>
                     </div>
                 </div>
 
@@ -241,4 +269,31 @@
 
         }
     </main>
+
+    <!-- Profile Saved Modal -->
+    @if (showSavedModal) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5">
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl animate-[fadeIn_0.2s_ease-out] text-center" (click)="$event.stopPropagation()">
+            <div class="px-6 py-8">
+                <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <lucide-icon name="check-circle" class="w-8 h-8 text-primary"></lucide-icon>
+                </div>
+                <h2 class="text-lg font-bold text-accent mb-2">Profile Saved!</h2>
+                @if (returnTo === 'contribute') {
+                <p class="text-sm text-neutral-500 mb-6">Your details have been saved. You're all set to make your contribution now.</p>
+                <button class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 transition-colors text-sm flex items-center justify-center gap-2"
+                    (click)="goToDashboard()">
+                    Contribute Now <lucide-icon name="arrow-right" class="w-4 h-4"></lucide-icon>
+                </button>
+                } @else {
+                <p class="text-sm text-neutral-500 mb-6">Your details have been updated successfully.</p>
+                <button class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 transition-colors text-sm"
+                    (click)="goToDashboard()">
+                    Back to Dashboard
+                </button>
+                }
+            </div>
+        </div>
+    </div>
+    }
 </div>

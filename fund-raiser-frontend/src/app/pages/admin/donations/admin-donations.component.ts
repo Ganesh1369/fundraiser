@@ -70,7 +70,7 @@ export class AdminDonationsComponent implements OnInit {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'donations.xlsx';
+            a.download = 'contributions.xlsx';
             a.click();
         }).catch(err => console.error('Export failed:', err));
     }

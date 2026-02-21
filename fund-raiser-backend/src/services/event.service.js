@@ -262,7 +262,7 @@ const registerForEvent = async (eventId, registrationData) => {
 
         // Other
         experience_level, medical_conditions, allergies, on_medication,
-        address_line_1, address_line_2, city, state, pin_code,
+        address_line_1, address_line_2, city, state, pin_code, country,
         fitness_declaration, terms_accepted
     } = registrationData;
 
@@ -344,14 +344,14 @@ const registerForEvent = async (eventId, registrationData) => {
             event_id, user_id, date_of_birth, gender, blood_group,
             emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
             experience_level, medical_conditions, allergies, on_medication,
-            address_line_1, address_line_2, city, state, pin_code,
+            address_line_1, address_line_2, city, state, pin_code, country,
             fitness_declaration, terms_accepted
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             eventId, userId, date_of_birth, gender, blood_group,
             emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
             experience_level, medical_conditions, allergies, on_medication,
-            address_line_1, address_line_2, city, state, pin_code,
+            address_line_1, address_line_2, city, state, pin_code, country,
             fitness_declaration, terms_accepted
         ]
     );

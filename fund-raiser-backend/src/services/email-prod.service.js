@@ -79,9 +79,9 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
     const mailOptions = {
         from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to,
-        subject: `Thank You for Your Donation of ${formattedAmount}!`,
+        subject: `Thank You for Your Contribution of ${formattedAmount}!`,
         html: emailWrapper(`
-            <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Donation Receipt</p>
+            <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Contribution Receipt</p>
             <p style="color: #171717; font-size: 15px; margin: 0 0 4px;">Dear <strong>${name}</strong>,</p>
             <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">Thank you for your generous contribution! Your support makes a real difference.</p>
             <div style="background: #f5f5f5; border-radius: 12px; padding: 20px; margin: 0 0 20px;">

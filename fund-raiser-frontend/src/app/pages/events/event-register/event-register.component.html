@@ -170,23 +170,49 @@
                 </div>
                 <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">City</label>
-                        <input type="text" formControlName="city"
-                            class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            placeholder="City">
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Country</label>
+                        <select formControlName="country" (change)="onCountryChange()"
+                            class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                            <option value="" disabled>Select Country</option>
+                            @for (c of countries; track c.iso2) {
+                            <option [value]="c.name">{{ c.name }}</option>
+                            }
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-neutral-600 mb-1.5">State</label>
-                        <input type="text" formControlName="state"
-                            class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            placeholder="State">
+                        <select formControlName="state" (change)="onStateChange()"
+                            class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                            @if (loadingStates) {
+                            <option value="" disabled selected>Loading...</option>
+                            } @else {
+                            <option value="" disabled>Select State</option>
+                            @for (s of states; track s.iso2) {
+                            <option [value]="s.name">{{ s.name }}</option>
+                            }
+                            }
+                        </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">PIN Code</label>
-                        <input type="text" formControlName="pincode"
-                            class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            placeholder="PIN code">
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">City</label>
+                        <select formControlName="city"
+                            class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                            @if (loadingCities) {
+                            <option value="" disabled selected>Loading...</option>
+                            } @else {
+                            <option value="" disabled>Select City</option>
+                            @for (c of cities; track c.id) {
+                            <option [value]="c.name">{{ c.name }}</option>
+                            }
+                            }
+                        </select>
                     </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PIN Code</label>
+                    <input type="text" formControlName="pincode"
+                        class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="PIN code">
                 </div>
             </div>
 

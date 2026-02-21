@@ -77,7 +77,7 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
 
         if (updateResult.rowCount === 0) {
             await client.query('ROLLBACK');
-            throw { status: 404, message: 'Donation not found' };
+            throw { status: 404, message: 'Contribution not found' };
         }
 
         const donationResult = await client.query(

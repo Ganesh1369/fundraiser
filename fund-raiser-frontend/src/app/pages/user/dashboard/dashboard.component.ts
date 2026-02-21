@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
@@ -87,6 +87,7 @@ export class DashboardComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService,
@@ -175,7 +176,7 @@ export class DashboardComponent implements OnInit {
                         amount: res.data.amount,
                         currency: res.data.currency,
                         name: 'ICE Network',
-                        description: 'ICE Network Donation',
+                        description: 'ICE Network Contribution',
                         order_id: res.data.orderId,
                         handler: (response: any) => {
                             this.zone.run(() => {
@@ -215,7 +216,7 @@ export class DashboardComponent implements OnInit {
             next: (res: any) => {
                 if (res.success) {
                     this.loadDashboardData();
-                    this.toast.success('Thank you for your donation!');
+                    this.toast.success('Thank you for your contribution!');
                 }
             },
             error: () => this.toast.error('Payment verification failed. Please contact support.')
@@ -322,6 +323,10 @@ export class DashboardComponent implements OnInit {
                 if (res.success) {
                     this.profile = res.data;
                     this.checkProfileComplete();
+                    // Auto-open contribute modal if redirected from profile page
+                    if (this.route.snapshot.queryParamMap.get('contribute') === '1' && !this.addressIncomplete) {
+                        this.showDonateModal = true;
+                    }
                     this.cdr.detectChanges();
                 }
             },

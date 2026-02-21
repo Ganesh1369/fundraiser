@@ -89,6 +89,19 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/user/certificate-requests`, { headers: this.getHeaders() });
     }
 
+    // --- Location ---
+    getCountries(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/locations/countries`);
+    }
+
+    getStates(countryCode: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/locations/states/${countryCode}`);
+    }
+
+    getCities(countryCode: string, stateCode: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/locations/cities/${countryCode}/${stateCode}`);
+    }
+
     // --- Donations ---
     createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation'): Observable<any> {
         return this.http.post(`${this.apiUrl}/donations/create-order`, { amount, request80g, purpose }, { headers: this.getHeaders() });

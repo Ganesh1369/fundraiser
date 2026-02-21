@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
@@ -22,24 +22,38 @@ export class ProfileComponent implements OnInit {
     showAvatarMenu = false;
     showImageViewer = false;
     errors: Record<string, boolean> = {};
+    showSavedModal = false;
+    returnTo = '';
+
+    countries: any[] = [];
+    states: any[] = [];
+    cities: any[] = [];
+    selectedCountryCode = 'IN';
+    selectedStateCode = '';
+    loadingStates = false;
+    loadingCities = false;
 
     profileForm: any = {
         name: '', phone: '',
         addressLine1: '', addressLine2: '', area: '', city: '', state: '', pincode: '',
+        country: 'India',
         age: '', classGrade: '', schoolName: '',
         organizationName: '', panNumber: '', userType: ''
     };
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService
     ) {}
 
     ngOnInit(): void {
+        this.returnTo = this.route.snapshot.queryParamMap.get('returnTo') || '';
         this.loadUser();
         this.loadProfile();
+        this.loadCountries();
     }
 
     loadUser(): void {
@@ -86,6 +100,7 @@ export class ProfileComponent implements OnInit {
             city: this.profile.city || '',
             state: this.profile.state || '',
             pincode: this.profile.pincode || '',
+            country: this.profile.country || 'India',
             age: this.profile.age || '',
             classGrade: this.profile.classGrade || '',
             schoolName: this.profile.schoolName || '',
@@ -93,6 +108,101 @@ export class ProfileComponent implements OnInit {
             panNumber: this.profile.panNumber || '',
             userType: this.profile.userType || ''
         };
+
+        // Match country name to code
+        if (this.countries.length > 0) {
+            this.matchCountryAndLoadCascade();
+        }
+    }
+
+    loadCountries(): void {
+        this.api.getCountries().subscribe({
+            next: (res: any) => {
+                if (res.success) {
+                    this.countries = res.data;
+                    // Default load Indian states
+                    this.loadStates('IN');
+                    // If profile already loaded, match existing values
+                    if (this.profile) {
+                        this.matchCountryAndLoadCascade();
+                    }
+                }
+            }
+        });
+    }
+
+    matchCountryAndLoadCascade(): void {
+        const countryName = this.profileForm.country || 'India';
+        const match = this.countries.find((c: any) => c.name.toLowerCase() === countryName.toLowerCase());
+        if (match) {
+            this.selectedCountryCode = match.iso2;
+            this.loadStates(match.iso2, true);
+        }
+    }
+
+    onCountryChange(): void {
+        const selected = this.countries.find((c: any) => c.name === this.profileForm.country);
+        this.selectedCountryCode = selected ? selected.iso2 : '';
+        this.profileForm.state = '';
+        this.profileForm.city = '';
+        this.states = [];
+        this.cities = [];
+        this.selectedStateCode = '';
+        if (this.selectedCountryCode) {
+            this.loadStates(this.selectedCountryCode);
+        }
+    }
+
+    onStateChange(): void {
+        const selected = this.states.find((s: any) => s.name === this.profileForm.state);
+        this.selectedStateCode = selected ? selected.iso2 : '';
+        this.profileForm.city = '';
+        this.cities = [];
+        if (this.selectedStateCode && this.selectedCountryCode) {
+            this.loadCities(this.selectedCountryCode, this.selectedStateCode);
+        }
+    }
+
+    loadStates(countryCode: string, matchExisting = false): void {
+        this.loadingStates = true;
+        this.api.getStates(countryCode).subscribe({
+            next: (res: any) => {
+                this.loadingStates = false;
+                if (res.success) {
+                    this.states = res.data;
+                    if (matchExisting && this.profileForm.state) {
+                        const stateMatch = this.states.find((s: any) => s.name.toLowerCase() === this.profileForm.state.toLowerCase());
+                        if (stateMatch) {
+                            this.profileForm.state = stateMatch.name;
+                            this.selectedStateCode = stateMatch.iso2;
+                            this.loadCities(countryCode, stateMatch.iso2, true);
+                        }
+                    }
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => { this.loadingStates = false; }
+        });
+    }
+
+    loadCities(countryCode: string, stateCode: string, matchExisting = false): void {
+        this.loadingCities = true;
+        this.api.getCities(countryCode, stateCode).subscribe({
+            next: (res: any) => {
+                this.loadingCities = false;
+                if (res.success) {
+                    this.cities = res.data;
+                    if (matchExisting && this.profileForm.city) {
+                        const cityMatch = this.cities.find((c: any) => c.name.toLowerCase() === this.profileForm.city.toLowerCase());
+                        if (cityMatch) {
+                            this.profileForm.city = cityMatch.name;
+                        }
+                    }
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => { this.loadingCities = false; }
+        });
     }
 
     saveProfile(): void {
@@ -114,7 +224,6 @@ export class ProfileComponent implements OnInit {
                 this.isSaving = false;
                 if (res.success) {
                     this.errors = {};
-                    this.toast.success('Profile updated successfully!');
                     this.loadProfile();
                     if (this.user) {
                         const updated = {
@@ -125,6 +234,7 @@ export class ProfileComponent implements OnInit {
                         localStorage.setItem('user', JSON.stringify(updated));
                         this.user = updated;
                     }
+                    this.showSavedModal = true;
                 } else {
                     this.toast.error(res.message || 'Failed to update profile');
                 }
@@ -207,6 +317,15 @@ export class ProfileComponent implements OnInit {
     getInitials(name: string | undefined): string {
         if (!name) return '?';
         return name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    goToDashboard(): void {
+        this.showSavedModal = false;
+        if (this.returnTo === 'contribute') {
+            this.router.navigate(['/dashboard'], { queryParams: { contribute: '1' } });
+        } else {
+            this.router.navigate(['/dashboard']);
+        }
     }
 
     logout(): void {

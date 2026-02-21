@@ -41,7 +41,7 @@ exports.getDonations = async (req, res, next) => {
 exports.exportDonations = async (req, res, next) => {
     try {
         const buffer = await adminService.exportDonations(req.query);
-        res.setHeader('Content-Disposition', 'attachment; filename=donations.xlsx');
+        res.setHeader('Content-Disposition', 'attachment; filename=contributions.xlsx');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.send(buffer);
     } catch (error) {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
+import { ApiService } from '../../../services/api.service';
 import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -20,12 +21,21 @@ export class EventRegisterComponent implements OnInit {
   errorMessage = '';
   showPassword = false;
 
+  countries: any[] = [];
+  states: any[] = [];
+  cities: any[] = [];
+  selectedCountryCode = 'IN';
+  selectedStateCode = '';
+  loadingStates = false;
+  loadingCities = false;
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private api: ApiService
   ) {
     this.registerForm = this.fb.group({
       user_type: ['individual'],
@@ -42,6 +52,7 @@ export class EventRegisterComponent implements OnInit {
       tshirt_size: [''],
       medical_conditions: [''],
       address: [''],
+      country: ['India'],
       city: [''],
       state: [''],
       pincode: [''],
@@ -67,6 +78,66 @@ export class EventRegisterComponent implements OnInit {
         }
       });
     }
+    this.loadCountries();
+  }
+
+  loadCountries(): void {
+    this.api.getCountries().subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.countries = res.data;
+          this.loadStates('IN');
+        }
+      }
+    });
+  }
+
+  onCountryChange(): void {
+    const countryName = this.registerForm.get('country')?.value;
+    const selected = this.countries.find((c: any) => c.name === countryName);
+    this.selectedCountryCode = selected ? selected.iso2 : '';
+    this.registerForm.patchValue({ state: '', city: '' });
+    this.states = [];
+    this.cities = [];
+    this.selectedStateCode = '';
+    if (this.selectedCountryCode) {
+      this.loadStates(this.selectedCountryCode);
+    }
+  }
+
+  onStateChange(): void {
+    const stateName = this.registerForm.get('state')?.value;
+    const selected = this.states.find((s: any) => s.name === stateName);
+    this.selectedStateCode = selected ? selected.iso2 : '';
+    this.registerForm.patchValue({ city: '' });
+    this.cities = [];
+    if (this.selectedStateCode && this.selectedCountryCode) {
+      this.loadCities(this.selectedCountryCode, this.selectedStateCode);
+    }
+  }
+
+  loadStates(countryCode: string): void {
+    this.loadingStates = true;
+    this.api.getStates(countryCode).subscribe({
+      next: (res: any) => {
+        this.loadingStates = false;
+        if (res.success) this.states = res.data;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingStates = false; }
+    });
+  }
+
+  loadCities(countryCode: string, stateCode: string): void {
+    this.loadingCities = true;
+    this.api.getCities(countryCode, stateCode).subscribe({
+      next: (res: any) => {
+        this.loadingCities = false;
+        if (res.success) this.cities = res.data;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingCities = false; }
+    });
   }
 
   onSubmit() {

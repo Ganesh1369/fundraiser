@@ -1,5 +1,5 @@
 <header class="admin-header">
-    <h1>Donation Management</h1>
+    <h1>Contribution Management</h1>
 </header>
 
 <div class="filters">
@@ -18,15 +18,15 @@
     @if (donations.length === 0) {
     <div class="empty-state">
         <lucide-icon name="wallet" class="empty-icon w-10 h-10"></lucide-icon>
-        <h3>No donation data</h3>
-        <p>There are no donations yet.</p>
+        <h3>No contribution data</h3>
+        <p>There are no contributions yet.</p>
     </div>
     } @else {
     <div class="table-wrapper">
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Donor</th>
+                    <th>Contributor</th>
                     <th>Email</th>
                     <th>Amount</th>
                     <th>Status</th>
