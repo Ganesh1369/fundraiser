@@ -136,6 +136,9 @@ CREATE TABLE donations (
     amount DECIMAL(12, 2) NOT NULL,
     currency VARCHAR(3) DEFAULT 'INR',
 
+    -- Tree count (for tree-based contributions)
+    num_trees INT UNSIGNED DEFAULT NULL,
+
     -- Razorpay Details
     razorpay_order_id VARCHAR(100),
     razorpay_payment_id VARCHAR(100),
@@ -270,6 +273,7 @@ SELECT
     u.referral_points,
     COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) AS total_donations,
     SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN 1 ELSE 0 END) AS donation_count,
+    COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.num_trees ELSE 0 END), 0) AS total_trees,
     (COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) + u.referral_points) AS score
 FROM users u
 LEFT JOIN donations d ON u.id = d.user_id

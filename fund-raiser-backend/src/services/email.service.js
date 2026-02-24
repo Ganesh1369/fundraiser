@@ -72,9 +72,15 @@ const sendPasswordResetEmail = async (to, otp) => {
 /**
  * Send donation confirmation email
  */
-const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) => {
+const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date, numTrees) => {
     const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
     const formattedDate = new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const treesRow = numTrees ? `
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px; border-top: 1px solid #e5e5e5;">Trees</td>
+                        <td style="color: #16a34a; padding: 8px 0; font-size: 14px; font-weight: 600; text-align: right; border-top: 1px solid #e5e5e5;">${numTrees} tree${numTrees > 1 ? 's' : ''}</td>
+                    </tr>` : '';
 
     const mailOptions = {
         from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
@@ -89,7 +95,7 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
                     <tr>
                         <td style="color: #737373; padding: 8px 0; font-size: 13px;">Amount</td>
                         <td style="color: #16a34a; padding: 8px 0; font-size: 16px; font-weight: 700; text-align: right;">${formattedAmount}</td>
-                    </tr>
+                    </tr>${treesRow}
                     <tr>
                         <td style="color: #737373; padding: 8px 0; font-size: 13px; border-top: 1px solid #e5e5e5;">Payment ID</td>
                         <td style="color: #171717; padding: 8px 0; font-size: 13px; text-align: right; border-top: 1px solid #e5e5e5;">${paymentId}</td>

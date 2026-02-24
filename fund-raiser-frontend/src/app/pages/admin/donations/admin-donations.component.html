@@ -28,6 +28,7 @@
                 <tr>
                     <th>Contributor</th>
                     <th>Email</th>
+                    <th>Trees</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Payment ID</th>
@@ -39,6 +40,7 @@
                 <tr>
                     <td><a [routerLink]="['/admin/users', slugify(donation.user_name)]" [state]="{userId: donation.user_id}" class="user-link">{{ donation.user_name }}</a></td>
                     <td>{{ donation.user_email }}</td>
+                    <td>{{ donation.num_trees || '-' }}</td>
                     <td class="amount">{{ formatCurrency(donation.amount) }}</td>
                     <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
                     <td>{{ donation.razorpay_payment_id || '-' }}</td>

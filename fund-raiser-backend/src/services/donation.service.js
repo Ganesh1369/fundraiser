@@ -9,12 +9,42 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+// Tree-based slab pricing (flat-slab: entire quantity priced at one rate)
+const TREE_SLABS = [
+    { min: 1,  max: 5,        price: 2000 },
+    { min: 6,  max: 10,       price: 1750 },
+    { min: 11, max: 20,       price: 1500 },
+    { min: 21, max: 50,       price: 1250 },
+    { min: 51, max: Infinity,  price: 1000 },
+];
+
+const getTreePrice = (n) => TREE_SLABS.find(s => n >= s.min && n <= s.max)?.price;
+const calculateTreeAmount = (n) => n * getTreePrice(n);
+
 /**
  * Create Razorpay order
  */
-const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation') => {
-    if (!amount || amount < 1) {
-        throw { status: 400, message: 'Please provide a valid amount (minimum ₹1)' };
+const createOrder = async (userId, userName, numTrees, request80g = false, purpose = 'donation') => {
+    let amount;
+    let trees = null;
+
+    if (purpose === 'registration_fee') {
+        // Backward compat: numTrees is actually raw amount for registration fees
+        amount = numTrees;
+        if (!amount || amount < 1) {
+            throw { status: 400, message: 'Please provide a valid amount (minimum ₹1)' };
+        }
+    } else {
+        // Tree-based contribution
+        if (!numTrees || numTrees < 1 || !Number.isInteger(numTrees)) {
+            throw { status: 400, message: 'Please select at least 1 tree' };
+        }
+        const pricePerTree = getTreePrice(numTrees);
+        if (!pricePerTree) {
+            throw { status: 400, message: 'Invalid tree count' };
+        }
+        amount = calculateTreeAmount(numTrees);
+        trees = numTrees;
     }
 
     const options = {
@@ -30,9 +60,9 @@ const createOrder = async (userId, userName, amount, request80g = false, purpose
     const referrerResult = await db.query('SELECT referred_by FROM users WHERE id = ?', [userId]);
     const referrerId = referrerResult.rows[0]?.referred_by || null;
     await db.query(
-        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, purpose]
+        `INSERT INTO donations (id, user_id, amount, currency, num_trees, razorpay_order_id, status, referrer_id, request_80g, purpose)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [donationId, userId, amount, 'INR', trees, order.id, 'pending', referrerId, request80g, purpose]
     );
 
     return {
@@ -81,7 +111,7 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         }
 
         const donationResult = await client.query(
-            'SELECT id, amount, referrer_id, request_80g, purpose FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
+            'SELECT id, amount, num_trees, referrer_id, request_80g, purpose FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
             [razorpayOrderId, userId]
         );
         const donation = donationResult.rows[0];
@@ -131,7 +161,8 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                 userName,
                 parseFloat(donation.amount),
                 razorpayPaymentId,
-                new Date()
+                new Date(),
+                donation.num_trees
             ).catch(err => console.error('Failed to send donation email:', err.message));
         }
 

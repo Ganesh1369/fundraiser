@@ -17,6 +17,10 @@ interface DashboardStats {
         thisMonth: number;
         thisWeek: number;
     };
+    trees: {
+        total: number;
+        thisMonth: number;
+    };
     certificates: { [key: string]: number };
 }
 
@@ -39,6 +43,7 @@ interface LeaderboardEntry {
     userType: string;
     totalDonations: number;
     donationCount: number;
+    totalTrees: number;
     referralPoints: number;
     score: number;
 }

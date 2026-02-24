@@ -90,6 +90,13 @@
     </div>
     <div class="stat-card">
         <div class="stat-header">
+            <lucide-icon name="trees" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">Trees Contributed</span>
+        </div>
+        <div class="stat-value">{{ donations?.totalTrees || 0 }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
             <lucide-icon name="receipt" class="stat-icon w-5 h-5"></lucide-icon>
             <span class="stat-label">Contribution Count</span>
         </div>
@@ -134,6 +141,7 @@
             <thead>
                 <tr>
                     <th>Amount</th>
+                    <th>Trees</th>
                     <th>Status</th>
                     <th>Payment ID</th>
                     <th>Date</th>
@@ -143,6 +151,7 @@
                 @for (d of donations?.history; track d.id) {
                 <tr>
                     <td class="amount">{{ formatCurrency(d.amount) }}</td>
+                    <td>{{ d.num_trees || '-' }}</td>
                     <td><span class="status-badge" [ngClass]="d.status">{{ d.status }}</span></td>
                     <td>{{ d.razorpay_payment_id || '--' }}</td>
                     <td>{{ formatDate(d.created_at) }}</td>

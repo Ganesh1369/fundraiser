@@ -21,6 +21,7 @@ interface User {
 interface Donation {
     id: string;
     amount: number;
+    numTrees: number | null;
     status: string;
     createdAt: string;
     paymentId?: string;
@@ -32,6 +33,14 @@ interface DonationSummary {
     totalDonations: number;
     totalAmount: number;
     thisMonthAmount: number;
+    totalTrees: number;
+}
+
+interface TreeSlab {
+    min: number;
+    max: number;
+    price: number;
+    label: string;
 }
 
 interface ReferralStats {
@@ -64,13 +73,23 @@ interface CertificateRequest {
 export class DashboardComponent implements OnInit {
     user: User | null = null;
     donations: Donation[] = [];
-    summary: DonationSummary = { totalDonations: 0, totalAmount: 0, thisMonthAmount: 0 };
+    summary: DonationSummary = { totalDonations: 0, totalAmount: 0, thisMonthAmount: 0, totalTrees: 0 };
     referralStats: ReferralStats | null = null;
     certificateRequests: CertificateRequest[] = [];
 
     activeTab = 'overview';
-    donationAmount = 100;
     request80g = false;
+
+    // Tree slab pricing
+    treeSlabs: TreeSlab[] = [
+        { min: 1, max: 5, price: 2000, label: '1–5' },
+        { min: 6, max: 10, price: 1750, label: '6–10' },
+        { min: 11, max: 20, price: 1500, label: '11–20' },
+        { min: 21, max: 50, price: 1250, label: '21–50' },
+        { min: 51, max: 999, price: 1000, label: '51+' },
+    ];
+    selectedSlab: TreeSlab | null = null;
+    numTrees: number = 1;
     selectedFilter = 'all';
     isLoading = false;
     showDonateModal = false;
@@ -162,12 +181,40 @@ export class DashboardComponent implements OnInit {
         this.loadDonations();
     }
 
+    selectSlab(slab: TreeSlab): void {
+        this.selectedSlab = slab;
+        this.numTrees = slab.min;
+    }
+
+    incrementTrees(): void {
+        if (!this.selectedSlab) return;
+        const max = this.selectedSlab.max;
+        if (this.numTrees < max) this.numTrees++;
+    }
+
+    decrementTrees(): void {
+        if (!this.selectedSlab) return;
+        const min = this.selectedSlab.min;
+        if (this.numTrees > min) this.numTrees--;
+    }
+
+    clampTrees(): void {
+        if (!this.selectedSlab) return;
+        if (this.numTrees < this.selectedSlab.min) this.numTrees = this.selectedSlab.min;
+        if (this.numTrees > this.selectedSlab.max) this.numTrees = this.selectedSlab.max;
+    }
+
+    get calculatedAmount(): number {
+        if (!this.selectedSlab) return 0;
+        return this.numTrees * this.selectedSlab.price;
+    }
+
     initiateDonation(): void {
-        if (this.donationAmount < 1) return;
+        if (!this.selectedSlab || this.numTrees < 1) return;
 
         this.isLoading = true;
 
-        this.api.createOrder(this.donationAmount, this.request80g).subscribe({
+        this.api.createOrder(this.numTrees, this.request80g).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
@@ -176,7 +223,7 @@ export class DashboardComponent implements OnInit {
                         amount: res.data.amount,
                         currency: res.data.currency,
                         name: 'ICE Network',
-                        description: 'ICE Network Contribution',
+                        description: `${this.numTrees} Tree${this.numTrees > 1 ? 's' : ''} — ICE Network`,
                         order_id: res.data.orderId,
                         handler: (response: any) => {
                             this.zone.run(() => {

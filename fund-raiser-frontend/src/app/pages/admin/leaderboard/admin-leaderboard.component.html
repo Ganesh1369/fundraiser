@@ -29,6 +29,7 @@
                     <th>City</th>
                     <th>Type</th>
                     <th>Contributions</th>
+                    <th>Trees</th>
                     <th># Txns</th>
                     <th>Referral Pts</th>
                     <th>Score</th>
@@ -50,6 +51,7 @@
                     <td>{{ entry.city || '-' }}</td>
                     <td><span class="badge" [ngClass]="entry.userType">{{ entry.userType }}</span></td>
                     <td class="amount">{{ formatCurrency(entry.totalDonations) }}</td>
+                    <td>{{ entry.totalTrees || '-' }}</td>
                     <td>{{ entry.donationCount }}</td>
                     <td>{{ entry.referralPoints }}</td>
                     <td class="score-cell"><strong>{{ entry.score }}</strong></td>

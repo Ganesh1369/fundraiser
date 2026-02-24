@@ -39,6 +39,17 @@
         </div>
     </div>
 
+    <div class="stat-card green">
+        <div class="stat-header">
+            <lucide-icon name="trees" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">Total Trees</span>
+        </div>
+        <div class="stat-value">{{ stats?.trees?.total || 0 }}</div>
+        <div class="stat-breakdown">
+            <span class="flex items-center gap-1"><lucide-icon name="calendar" class="w-3.5 h-3.5"></lucide-icon> {{ stats?.trees?.thisMonth || 0 }} this month</span>
+        </div>
+    </div>
+
     <div class="stat-card">
         <div class="stat-header">
             <lucide-icon name="file-text" class="stat-icon w-5 h-5"></lucide-icon>

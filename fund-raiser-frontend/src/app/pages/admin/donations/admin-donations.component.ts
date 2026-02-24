@@ -12,6 +12,7 @@ interface Donation {
     user_name: string;
     user_email: string;
     amount: number;
+    num_trees: number | null;
     status: string;
     payment_method: string;
     razorpay_payment_id: string;

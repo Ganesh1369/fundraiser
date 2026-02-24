@@ -25,7 +25,9 @@ const _getDashboardStats = async () => {
             COUNT(*) as total_count,
             COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_amount,
             COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month,
-            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 7 DAY THEN amount ELSE 0 END), 0) as this_week
+            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 7 DAY THEN amount ELSE 0 END), 0) as this_week,
+            COALESCE(SUM(CASE WHEN status = 'completed' THEN num_trees ELSE 0 END), 0) as total_trees,
+            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN num_trees ELSE 0 END), 0) as trees_this_month
          FROM donations WHERE purpose = 'donation'`
     );
     const certStats = await db.query(
@@ -51,6 +53,10 @@ const _getDashboardStats = async () => {
             totalCount: parseInt(donationStats.rows[0].total_count),
             thisMonth: parseFloat(donationStats.rows[0].this_month),
             thisWeek: parseFloat(donationStats.rows[0].this_week)
+        },
+        trees: {
+            total: parseInt(donationStats.rows[0].total_trees),
+            thisMonth: parseInt(donationStats.rows[0].trees_this_month)
         },
         certificates: certsByStatus
     };
@@ -147,7 +153,7 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
     const countResult = await db.query(`SELECT COUNT(*) as count FROM donations d ${whereClause}`, params);
 
     const result = await db.query(
-        `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
+        `SELECT d.id, d.user_id, d.amount, d.currency, d.num_trees, d.status, d.payment_method,
                 d.razorpay_payment_id, d.created_at,
                 u.name as user_name, u.email as user_email, u.user_type
          FROM donations d JOIN users u ON u.id = d.user_id
@@ -181,7 +187,7 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
     const result = await db.query(
         `SELECT u.name as "Donor Name", u.email as "Donor Email", u.phone as "Donor Phone",
                 u.user_type as "Donor Type", u.city as "Donor City",
-                d.amount as "Amount (INR)", d.currency as "Currency", d.status as "Payment Status",
+                d.num_trees as "Trees", d.amount as "Amount (INR)", d.currency as "Currency", d.status as "Payment Status",
                 d.payment_method as "Payment Method",
                 d.razorpay_order_id as "Razorpay Order ID",
                 d.razorpay_payment_id as "Razorpay Payment ID",
@@ -218,7 +224,7 @@ const getUserAnalytics = async (userId) => {
     if (userResult.rows.length === 0) throw { status: 404, message: 'User not found' };
 
     const donations = await db.query(
-        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = ? AND purpose = 'donation' ORDER BY created_at DESC`,
+        `SELECT id, amount, num_trees, status, razorpay_payment_id, created_at FROM donations WHERE user_id = ? AND purpose = 'donation' ORDER BY created_at DESC`,
         [userId]
     );
 
@@ -261,6 +267,7 @@ const getUserAnalytics = async (userId) => {
         donations: {
             history: donations.rows.map(d => ({ ...d, amount: parseFloat(d.amount) })),
             totalAmount: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + parseFloat(d.amount), 0),
+            totalTrees: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + (d.num_trees || 0), 0),
             count: donations.rows.length
         },
         referrals: {
@@ -305,6 +312,7 @@ const _getLeaderboard = async ({ limit = 50, userType }) => {
         userType: row.user_type,
         totalDonations: parseFloat(row.total_donations),
         donationCount: parseInt(row.donation_count || 0),
+        totalTrees: parseInt(row.total_trees || 0),
         referralPoints: parseInt(row.referral_points),
         score: parseFloat(row.score)
     }));
@@ -318,7 +326,7 @@ const exportLeaderboard = async () => {
     const result = await db.query(
         `SELECT name as "Name", email as "Email", user_type as "User Type", city as "City",
                 total_donations as "Total Contributions (INR)", donation_count as "Number of Contributions",
-                referral_points as "Referral Points", score as "Total Score"
+                total_trees as "Trees", referral_points as "Referral Points", score as "Total Score"
          FROM leaderboard`
     );
 

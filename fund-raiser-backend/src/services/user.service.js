@@ -77,7 +77,7 @@ const getDonations = async (userId, period) => {
     }
 
     const result = await db.query(
-        `SELECT d.id, d.amount, d.currency, d.status, d.payment_method,
+        `SELECT d.id, d.amount, d.currency, d.num_trees, d.status, d.payment_method,
                 d.razorpay_payment_id, d.created_at, d.request_80g,
                 cr.status as certificate_status
          FROM donations d
@@ -89,6 +89,7 @@ const getDonations = async (userId, period) => {
 
     return result.rows.map(d => ({
         id: d.id, amount: parseFloat(d.amount), currency: d.currency,
+        numTrees: d.num_trees || null,
         status: d.status, paymentMethod: d.payment_method,
         paymentId: d.razorpay_payment_id, createdAt: d.created_at,
         request80g: d.request_80g, certificateStatus: d.certificate_status || null
@@ -103,7 +104,8 @@ const getDonationSummary = async (userId) => {
         `SELECT
             COUNT(*) as total_count,
             COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_amount,
-            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month
+            COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= NOW() - INTERVAL 1 MONTH THEN amount ELSE 0 END), 0) as this_month,
+            COALESCE(SUM(CASE WHEN status = 'completed' THEN num_trees ELSE 0 END), 0) as total_trees
          FROM donations WHERE user_id = ? AND purpose = 'donation'`,
         [userId]
     );
@@ -111,7 +113,8 @@ const getDonationSummary = async (userId) => {
     return {
         totalDonations: parseInt(s.total_count),
         totalAmount: parseFloat(s.total_amount),
-        thisMonthAmount: parseFloat(s.this_month)
+        thisMonthAmount: parseFloat(s.this_month),
+        totalTrees: parseInt(s.total_trees)
     };
 };
 
