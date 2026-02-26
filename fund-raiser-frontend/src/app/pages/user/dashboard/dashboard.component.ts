@@ -36,7 +36,7 @@ interface DonationSummary {
     totalTrees: number;
 }
 
-interface TreeSlab {
+interface TreeGrove {
     min: number;
     max: number;
     price: number;
@@ -80,15 +80,15 @@ export class DashboardComponent implements OnInit {
     activeTab = 'overview';
     request80g = false;
 
-    // Tree slab pricing
-    treeSlabs: TreeSlab[] = [
+    // Tree grove pricing
+    treeGroves: TreeGrove[] = [
         { min: 1, max: 5, price: 2000, label: '1–5' },
         { min: 6, max: 10, price: 1750, label: '6–10' },
         { min: 11, max: 20, price: 1500, label: '11–20' },
         { min: 21, max: 50, price: 1250, label: '21–50' },
         { min: 51, max: 999, price: 1000, label: '51+' },
     ];
-    selectedSlab: TreeSlab | null = null;
+    selectedGrove: TreeGrove | null = null;
     numTrees: number = 1;
     selectedFilter = 'all';
     isLoading = false;
@@ -181,36 +181,36 @@ export class DashboardComponent implements OnInit {
         this.loadDonations();
     }
 
-    selectSlab(slab: TreeSlab): void {
-        this.selectedSlab = slab;
-        this.numTrees = slab.min;
+    selectGrove(grove: TreeGrove): void {
+        this.selectedGrove = grove;
+        this.numTrees = grove.min;
     }
 
     incrementTrees(): void {
-        if (!this.selectedSlab) return;
-        const max = this.selectedSlab.max;
+        if (!this.selectedGrove) return;
+        const max = this.selectedGrove.max;
         if (this.numTrees < max) this.numTrees++;
     }
 
     decrementTrees(): void {
-        if (!this.selectedSlab) return;
-        const min = this.selectedSlab.min;
+        if (!this.selectedGrove) return;
+        const min = this.selectedGrove.min;
         if (this.numTrees > min) this.numTrees--;
     }
 
     clampTrees(): void {
-        if (!this.selectedSlab) return;
-        if (this.numTrees < this.selectedSlab.min) this.numTrees = this.selectedSlab.min;
-        if (this.numTrees > this.selectedSlab.max) this.numTrees = this.selectedSlab.max;
+        if (!this.selectedGrove) return;
+        if (this.numTrees < this.selectedGrove.min) this.numTrees = this.selectedGrove.min;
+        if (this.numTrees > this.selectedGrove.max) this.numTrees = this.selectedGrove.max;
     }
 
     get calculatedAmount(): number {
-        if (!this.selectedSlab) return 0;
-        return this.numTrees * this.selectedSlab.price;
+        if (!this.selectedGrove) return 0;
+        return this.numTrees * this.selectedGrove.price;
     }
 
     initiateDonation(): void {
-        if (!this.selectedSlab || this.numTrees < 1) return;
+        if (!this.selectedGrove || this.numTrees < 1) return;
 
         this.isLoading = true;
 
@@ -222,8 +222,8 @@ export class DashboardComponent implements OnInit {
                         key: res.data.keyId,
                         amount: res.data.amount,
                         currency: res.data.currency,
-                        name: 'ICE Network',
-                        description: `${this.numTrees} Tree${this.numTrees > 1 ? 's' : ''} — ICE Network`,
+                        name: 'ICE — ROOTS',
+                        description: `${this.numTrees} Tree${this.numTrees > 1 ? 's' : ''} — ROOTS by ICE`,
                         order_id: res.data.orderId,
                         handler: (response: any) => {
                             this.zone.run(() => {
@@ -336,15 +336,17 @@ export class DashboardComponent implements OnInit {
 
     shareOnWhatsApp(): void {
         if (this.referralStats?.referralLink) {
-            const text = `Join ICE Network — for a healthier, greener city! Use my referral link: ${this.referralStats.referralLink}`;
+            const text = `I just planted trees through ROOTS — ICE's million-tree initiative to make India net-zero. Every tree counts! Join me: ${this.referralStats.referralLink}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
     }
 
-    shareOnTwitter(): void {
+    shareOnInstagram(): void {
         if (this.referralStats?.referralLink) {
-            const text = `Join ICE Network — for a healthier, greener city!`;
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(this.referralStats.referralLink)}`, '_blank');
+            const text = `I just planted trees through ROOTS — ICE's million-tree initiative to make India net-zero. Every tree counts! Join me: ${this.referralStats.referralLink}`;
+            navigator.clipboard.writeText(text);
+            this.toast.success('Caption copied! Opening Instagram…');
+            window.open('https://www.instagram.com/', '_blank');
         }
     }
 

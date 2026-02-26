@@ -9,8 +9,8 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// Tree-based slab pricing (flat-slab: entire quantity priced at one rate)
-const TREE_SLABS = [
+// Tree-based grove pricing (entire quantity priced at one rate)
+const TREE_GROVES = [
     { min: 1,  max: 5,        price: 2000 },
     { min: 6,  max: 10,       price: 1750 },
     { min: 11, max: 20,       price: 1500 },
@@ -18,7 +18,7 @@ const TREE_SLABS = [
     { min: 51, max: Infinity,  price: 1000 },
 ];
 
-const getTreePrice = (n) => TREE_SLABS.find(s => n >= s.min && n <= s.max)?.price;
+const getTreePrice = (n) => TREE_GROVES.find(s => n >= s.min && n <= s.max)?.price;
 const calculateTreeAmount = (n) => n * getTreePrice(n);
 
 /**
