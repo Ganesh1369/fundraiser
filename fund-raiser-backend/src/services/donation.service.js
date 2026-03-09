@@ -139,7 +139,7 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
             );
             if (existingCert.rows.length === 0) {
                 const userPan = await client.query(
-                    'SELECT pan_number FROM users WHERE id = ?',
+                    'SELECT pan_number, name, email FROM users WHERE id = ?',
                     [userId]
                 );
                 const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
@@ -148,6 +148,17 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                      VALUES (?, ?, ?)`,
                     [userId, donation.id, panNumber]
                 );
+
+                // Send 80G request received notification to ICE team
+                if (userPan.rows[0]) {
+                    emailService.sendCertificateRequestReceivedEmail(
+                        userPan.rows[0].name,
+                        userPan.rows[0].email,
+                        panNumber,
+                        parseFloat(donation.amount),
+                        new Date()
+                    ).catch(err => console.error('Failed to send 80G request received email:', err.message));
+                }
             }
         }
 

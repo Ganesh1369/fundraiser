@@ -129,9 +129,54 @@ const sendCertificateApprovedEmail = async (to, name) => {
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Send 80G certificate request received notification to ICE team
+ */
+const sendCertificateRequestReceivedEmail = async (userName, userEmail, panNumber, donationAmount, donationDate) => {
+    const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(donationAmount);
+    const formattedDate = new Date(donationDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const mailOptions = {
+        from: `"ICE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to: 'communications@icenetwork.in, connect@icenetwork.in',
+        subject: `New 80G Certificate Request — ${userName}`,
+        html: emailWrapper(`
+            <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">New 80G Certificate Request</p>
+            <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">A new 80G certificate request has been received. Please review and process it at the earliest.</p>
+            <div style="background: #f5f5f5; border-radius: 12px; padding: 20px; margin: 0 0 20px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px;">Name</td>
+                        <td style="color: #171717; padding: 8px 0; font-size: 14px; font-weight: 600; text-align: right;">${userName}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px; border-top: 1px solid #e5e5e5;">Email</td>
+                        <td style="color: #171717; padding: 8px 0; font-size: 13px; text-align: right; border-top: 1px solid #e5e5e5;">${userEmail}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px; border-top: 1px solid #e5e5e5;">PAN Number</td>
+                        <td style="color: #171717; padding: 8px 0; font-size: 13px; text-align: right; border-top: 1px solid #e5e5e5;">${panNumber}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px; border-top: 1px solid #e5e5e5;">Donation Amount</td>
+                        <td style="color: #16a34a; padding: 8px 0; font-size: 16px; font-weight: 700; text-align: right; border-top: 1px solid #e5e5e5;">${formattedAmount}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px; border-top: 1px solid #e5e5e5;">Donation Date</td>
+                        <td style="color: #171717; padding: 8px 0; font-size: 13px; text-align: right; border-top: 1px solid #e5e5e5;">${formattedDate}</td>
+                    </tr>
+                </table>
+            </div>
+            <p style="color: #737373; font-size: 13px; text-align: center; margin: 0;">Please log in to the <strong style="color: #171717;">Admin Panel</strong> to process this request.</p>
+        `)
+    };
+    return transporter.sendMail(mailOptions);
+};
+
 module.exports = {
     sendOtpEmail,
     sendPasswordResetEmail,
     sendDonationConfirmationEmail,
-    sendCertificateApprovedEmail
+    sendCertificateApprovedEmail,
+    sendCertificateRequestReceivedEmail
 };

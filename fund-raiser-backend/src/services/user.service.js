@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
+const emailService = require('./email.service');
 
 /**
  * Get user profile
@@ -190,6 +191,20 @@ const requestCertificate = async (userId, panNumber, donationId) => {
         [certId, userId, donationId, panNumber.toUpperCase()]
     );
     const result = await db.query('SELECT id, status, requested_at FROM certificate_requests WHERE id = ?', [certId]);
+
+    // Send notification email to ICE team
+    const userResult = await db.query('SELECT name, email FROM users WHERE id = ?', [userId]);
+    const donationResult = await db.query('SELECT amount, created_at FROM donations WHERE id = ?', [donationId]);
+    if (userResult.rows.length > 0 && donationResult.rows.length > 0) {
+        emailService.sendCertificateRequestReceivedEmail(
+            userResult.rows[0].name,
+            userResult.rows[0].email,
+            panNumber.toUpperCase(),
+            donationResult.rows[0].amount,
+            donationResult.rows[0].created_at
+        ).catch(err => console.error('Failed to send 80G request received email:', err.message));
+    }
+
     return result.rows[0];
 };
 

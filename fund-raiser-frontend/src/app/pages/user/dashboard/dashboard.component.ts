@@ -96,6 +96,8 @@ export class DashboardComponent implements OnInit {
     showCertificateModal = false;
     panNumber = '';
     panEditable = false;
+    donatePanNumber = '';
+    donatePanEditable = false;
     selectedDonationId = '';
     linkCopied = false;
 
@@ -211,8 +213,15 @@ export class DashboardComponent implements OnInit {
 
     initiateDonation(): void {
         if (!this.selectedGrove || this.numTrees < 1) return;
+        if (this.request80g && !this.isValidPAN(this.donatePanNumber)) return;
 
         this.isLoading = true;
+
+        // Save PAN to profile before creating order so backend can use it
+        if (this.request80g && this.donatePanNumber && this.profile?.panNumber !== this.donatePanNumber.toUpperCase()) {
+            this.api.updateProfile({ panNumber: this.donatePanNumber.toUpperCase() }).subscribe();
+            if (this.profile) this.profile.panNumber = this.donatePanNumber.toUpperCase();
+        }
 
         this.api.createOrder(this.numTrees, this.request80g).subscribe({
             next: (res: any) => {
@@ -402,6 +411,8 @@ export class DashboardComponent implements OnInit {
         if (this.addressIncomplete) {
             this.showAddressPrompt = true;
         } else {
+            this.donatePanNumber = this.profile?.panNumber || '';
+            this.donatePanEditable = !this.donatePanNumber;
             this.showDonateModal = true;
         }
     }

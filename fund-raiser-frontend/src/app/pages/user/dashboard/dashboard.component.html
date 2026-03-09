@@ -292,8 +292,8 @@
         <div class="w-full max-w-md bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
             <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
                 <div>
-                    <h2 class="text-lg font-bold text-accent m-0">ROOTS</h2>
-                    <p class="text-xs text-neutral-400 m-0 italic">Restoring Our Original Tree Systems</p>
+                    <h2 class="text-xl font-extrabold text-accent m-0 tracking-wide">ROOTS</h2>
+                    <p class="text-xs text-neutral-700 m-0 font-semibold italic">Restoring Our Original Tree Systems</p>
                 </div>
                 <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
                     (click)="showDonateModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
@@ -337,10 +337,32 @@
                 </div>
 
                 @if (user?.userType === 'organization' || user?.userType === 'individual') {
-                <label class="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer">
+                <label class="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer mb-1">
                     <input type="checkbox" [(ngModel)]="request80g" class="w-4 h-4 accent-primary">
                     <span>Request 80G certificate for this contribution</span>
                 </label>
+
+                @if (request80g) {
+                <div class="mt-3 p-4 bg-neutral-50 rounded-xl border border-neutral-200">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
+                    @if (!donatePanEditable && isValidPAN(donatePanNumber)) {
+                    <div class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl text-sm flex items-center justify-between">
+                        <span class="font-medium text-accent tracking-wider uppercase">{{ donatePanNumber }}</span>
+                        <button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400 transition-colors"
+                            (click)="donatePanEditable = true" title="Edit PAN">
+                            <lucide-icon name="pencil" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                    </div>
+                    } @else {
+                    <input type="text" class="w-full px-4 py-3 bg-white border rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                        [ngClass]="donatePanNumber.length > 0 && !isValidPAN(donatePanNumber) ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200'"
+                        [(ngModel)]="donatePanNumber" placeholder="AAAAA9999A" maxlength="10">
+                    @if (donatePanNumber.length > 0 && !isValidPAN(donatePanNumber)) {
+                    <p class="text-xs text-red-500 mt-1 m-0">Format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)</p>
+                    }
+                    }
+                </div>
+                }
                 }
                 }
             </div>
@@ -348,7 +370,7 @@
                 <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
                     (click)="showDonateModal = false">Cancel</button>
                 <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
-                    (click)="initiateDonation()" [disabled]="isLoading || !selectedGrove">
+                    (click)="initiateDonation()" [disabled]="isLoading || !selectedGrove || (request80g && !isValidPAN(donatePanNumber))">
                     @if (isLoading) {
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Processing...
