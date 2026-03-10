@@ -10,13 +10,6 @@
                     (click)="onDonateClick()">
                     Contribute
                 </button>
-                @if (user?.userType === 'organization' || user?.userType === 'individual') {
-                <button class="px-3 sm:px-4 py-2 border border-neutral-200 text-xs sm:text-sm font-medium text-neutral-700 rounded-xl hover:border-primary hover:text-primary transition-all"
-                    (click)="openCertificateModal()">
-                    <span class="sm:hidden">80G</span>
-                    <span class="hidden sm:inline">80G Certificate</span>
-                </button>
-                }
                 <button class="w-9 h-9 rounded-full overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer shrink-0"
                     (click)="goToProfile()" title="Edit Profile">
                     @if (profile?.profilePic) {
