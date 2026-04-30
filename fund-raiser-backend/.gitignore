@@ -1,3 +1,8 @@
 node_modules/
 .env
 uploads/
+
+# Prisma
+# schema.prisma and migrations/ are tracked.
+# The generated client is regenerated on `npm install` via @prisma/client postinstall.
+.prisma/

@@ -1,0 +1,336 @@
+// Prisma schema — ICE Fundraiser Platform
+//
+// This file is the source of truth for the database schema going forward.
+// Phase 1 code continues to use mysql2 with raw SQL; new Phase 2 code uses @prisma/client.
+// Migrations live in prisma/migrations/ and are applied via `prisma migrate deploy`.
+//
+// To regenerate the client:           npx prisma generate
+// To create a new migration:          npx prisma migrate dev --name <description> --create-only
+// To apply pending migrations:        npx prisma migrate deploy
+// To mark an existing DB as baselined: npx prisma migrate resolve --applied "0_init"
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== Enums =====
+
+enum UserType {
+  student
+  individual
+  organization
+}
+
+enum EventType {
+  marathon
+  cyclothon
+  walkathon
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum ExperienceLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum DonationPurpose {
+  donation
+  registration_fee
+}
+
+enum CertificateStatus {
+  pending
+  processing
+  approved
+  rejected
+}
+
+enum RegistrationStatus {
+  registered
+  cancelled
+}
+
+enum OrgSettingType {
+  text
+  image
+  date
+  number
+}
+
+// ===== Tables =====
+
+model User {
+  id                    String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_type             UserType
+  name                  String   @db.VarChar(100)
+  age                   Int?
+  email                 String   @unique(map: "email") @db.VarChar(255)
+  phone                 String   @db.VarChar(20)
+  password_hash         String   @db.VarChar(255)
+  class_grade           String?  @db.VarChar(50)
+  school_name           String?  @db.VarChar(200)
+  address_line_1        String?  @db.VarChar(255)
+  address_line_2        String?  @db.VarChar(255)
+  area                  String?  @db.VarChar(100)
+  city                  String?  @db.VarChar(100)
+  state                 String?  @db.VarChar(100)
+  pincode               String?  @db.VarChar(10)
+  country               String?  @default("India") @db.VarChar(100)
+  organization_name     String?  @db.VarChar(200)
+  pan_number            String?  @db.VarChar(20)
+  pan_document_url      String?  @db.VarChar(500)
+  referral_code         String   @unique(map: "referral_code") @db.VarChar(20)
+  referred_by           String?  @db.Char(36)
+  referral_points       Int      @default(0)
+  profile_pic           String?  @db.VarChar(500)
+  email_verified        Boolean  @default(false)
+  registration_fee_paid Boolean  @default(false)
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now()) @db.DateTime(0)
+  updated_at            DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  referrer                User?                   @relation("Referrals", fields: [referred_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_ibfk_1")
+  referred_users          User[]                  @relation("Referrals")
+  donations               Donation[]              @relation("DonationOwner")
+  donations_as_referrer   Donation[]              @relation("DonationReferrer")
+  certificate_requests    CertificateRequest[]
+  event_registrations     EventRegistration[]
+  push_subscription       PushSubscription?
+  referral_points_history ReferralPointsHistory[]
+
+  @@index([referral_code], map: "idx_users_referral_code")
+  @@index([referred_by], map: "idx_users_referred_by")
+  @@index([user_type], map: "idx_users_user_type")
+  @@index([email], map: "idx_users_email")
+  @@map("users")
+}
+
+model Event {
+  id                String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  event_name        String   @db.VarChar(150)
+  event_type        EventType
+  event_date        DateTime @db.Date
+  event_location    String   @db.VarChar(200)
+  description       String?  @db.Text
+  banner_url        String?  @db.VarChar(500)
+  registration_open Boolean  @default(true)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.DateTime(0)
+  updated_at        DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  donations           Donation[]
+  event_registrations EventRegistration[]
+
+  @@index([is_active], map: "idx_events_is_active")
+  @@index([registration_open], map: "idx_events_registration_open")
+  @@map("events")
+}
+
+model EventRegistration {
+  id                             String             @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  event_id                       String             @db.Char(36)
+  user_id                        String             @db.Char(36)
+  date_of_birth                  DateTime           @db.Date
+  gender                         Gender
+  blood_group                    String?            @db.VarChar(5)
+  emergency_contact_name         String?            @db.VarChar(100)
+  emergency_contact_phone        String?            @db.VarChar(20)
+  emergency_contact_relationship String?            @db.VarChar(50)
+  experience_level               ExperienceLevel
+  medical_conditions             String?            @db.Text
+  allergies                      String?            @db.Text
+  on_medication                  Boolean            @default(false)
+  address_line_1                 String?            @db.VarChar(255)
+  address_line_2                 String?            @db.VarChar(255)
+  city                           String?            @db.VarChar(100)
+  state                          String?            @db.VarChar(100)
+  pin_code                       String?            @db.VarChar(20)
+  country                        String?            @default("India") @db.VarChar(100)
+  fitness_declaration            Boolean            @default(false)
+  terms_accepted                 Boolean            @default(true)
+  registration_status            RegistrationStatus @default(registered)
+  created_at                     DateTime           @default(now()) @db.DateTime(0)
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "event_registrations_ibfk_1")
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "event_registrations_ibfk_2")
+
+  @@unique([event_id, user_id], map: "idx_event_registrations_unique")
+  @@index([event_id], map: "idx_event_registrations_event_id")
+  @@index([user_id], map: "idx_event_registrations_user_id")
+  @@index([registration_status], map: "idx_event_registrations_status")
+  @@map("event_registrations")
+}
+
+model Donation {
+  id                  String          @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_id             String          @db.Char(36)
+  event_id            String?         @db.Char(36)
+  amount              Decimal         @db.Decimal(12, 2)
+  currency            String?         @default("INR") @db.VarChar(3)
+  num_trees           Int?            @db.UnsignedInt
+  razorpay_order_id   String?         @db.VarChar(100)
+  razorpay_payment_id String?         @db.VarChar(100)
+  razorpay_signature  String?         @db.VarChar(255)
+  status              String?         @default("pending") @db.VarChar(20)
+  referrer_id         String?         @db.Char(36)
+  points_awarded      Boolean         @default(false)
+  purpose             DonationPurpose @default(donation)
+  request_80g         Boolean         @default(false)
+  payment_method      String?         @db.VarChar(50)
+  created_at          DateTime        @default(now()) @db.DateTime(0)
+  updated_at          DateTime        @default(now()) @updatedAt @db.DateTime(0)
+
+  user                    User                    @relation("DonationOwner", fields: [user_id], references: [id], onDelete: Cascade, map: "donations_ibfk_1")
+  event                   Event?                  @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "donations_ibfk_2")
+  referrer                User?                   @relation("DonationReferrer", fields: [referrer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "donations_ibfk_3")
+  certificate_request     CertificateRequest?
+  referral_points_history ReferralPointsHistory[]
+
+  @@index([user_id], map: "idx_donations_user_id")
+  @@index([event_id], map: "idx_donations_event_id")
+  @@index([referrer_id], map: "idx_donations_referrer_id")
+  @@index([created_at], map: "idx_donations_created_at")
+  @@index([status], map: "idx_donations_status")
+  @@map("donations")
+}
+
+model ReferralPointsHistory {
+  id            String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_id       String   @db.Char(36)
+  donation_id   String   @db.Char(36)
+  points_earned Int
+  donor_name    String?  @db.VarChar(100)
+  created_at    DateTime @default(now()) @db.DateTime(0)
+
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "referral_points_history_ibfk_1")
+  donation Donation @relation(fields: [donation_id], references: [id], onDelete: Cascade, map: "referral_points_history_ibfk_2")
+
+  @@index([user_id], map: "idx_referral_points_user_id")
+  @@index([donation_id], map: "donation_id")
+  @@map("referral_points_history")
+}
+
+model CertificateRequest {
+  id              String            @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_id         String            @db.Char(36)
+  donation_id     String?           @unique(map: "idx_certificate_requests_donation") @db.Char(36)
+  pan_number      String            @db.VarChar(20)
+  status          CertificateStatus @default(pending)
+  admin_notes     String?           @db.Text
+  certificate_url String?           @db.VarChar(500)
+  requested_at    DateTime          @default(now()) @db.DateTime(0)
+  processed_at    DateTime?         @db.DateTime(0)
+  created_at      DateTime          @default(now()) @db.DateTime(0)
+  updated_at      DateTime          @default(now()) @updatedAt @db.DateTime(0)
+
+  user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "certificate_requests_ibfk_1")
+  donation Donation? @relation(fields: [donation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "certificate_requests_ibfk_2")
+
+  @@index([user_id], map: "idx_certificate_requests_user_id")
+  @@index([status], map: "idx_certificate_requests_status")
+  @@map("certificate_requests")
+}
+
+model AdminUser {
+  id            String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  username      String   @unique(map: "username") @db.VarChar(50)
+  password_hash String   @db.VarChar(255)
+  name          String?  @db.VarChar(100)
+  email         String?  @db.VarChar(255)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.DateTime(0)
+  updated_at    DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  @@map("admin_users")
+}
+
+model PushSubscription {
+  id         String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_id    String   @unique(map: "unique_push_user") @db.Char(36)
+  endpoint   String   @db.Text
+  p256dh     String   @db.VarChar(255)
+  auth       String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.DateTime(0)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "push_subscriptions_ibfk_1")
+
+  @@index([user_id], map: "idx_push_subscriptions_user_id")
+  @@map("push_subscriptions")
+}
+
+model OtpVerification {
+  id         String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  email      String   @db.VarChar(255)
+  otp        String   @db.VarChar(10)
+  purpose    String   @default("register") @db.VarChar(20)
+  verified   Boolean  @default(false)
+  expires_at DateTime @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([email], map: "idx_otp_verifications_email")
+  @@index([email, purpose], map: "idx_otp_verifications_email_purpose")
+  @@map("otp_verifications")
+}
+
+// ===== Phase 2.1 — Org Settings =====
+//
+// Single key-value table holding ICE legal name, address, PAN, 80G info,
+// signatory + signature image, logo. Admin-editable via /admin/settings.
+// PDF certificate generation reads at generation time.
+
+model OrgSetting {
+  setting_key   String         @id @db.VarChar(100)
+  setting_value String?        @db.Text
+  setting_type  OrgSettingType @default(text)
+  label         String?        @db.VarChar(150)
+  is_required   Boolean        @default(false)
+  updated_at    DateTime       @default(now()) @updatedAt @db.DateTime(0)
+  updated_by    String?        @db.Char(36)
+
+  @@map("org_settings")
+}
+
+// ===== Views =====
+// Both views are pre-existing in prod; included so Prisma introspection stays in sync.
+// They are read-only from the application.
+
+view Leaderboard {
+  id              String   @id @db.Char(36)
+  name            String   @db.VarChar(100)
+  email           String   @db.VarChar(255)
+  city            String?  @db.VarChar(100)
+  user_type       UserType
+  referral_points Int
+  total_donations Decimal  @db.Decimal(34, 2)
+  donation_count  Decimal  @db.Decimal(22, 0)
+  score           Decimal  @db.Decimal(35, 2)
+
+  @@map("leaderboard")
+}
+
+view LeaderboardView {
+  id              String  @id @db.Char(36)
+  name            String  @db.VarChar(100)
+  email           String  @db.VarChar(255)
+  phone           String  @db.VarChar(20)
+  referral_code   String  @db.VarChar(20)
+  referral_points Int
+  total_donations Decimal @db.Decimal(34, 2)
+  donation_count  Decimal @db.Decimal(22, 0)
+  total_trees     Decimal @db.Decimal(32, 0)
+  score           Decimal @db.Decimal(35, 2)
+
+  @@map("leaderboard_view")
+}

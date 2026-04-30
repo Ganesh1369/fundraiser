@@ -1,0 +1,21 @@
+# Documentation (kept local, not version controlled)
+docs/
+
+# Production data dumps — contain PII, password hashes, payment IDs, real PANs
+db-schema/prod sql/
+db-schema/prod-sql/
+db-schema/prod_sql/
+*.dump.sql
+
+# Local Claude Code agent state
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local env
+.env
+.env.local

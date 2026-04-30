@@ -24,6 +24,7 @@ CREATE TABLE users (
     city VARCHAR(100),
     state VARCHAR(100),
     pincode VARCHAR(10),
+    country VARCHAR(100) DEFAULT 'India',
 
     -- Organization Details (for organizations)
     organization_name VARCHAR(200),
@@ -104,6 +105,7 @@ CREATE TABLE event_registrations (
     city VARCHAR(100),
     state VARCHAR(100),
     pin_code VARCHAR(20),
+    country VARCHAR(100) DEFAULT 'India',
 
     -- Consent
     fitness_declaration BOOLEAN DEFAULT false,
@@ -133,6 +135,7 @@ CREATE TABLE donations (
     -- Payment Details
     amount DECIMAL(12, 2) NOT NULL,
     currency VARCHAR(3) DEFAULT 'INR',
+    num_trees INT UNSIGNED,
 
     -- Razorpay Details
     razorpay_order_id VARCHAR(100),
@@ -257,7 +260,30 @@ CREATE TABLE otp_verifications (
 CREATE INDEX idx_otp_verifications_email ON otp_verifications(email);
 CREATE INDEX idx_otp_verifications_email_purpose ON otp_verifications(email, purpose);
 
--- Leaderboard View (for efficient querying)
+-- ===== Phase 2.1: Org Settings =====
+-- Admin-editable ICE org details consumed by the cert PDF generator.
+CREATE TABLE org_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT,
+    setting_type ENUM('text', 'image', 'date', 'number') NOT NULL DEFAULT 'text',
+    label VARCHAR(150),
+    is_required BOOLEAN DEFAULT false,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by CHAR(36)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO org_settings (setting_key, setting_type, label, is_required) VALUES
+    ('ice_legal_name',         'text',  'ICE legal name (as registered)',  true),
+    ('ice_registered_address', 'text',  'ICE registered address',          true),
+    ('ice_pan',                'text',  'ICE PAN',                         true),
+    ('ice_80g_reg_number',     'text',  '80G registration number',         true),
+    ('ice_80g_valid_from',     'date',  '80G validity — from',             true),
+    ('ice_80g_valid_to',       'date',  '80G validity — to',               true),
+    ('ice_signatory_name',     'text',  'Signatory name & designation',    true),
+    ('ice_signatory_image',    'image', 'Signatory signature image',       true),
+    ('ice_logo',               'image', 'ICE logo (used on certificate)',  true);
+
+-- Leaderboard View (filters out inactive users; used by admin leaderboard endpoint)
 CREATE OR REPLACE VIEW leaderboard AS
 SELECT
     u.id,
@@ -274,6 +300,24 @@ LEFT JOIN donations d ON u.id = d.user_id
 WHERE u.is_active = true
 GROUP BY u.id, u.name, u.email, u.city, u.user_type, u.referral_points
 ORDER BY score DESC;
+
+-- Extended leaderboard view: includes phone, referral_code, total_trees;
+-- does NOT filter by is_active (raw view of all users + their donation totals).
+CREATE OR REPLACE VIEW leaderboard_view AS
+SELECT
+    u.id,
+    u.name,
+    u.email,
+    u.phone,
+    u.referral_code,
+    u.referral_points,
+    COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) AS total_donations,
+    SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN 1 ELSE 0 END) AS donation_count,
+    COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.num_trees ELSE 0 END), 0) AS total_trees,
+    (COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation' THEN d.amount ELSE 0 END), 0) + u.referral_points) AS score
+FROM users u
+LEFT JOIN donations d ON u.id = d.user_id
+GROUP BY u.id;
 
 -- Insert default admin user (password: admin123 - should be changed in production)
 -- Password hash for 'admin123' using bcrypt
