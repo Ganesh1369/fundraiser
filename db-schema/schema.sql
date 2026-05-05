@@ -62,20 +62,30 @@ CREATE INDEX idx_users_email ON users(email);
 -- Events Table
 CREATE TABLE events (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    project_id CHAR(36),                                  -- Phase 2.1: links event to a project
     event_name VARCHAR(150) NOT NULL,
     event_type ENUM('marathon', 'cyclothon', 'walkathon') NOT NULL,
     event_date DATE NOT NULL,
     event_location VARCHAR(200) NOT NULL,
     description TEXT,
     banner_url VARCHAR(500),
+    -- Phase 2.1 richer event-page fields
+    hero_banner_url VARCHAR(500),
+    schedule TEXT,
+    venue_details TEXT,
+    contact_name VARCHAR(100),
+    contact_phone VARCHAR(20),
+    contact_email VARCHAR(255),
     registration_open BOOLEAN DEFAULT true,
     is_active BOOLEAN DEFAULT true,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_events_project FOREIGN KEY (project_id) REFERENCES projects(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_events_is_active ON events(is_active);
 CREATE INDEX idx_events_registration_open ON events(registration_open);
+CREATE INDEX idx_events_project_id ON events(project_id);
 
 -- Event Registrations Table
 CREATE TABLE event_registrations (
@@ -131,6 +141,7 @@ CREATE TABLE donations (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     user_id CHAR(36) NOT NULL,
     event_id CHAR(36),
+    project_id CHAR(36),                                  -- Phase 2.1: links donation to a project
 
     -- Payment Details
     amount DECIMAL(12, 2) NOT NULL,
@@ -148,6 +159,7 @@ CREATE TABLE donations (
     -- Referral Attribution
     referrer_id CHAR(36),
     points_awarded BOOLEAN DEFAULT false,
+    points_formula_version TINYINT UNSIGNED NOT NULL DEFAULT 2, -- Phase 2.1: 1=legacy ₹1=1pt, 2=new ₹100=1pt
 
     -- Purpose: 'donation' for real donations, 'registration_fee' for event registration fees
     purpose ENUM('donation', 'registration_fee') DEFAULT 'donation',
@@ -162,7 +174,8 @@ CREATE TABLE donations (
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events(id),
-    FOREIGN KEY (referrer_id) REFERENCES users(id)
+    FOREIGN KEY (referrer_id) REFERENCES users(id),
+    CONSTRAINT fk_donations_project FOREIGN KEY (project_id) REFERENCES projects(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create indexes for donation queries
@@ -171,6 +184,7 @@ CREATE INDEX idx_donations_event_id ON donations(event_id);
 CREATE INDEX idx_donations_referrer_id ON donations(referrer_id);
 CREATE INDEX idx_donations_created_at ON donations(created_at);
 CREATE INDEX idx_donations_status ON donations(status);
+CREATE INDEX idx_donations_project_id ON donations(project_id);
 
 -- Referral Points History Table
 CREATE TABLE referral_points_history (
@@ -282,6 +296,47 @@ INSERT INTO org_settings (setting_key, setting_type, label, is_required) VALUES
     ('ice_signatory_name',     'text',  'Signatory name & designation',    true),
     ('ice_signatory_image',    'image', 'Signatory signature image',       true),
     ('ice_logo',               'image', 'ICE logo (used on certificate)',  true);
+
+-- ===== Phase 2.1: Projects =====
+-- First-class project entities. Day-2 migration links events.project_id and donations.project_id here.
+CREATE TABLE projects (
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    tagline VARCHAR(255),
+    logo_url VARCHAR(500),
+    description TEXT,
+    vision TEXT,
+    mission TEXT,
+    banner_urls JSON,
+    display_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_projects_is_active ON projects(is_active);
+CREATE INDEX idx_projects_slug ON projects(slug);
+
+CREATE TABLE accomplishments (
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    project_id CHAR(36) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    metric_value VARCHAR(50),
+    metric_unit VARCHAR(50),
+    icon VARCHAR(50),
+    display_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_accomplishments_project_id ON accomplishments(project_id);
+
+INSERT INTO projects (slug, name, display_order, is_active) VALUES
+    ('roots', 'ROOTS', 1, true),
+    ('zoo',   'ZOO',   2, true);
 
 -- Leaderboard View (filters out inactive users; used by admin leaderboard endpoint)
 CREATE OR REPLACE VIEW leaderboard AS

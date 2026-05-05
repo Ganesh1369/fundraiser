@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
+import { ProjectService } from '../../../services/project.service';
 import { environment } from '../../../environment';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -16,6 +17,8 @@ interface Donation {
     payment_method: string;
     razorpay_payment_id: string;
     created_at: string;
+    project_name?: string;
+    project_slug?: string;
 }
 
 @Component({
@@ -29,20 +32,34 @@ interface Donation {
 export class AdminDonationsComponent implements OnInit {
     donations: Donation[] = [];
     donationStatusFilter = '';
+    projectFilter = '';
+    projects: any[] = [];
     pagination = { page: 1, totalPages: 1, total: 0 };
 
     constructor(
         private router: Router,
         private api: ApiService,
+        private projectService: ProjectService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
+        this.loadProjects();
         this.loadDonations();
     }
 
+    loadProjects(): void {
+        this.projectService.adminList().subscribe({
+            next: (res: any) => {
+                this.projects = res?.data || [];
+                this.cdr.detectChanges();
+            },
+            error: () => { /* projects filter is optional; admin list may 401 if logged out, handled below */ }
+        });
+    }
+
     loadDonations(page: number = 1): void {
-        this.api.getAdminDonations(20, page, this.donationStatusFilter).subscribe({
+        this.api.getAdminDonations(20, page, this.donationStatusFilter, this.projectFilter).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.donations = res.data.donations || [];
@@ -64,7 +81,12 @@ export class AdminDonationsComponent implements OnInit {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
 
-        fetch(`${environment.apiUrl}/admin/donations/export`, {
+        const params = new URLSearchParams();
+        if (this.donationStatusFilter) params.append('status', this.donationStatusFilter);
+        if (this.projectFilter) params.append('projectId', this.projectFilter);
+        const qs = params.toString() ? `?${params.toString()}` : '';
+
+        fetch(`${environment.apiUrl}/admin/donations/export${qs}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(res => res.blob()).then(blob => {
             const url = window.URL.createObjectURL(blob);

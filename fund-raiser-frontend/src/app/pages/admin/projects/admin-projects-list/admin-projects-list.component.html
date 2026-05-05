@@ -1,0 +1,59 @@
+<header class="admin-header">
+    <div class="header-row">
+        <h1>Projects</h1>
+        <button routerLink="/admin/projects/new" class="btn btn-primary">+ New Project</button>
+    </div>
+    <p class="subtitle">First-class fundraising programs. Donations and events are linked to a project.</p>
+</header>
+
+<div class="card">
+    @if (loading) {
+        <div class="loading-state">Loading…</div>
+    } @else {
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Tagline</th>
+                        <th>Accomplishments</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (p of projects; track p.id) {
+                        <tr>
+                            <td>{{ p.display_order }}</td>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td><code>{{ p.slug }}</code></td>
+                            <td class="tagline">{{ p.tagline || '—' }}</td>
+                            <td>{{ p._count?.accomplishments || 0 }}</td>
+                            <td>
+                                <span class="status-badge" [ngClass]="p.is_active ? 'status-open' : 'status-closed'">
+                                    {{ p.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            <td class="action-cell">
+                                <a [routerLink]="['/admin/projects', p.id]" class="btn-action view">Edit</a>
+                                <button (click)="toggle(p)" class="btn-action toggle">
+                                    {{ p.is_active ? 'Deactivate' : 'Activate' }}
+                                </button>
+                                <button (click)="remove(p)" class="btn-action delete">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (projects.length === 0) {
+                <div class="empty-state">
+                    <lucide-icon name="folder" class="empty-icon w-10 h-10"></lucide-icon>
+                    <h3>No projects yet</h3>
+                    <p>Create your first project to start linking events and donations.</p>
+                </div>
+            }
+        </div>
+    }
+</div>

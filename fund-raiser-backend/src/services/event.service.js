@@ -5,19 +5,42 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
 /**
+ * Resolve the project_id to attach to a new event. Falls back to ROOTS so every
+ * event has a project (locked decision §14).
+ */
+const resolveProjectId = async (projectId) => {
+    if (projectId) {
+        const row = await db.query('SELECT id FROM projects WHERE id = ? AND is_active = true', [projectId]);
+        if (row.rows.length > 0) return row.rows[0].id;
+    }
+    const roots = await db.query("SELECT id FROM projects WHERE slug = 'roots'");
+    return roots.rows[0]?.id || null;
+};
+
+/**
  * Create a new event
  */
 const createEvent = async (eventData) => {
     const {
         event_name, event_type, event_date, event_location,
-        description, banner_url
+        description, banner_url, project_id,
+        hero_banner_url, schedule, venue_details,
+        contact_name, contact_phone, contact_email
     } = eventData;
 
     const eventId = uuidv4();
+    const resolvedProjectId = await resolveProjectId(project_id);
     await db.query(
-        `INSERT INTO events (id, event_name, event_type, event_date, event_location, description, banner_url)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [eventId, event_name, event_type, event_date, event_location, description, banner_url]
+        `INSERT INTO events (
+            id, project_id, event_name, event_type, event_date, event_location,
+            description, banner_url, hero_banner_url, schedule, venue_details,
+            contact_name, contact_phone, contact_email
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            eventId, resolvedProjectId, event_name, event_type, event_date, event_location,
+            description, banner_url, hero_banner_url, schedule, venue_details,
+            contact_name, contact_phone, contact_email
+        ]
     );
 
     const result = await db.query('SELECT * FROM events WHERE id = ?', [eventId]);
@@ -27,35 +50,46 @@ const createEvent = async (eventData) => {
 /**
  * Get all events (Admin)
  */
-const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
+const getAllEvents = async ({ page = 1, limit = 20, search, type, projectId }) => {
     page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
 
     if (search) {
-        whereConditions.push(`event_name LIKE ?`);
+        whereConditions.push(`e.event_name LIKE ?`);
         params.push(`%${search}%`);
     }
 
     if (type) {
-        whereConditions.push(`event_type = ?`);
+        whereConditions.push(`e.event_type = ?`);
         params.push(type);
+    }
+
+    if (projectId) {
+        whereConditions.push(`e.project_id = ?`);
+        params.push(projectId);
     }
 
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
-    const countResult = await db.query(`SELECT COUNT(*) FROM events ${whereClause}`, params);
+    const countResult = await db.query(
+        `SELECT COUNT(*) AS count FROM events e ${whereClause}`,
+        params
+    );
 
     const result = await db.query(
-        `SELECT e.*,
+        `SELECT e.*, p.name AS project_name, p.slug AS project_slug,
             (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id AND er.registration_status = 'registered') as registration_count
          FROM events e
+         LEFT JOIN projects p ON p.id = e.project_id
          ${whereClause}
          ORDER BY e.event_date DESC
          LIMIT ${limit} OFFSET ${offset}`,
         params
     );
+
+    const total = parseInt(countResult.rows[0].count);
 
     return {
         events: result.rows.map(e => ({
@@ -63,10 +97,10 @@ const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
             registration_count: parseInt(e.registration_count)
         })),
         pagination: {
-            total: parseInt(countResult.rows[0].count),
+            total,
             page: parseInt(page),
             limit: parseInt(limit),
-            totalPages: Math.ceil(countResult.rows[0].count / limit)
+            totalPages: Math.ceil(total / limit)
         }
     };
 };
@@ -76,9 +110,11 @@ const getAllEvents = async ({ page = 1, limit = 20, search, type }) => {
  */
 const getEventById = async (id) => {
     const result = await db.query(
-        `SELECT e.*,
+        `SELECT e.*, p.name AS project_name, p.slug AS project_slug,
             (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id AND er.registration_status = 'registered') as registration_count
-         FROM events e WHERE e.id = ?`,
+         FROM events e
+         LEFT JOIN projects p ON p.id = e.project_id
+         WHERE e.id = ?`,
         [id]
     );
 
@@ -92,7 +128,9 @@ const getEventById = async (id) => {
 const updateEvent = async (id, eventData) => {
     const {
         event_name, event_type, event_date, event_location,
-        description, banner_url
+        description, banner_url, project_id,
+        hero_banner_url, schedule, venue_details,
+        contact_name, contact_phone, contact_email
     } = eventData;
 
     const updateResult = await db.query(
@@ -102,9 +140,21 @@ const updateEvent = async (id, eventData) => {
              event_date = COALESCE(?, event_date),
              event_location = COALESCE(?, event_location),
              description = COALESCE(?, description),
-             banner_url = COALESCE(?, banner_url)
+             banner_url = COALESCE(?, banner_url),
+             project_id = COALESCE(?, project_id),
+             hero_banner_url = COALESCE(?, hero_banner_url),
+             schedule = COALESCE(?, schedule),
+             venue_details = COALESCE(?, venue_details),
+             contact_name = COALESCE(?, contact_name),
+             contact_phone = COALESCE(?, contact_phone),
+             contact_email = COALESCE(?, contact_email)
          WHERE id = ?`,
-        [event_name, event_type, event_date, event_location, description, banner_url, id]
+        [
+            event_name, event_type, event_date, event_location,
+            description, banner_url, project_id,
+            hero_banner_url, schedule, venue_details,
+            contact_name, contact_phone, contact_email, id
+        ]
     );
 
     if (updateResult.rowCount === 0) throw { status: 404, message: 'Event not found' };
@@ -145,7 +195,7 @@ const getEventRegistrations = async (eventId, { page = 1, limit = 20, search }) 
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const countResult = await db.query(
-        `SELECT COUNT(*) FROM event_registrations er
+        `SELECT COUNT(*) AS count FROM event_registrations er
          JOIN users u ON er.user_id = u.id
          ${whereClause}`,
         params
@@ -161,13 +211,15 @@ const getEventRegistrations = async (eventId, { page = 1, limit = 20, search }) 
         params
     );
 
+    const total = parseInt(countResult.rows[0].count);
+
     return {
         registrations: result.rows,
         pagination: {
-            total: parseInt(countResult.rows[0].count),
+            total,
             page: parseInt(page),
             limit: parseInt(limit),
-            totalPages: Math.ceil(countResult.rows[0].count / limit)
+            totalPages: Math.ceil(total / limit)
         }
     };
 };
@@ -198,10 +250,13 @@ const exportEventRegistrations = async (eventId) => {
  */
 const getActiveEvents = async () => {
     const result = await db.query(
-        `SELECT id, event_name, event_type, event_date, event_location, description, banner_url
-         FROM events
-         WHERE is_active = true AND registration_open = true
-         ORDER BY event_date ASC`
+        `SELECT e.id, e.event_name, e.event_type, e.event_date, e.event_location,
+                e.description, e.banner_url, e.hero_banner_url, e.project_id,
+                p.name AS project_name, p.slug AS project_slug
+         FROM events e
+         LEFT JOIN projects p ON p.id = e.project_id
+         WHERE e.is_active = true AND e.registration_open = true
+         ORDER BY e.event_date ASC`
     );
     return result.rows;
 };
@@ -211,9 +266,14 @@ const getActiveEvents = async () => {
  */
 const getEventDetails = async (id) => {
     const result = await db.query(
-        `SELECT id, event_name, event_type, event_date, event_location, description, banner_url, registration_open
-         FROM events
-         WHERE id = ? AND is_active = true`,
+        `SELECT e.id, e.event_name, e.event_type, e.event_date, e.event_location,
+                e.description, e.banner_url, e.hero_banner_url, e.schedule, e.venue_details,
+                e.contact_name, e.contact_phone, e.contact_email,
+                e.registration_open, e.project_id,
+                p.name AS project_name, p.slug AS project_slug
+         FROM events e
+         LEFT JOIN projects p ON p.id = e.project_id
+         WHERE e.id = ? AND e.is_active = true`,
         [id]
     );
 

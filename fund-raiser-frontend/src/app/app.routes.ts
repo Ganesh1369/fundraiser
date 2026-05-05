@@ -59,6 +59,22 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/certificates/admin-certificates.component').then(m => m.AdminCertificatesComponent)
             },
             {
+                path: 'settings',
+                loadComponent: () => import('./pages/admin/settings/admin-settings.component').then(m => m.AdminSettingsComponent)
+            },
+            {
+                path: 'projects',
+                loadComponent: () => import('./pages/admin/projects/admin-projects-list/admin-projects-list.component').then(m => m.AdminProjectsListComponent)
+            },
+            {
+                path: 'projects/new',
+                loadComponent: () => import('./pages/admin/projects/admin-project-create/admin-project-create.component').then(m => m.AdminProjectCreateComponent)
+            },
+            {
+                path: 'projects/:id',
+                loadComponent: () => import('./pages/admin/projects/admin-project-detail/admin-project-detail.component').then(m => m.AdminProjectDetailComponent)
+            },
+            {
                 path: 'events',
                 loadComponent: () => import('./pages/admin/events/admin-events-list/admin-events-list.component').then(m => m.AdminEventsListComponent)
             },

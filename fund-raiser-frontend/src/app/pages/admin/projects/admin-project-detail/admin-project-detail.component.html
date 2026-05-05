@@ -1,0 +1,176 @@
+<header class="admin-header">
+    <a routerLink="/admin/projects" class="back-link">&larr; Back to Projects</a>
+    <h1>Edit Project</h1>
+</header>
+
+@if (loading) {
+    <div class="loading-state">Loading…</div>
+} @else {
+    <form [formGroup]="projectForm" (ngSubmit)="onSaveProject()" class="settings-form">
+        <section class="card form-section">
+            <h2>Basic Info</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Name *</label>
+                    <input type="text" formControlName="name" class="form-input">
+                    <p class="form-error" *ngIf="f['name'].touched && f['name'].invalid">Name is required.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Slug *</label>
+                    <input type="text" formControlName="slug" class="form-input">
+                    <p class="form-error" *ngIf="f['slug'].touched && f['slug'].invalid">Lowercase letters, digits, and hyphens only.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tagline</label>
+                <input type="text" formControlName="tagline" class="form-input" placeholder="One-line summary">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Logo URL</label>
+                <input type="text" formControlName="logo_url" class="form-input" placeholder="https://… or /uploads/…">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Display Order</label>
+                    <input type="number" formControlName="display_order" class="form-input" min="0">
+                </div>
+                <div class="form-group form-group-checkbox">
+                    <label class="form-label">
+                        <input type="checkbox" formControlName="is_active"> Active
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="card form-section">
+            <h2>Public Page Content</h2>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea formControlName="description" rows="3" class="form-input form-textarea" placeholder="Short description shown on the project page"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vision</label>
+                <textarea formControlName="vision" rows="3" class="form-input form-textarea"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mission</label>
+                <textarea formControlName="mission" rows="3" class="form-input form-textarea"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Banner Image URLs</label>
+                <textarea formControlName="banner_urls_text" rows="4" class="form-input form-textarea" placeholder="One URL per line"></textarea>
+                <p class="form-hint">One URL per line. Rendered as a carousel on the public page.</p>
+            </div>
+        </section>
+
+        <div class="form-footer">
+            <div *ngIf="errorMessage" class="error-banner">{{ errorMessage }}</div>
+            <div *ngIf="successMessage" class="success-banner">{{ successMessage }}</div>
+            <div class="footer-actions">
+                <button type="submit" class="btn btn-primary" [disabled]="projectForm.invalid || saving">
+                    {{ saving ? 'Saving…' : 'Save Changes' }}
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <section class="card form-section accomplishments-section">
+        <h2>Accomplishments</h2>
+        <p class="section-hint">Highlights shown on the public project page. Use metrics like "10,000+" with a unit like "trees planted".</p>
+
+        @if (accomplishments.length === 0) {
+            <p class="empty-line">No accomplishments yet. Add the first one below.</p>
+        }
+
+        @for (a of accomplishments; track a.id) {
+            <div class="accomplishment-card">
+                <form [formGroup]="accomplishmentForms[a.id]" (ngSubmit)="onSaveAccomplishment(a.id)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Title *</label>
+                            <input type="text" formControlName="title" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Display Order</label>
+                            <input type="number" formControlName="display_order" class="form-input" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea formControlName="description" rows="2" class="form-input form-textarea"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Metric Value</label>
+                            <input type="text" formControlName="metric_value" class="form-input" placeholder='e.g. "10,000+"'>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Metric Unit</label>
+                            <input type="text" formControlName="metric_unit" class="form-input" placeholder='e.g. "trees planted"'>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Icon (lucide name)</label>
+                        <input type="text" formControlName="icon" class="form-input" placeholder='e.g. "trees"'>
+                    </div>
+
+                    <div class="card-actions">
+                        <button type="button" class="btn btn-outline btn-danger" (click)="onDeleteAccomplishment(a.id)">Delete</button>
+                        <button type="submit" class="btn btn-primary" [disabled]="accomplishmentForms[a.id].invalid || accomplishmentSaving[a.id]">
+                            {{ accomplishmentSaving[a.id] ? 'Saving…' : 'Save' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        }
+
+        <div class="accomplishment-card add-card">
+            <h3>Add Accomplishment</h3>
+            <form [formGroup]="newAccomplishmentForm" (ngSubmit)="onAddAccomplishment()">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" formControlName="title" class="form-input">
+                        <p class="form-error" *ngIf="newF['title'].touched && newF['title'].invalid">Title is required.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" formControlName="display_order" class="form-input" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea formControlName="description" rows="2" class="form-input form-textarea"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Metric Value</label>
+                        <input type="text" formControlName="metric_value" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Metric Unit</label>
+                        <input type="text" formControlName="metric_unit" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Icon (lucide name)</label>
+                    <input type="text" formControlName="icon" class="form-input">
+                </div>
+
+                <div class="card-actions">
+                    <button type="submit" class="btn btn-primary" [disabled]="newAccomplishmentForm.invalid || addingAccomplishment">
+                        {{ addingAccomplishment ? 'Adding…' : '+ Add Accomplishment' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+}

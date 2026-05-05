@@ -1,0 +1,128 @@
+<header class="admin-header">
+    <h1>Organization Settings</h1>
+    <p class="subtitle">ICE legal details used on every 80G certificate. Required values gate cert generation.</p>
+</header>
+
+<div *ngIf="!loading && !complete" class="warning-banner">
+    <lucide-icon name="alert-triangle" class="w-5 h-5"></lucide-icon>
+    <div>
+        <strong>Setup incomplete.</strong> 80G certificates will queue until these are filled:
+        <span class="key-chip" *ngFor="let k of missingKeys">{{ formatKey(k) }}</span>
+    </div>
+</div>
+
+<div *ngIf="!loading && complete" class="success-banner static">
+    <lucide-icon name="check-circle" class="w-5 h-5"></lucide-icon>
+    <span>Setup complete. Certificates will auto-generate using these details.</span>
+</div>
+
+<div *ngIf="loading" class="loading-block">Loading…</div>
+
+<form *ngIf="!loading" [formGroup]="settingsForm" (ngSubmit)="onSubmit()" class="settings-form">
+
+    <section class="card form-section">
+        <h2>Legal &amp; Tax Identity</h2>
+
+        <div class="form-group">
+            <label class="form-label">Legal Name *</label>
+            <input type="text" formControlName="ice_legal_name" class="form-input" placeholder="ICE — registered legal name">
+            <p class="form-error" *ngIf="f['ice_legal_name'].touched && f['ice_legal_name'].invalid">Legal name is required.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Registered Address *</label>
+            <textarea formControlName="ice_registered_address" rows="3" class="form-input form-textarea" placeholder="Full registered address as on 80G certificate"></textarea>
+            <p class="form-error" *ngIf="f['ice_registered_address'].touched && f['ice_registered_address'].invalid">Address is required.</p>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">PAN *</label>
+                <input type="text" formControlName="ice_pan" class="form-input" placeholder="AAAAA1234A" maxlength="10" style="text-transform: uppercase;">
+                <p class="form-error" *ngIf="f['ice_pan'].touched && f['ice_pan'].invalid">Enter a valid 10-character PAN (e.g. AAAAA1234A).</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">80G Registration Number *</label>
+                <input type="text" formControlName="ice_80g_reg_number" class="form-input" placeholder="80G reg no.">
+                <p class="form-error" *ngIf="f['ice_80g_reg_number'].touched && f['ice_80g_reg_number'].invalid">80G reg number is required.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card form-section">
+        <h2>80G Validity</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Valid From *</label>
+                <input type="text" formControlName="ice_80g_valid_from" appFlatpickr [fpConfig]="{}" class="form-input" placeholder="Select start date">
+                <p class="form-error" *ngIf="f['ice_80g_valid_from'].touched && f['ice_80g_valid_from'].invalid">Start date is required.</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Valid To *</label>
+                <input type="text" formControlName="ice_80g_valid_to" appFlatpickr [fpConfig]="{}" class="form-input" placeholder="Select end date">
+                <p class="form-error" *ngIf="f['ice_80g_valid_to'].touched && f['ice_80g_valid_to'].invalid">End date is required.</p>
+            </div>
+        </div>
+        <p class="form-error" *ngIf="settingsForm.errors?.['dateRange']">"Valid To" must be on or after "Valid From".</p>
+    </section>
+
+    <section class="card form-section">
+        <h2>Signatory</h2>
+
+        <div class="form-group">
+            <label class="form-label">Signatory Name &amp; Designation *</label>
+            <input type="text" formControlName="ice_signatory_name" class="form-input" placeholder="e.g. Jane Doe, Treasurer">
+            <p class="form-error" *ngIf="f['ice_signatory_name'].touched && f['ice_signatory_name'].invalid">Signatory name is required.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Signature Image</label>
+            <div class="image-widget">
+                <div class="image-preview" *ngIf="signatoryUrl">
+                    <img [src]="imgSrc(signatoryUrl)" alt="Signatory">
+                </div>
+                <div class="image-preview placeholder" *ngIf="!signatoryUrl">No signature uploaded</div>
+                <div class="image-actions">
+                    <button type="button" class="btn btn-outline" (click)="triggerSig()" [disabled]="uploadingSignatory">
+                        <lucide-icon name="upload" class="w-4 h-4"></lucide-icon>
+                        {{ uploadingSignatory ? 'Uploading…' : (signatoryUrl ? 'Replace image' : 'Upload image') }}
+                    </button>
+                    <span class="hint">PNG, JPG, or WebP — max 2 MB</span>
+                </div>
+                <input #sigInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onSignatoryChange($event)">
+            </div>
+        </div>
+    </section>
+
+    <section class="card form-section">
+        <h2>Logo</h2>
+        <div class="form-group">
+            <label class="form-label">ICE Logo (used on certificate)</label>
+            <div class="image-widget">
+                <div class="image-preview" *ngIf="logoUrl">
+                    <img [src]="imgSrc(logoUrl)" alt="Logo">
+                </div>
+                <div class="image-preview placeholder" *ngIf="!logoUrl">No logo uploaded</div>
+                <div class="image-actions">
+                    <button type="button" class="btn btn-outline" (click)="triggerLogo()" [disabled]="uploadingLogo">
+                        <lucide-icon name="upload" class="w-4 h-4"></lucide-icon>
+                        {{ uploadingLogo ? 'Uploading…' : (logoUrl ? 'Replace image' : 'Upload image') }}
+                    </button>
+                    <span class="hint">PNG, JPG, or WebP — max 2 MB</span>
+                </div>
+                <input #logoInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onLogoChange($event)">
+            </div>
+        </div>
+        <p class="form-error" *ngIf="uploadError">{{ uploadError }}</p>
+    </section>
+
+    <div class="form-footer">
+        <div *ngIf="errorMessage" class="error-banner">{{ errorMessage }}</div>
+        <div *ngIf="successMessage" class="success-banner">{{ successMessage }}</div>
+        <div class="footer-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="settingsForm.invalid || saving">
+                {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+        </div>
+    </div>
+</form>

@@ -111,7 +111,9 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
         `SELECT u.user_type as "User Type", u.name as "Name", u.age as "Age",
                 u.email as "Email", u.phone as "Phone",
                 u.class_grade as "Class / Grade", u.school_name as "School Name",
-                u.area as "Area", u.locality as "Locality", u.city as "City",
+                u.address_line_1 as "Address Line 1", u.address_line_2 as "Address Line 2",
+                u.area as "Area", u.city as "City", u.state as "State",
+                u.pincode as "Pincode", u.country as "Country",
                 u.organization_name as "Organization Name", u.pan_number as "PAN Number",
                 u.referral_code as "Referral Code",
                 r.name as "Referred By",
@@ -134,7 +136,7 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
 /**
  * Get donations with filters
  */
-const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) => {
+const getDonations = async ({ status, fromDate, toDate, projectId, page = 1, limit = 20 }) => {
     page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
@@ -143,15 +145,19 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
     if (status) { whereConditions.push(`d.status = ?`); params.push(status); }
     if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
+    if (projectId) { whereConditions.push(`d.project_id = ?`); params.push(projectId); }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const countResult = await db.query(`SELECT COUNT(*) as count FROM donations d ${whereClause}`, params);
 
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
-                d.razorpay_payment_id, d.created_at,
-                u.name as user_name, u.email as user_email, u.user_type
-         FROM donations d JOIN users u ON u.id = d.user_id
+                d.razorpay_payment_id, d.created_at, d.project_id,
+                u.name as user_name, u.email as user_email, u.user_type,
+                p.name as project_name, p.slug as project_slug
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         LEFT JOIN projects p ON p.id = d.project_id
          ${whereClause} ORDER BY d.created_at DESC
          LIMIT ${limit} OFFSET ${offset}`,
         params
@@ -170,18 +176,20 @@ const getDonations = async ({ status, fromDate, toDate, page = 1, limit = 20 }) 
 /**
  * Export donations to Excel buffer
  */
-const exportDonations = async ({ status, fromDate, toDate }) => {
+const exportDonations = async ({ status, fromDate, toDate, projectId }) => {
     const params = [];
     let whereConditions = [`d.purpose = 'donation'`];
 
     if (status) { whereConditions.push(`d.status = ?`); params.push(status); }
     if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
+    if (projectId) { whereConditions.push(`d.project_id = ?`); params.push(projectId); }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const result = await db.query(
         `SELECT u.name as "Donor Name", u.email as "Donor Email", u.phone as "Donor Phone",
                 u.user_type as "Donor Type", u.city as "Donor City",
+                p.name as "Project",
                 d.amount as "Amount (INR)", d.currency as "Currency", d.status as "Payment Status",
                 d.payment_method as "Payment Method",
                 d.razorpay_order_id as "Razorpay Order ID",
@@ -194,6 +202,7 @@ const exportDonations = async ({ status, fromDate, toDate }) => {
          JOIN users u ON u.id = d.user_id
          LEFT JOIN users ref ON ref.id = d.referrer_id
          LEFT JOIN events e ON e.id = d.event_id
+         LEFT JOIN projects p ON p.id = d.project_id
          ${whereClause} ORDER BY d.created_at DESC`,
         params
     );

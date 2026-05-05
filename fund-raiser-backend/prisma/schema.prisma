@@ -119,22 +119,31 @@ model User {
 
 model Event {
   id                String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  project_id        String?  @db.Char(36)
   event_name        String   @db.VarChar(150)
   event_type        EventType
   event_date        DateTime @db.Date
   event_location    String   @db.VarChar(200)
   description       String?  @db.Text
   banner_url        String?  @db.VarChar(500)
+  hero_banner_url   String?  @db.VarChar(500)
+  schedule          String?  @db.Text
+  venue_details     String?  @db.Text
+  contact_name      String?  @db.VarChar(100)
+  contact_phone     String?  @db.VarChar(20)
+  contact_email     String?  @db.VarChar(255)
   registration_open Boolean  @default(true)
   is_active         Boolean  @default(true)
   created_at        DateTime @default(now()) @db.DateTime(0)
   updated_at        DateTime @default(now()) @updatedAt @db.DateTime(0)
 
+  project             Project?            @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_events_project")
   donations           Donation[]
   event_registrations EventRegistration[]
 
   @@index([is_active], map: "idx_events_is_active")
   @@index([registration_open], map: "idx_events_registration_open")
+  @@index([project_id], map: "idx_events_project_id")
   @@map("events")
 }
 
@@ -174,27 +183,30 @@ model EventRegistration {
 }
 
 model Donation {
-  id                  String          @id @default(dbgenerated("(UUID())")) @db.Char(36)
-  user_id             String          @db.Char(36)
-  event_id            String?         @db.Char(36)
-  amount              Decimal         @db.Decimal(12, 2)
-  currency            String?         @default("INR") @db.VarChar(3)
-  num_trees           Int?            @db.UnsignedInt
-  razorpay_order_id   String?         @db.VarChar(100)
-  razorpay_payment_id String?         @db.VarChar(100)
-  razorpay_signature  String?         @db.VarChar(255)
-  status              String?         @default("pending") @db.VarChar(20)
-  referrer_id         String?         @db.Char(36)
-  points_awarded      Boolean         @default(false)
-  purpose             DonationPurpose @default(donation)
-  request_80g         Boolean         @default(false)
-  payment_method      String?         @db.VarChar(50)
-  created_at          DateTime        @default(now()) @db.DateTime(0)
-  updated_at          DateTime        @default(now()) @updatedAt @db.DateTime(0)
+  id                     String          @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_id                String          @db.Char(36)
+  event_id               String?         @db.Char(36)
+  project_id             String?         @db.Char(36)
+  amount                 Decimal         @db.Decimal(12, 2)
+  currency               String?         @default("INR") @db.VarChar(3)
+  num_trees              Int?            @db.UnsignedInt
+  razorpay_order_id      String?         @db.VarChar(100)
+  razorpay_payment_id    String?         @db.VarChar(100)
+  razorpay_signature     String?         @db.VarChar(255)
+  status                 String?         @default("pending") @db.VarChar(20)
+  referrer_id            String?         @db.Char(36)
+  points_awarded         Boolean         @default(false)
+  points_formula_version Int             @default(2) @db.UnsignedTinyInt
+  purpose                DonationPurpose @default(donation)
+  request_80g            Boolean         @default(false)
+  payment_method         String?         @db.VarChar(50)
+  created_at             DateTime        @default(now()) @db.DateTime(0)
+  updated_at             DateTime        @default(now()) @updatedAt @db.DateTime(0)
 
   user                    User                    @relation("DonationOwner", fields: [user_id], references: [id], onDelete: Cascade, map: "donations_ibfk_1")
   event                   Event?                  @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "donations_ibfk_2")
   referrer                User?                   @relation("DonationReferrer", fields: [referrer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "donations_ibfk_3")
+  project                 Project?                @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_donations_project")
   certificate_request     CertificateRequest?
   referral_points_history ReferralPointsHistory[]
 
@@ -203,6 +215,7 @@ model Donation {
   @@index([referrer_id], map: "idx_donations_referrer_id")
   @@index([created_at], map: "idx_donations_created_at")
   @@index([status], map: "idx_donations_status")
+  @@index([project_id], map: "idx_donations_project_id")
   @@map("donations")
 }
 
@@ -300,6 +313,53 @@ model OrgSetting {
   updated_by    String?        @db.Char(36)
 
   @@map("org_settings")
+}
+
+// ===== Phase 2.1 — Projects =====
+//
+// First-class projects (initial seed: ROOTS, ZOO). Public landing pages render from DB on every request.
+// Events and donations gain project_id FKs in a follow-up migration (Day 2).
+
+model Project {
+  id            String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  slug          String   @unique(map: "slug") @db.VarChar(100)
+  name          String   @db.VarChar(150)
+  tagline       String?  @db.VarChar(255)
+  logo_url      String?  @db.VarChar(500)
+  description   String?  @db.Text
+  vision        String?  @db.Text
+  mission       String?  @db.Text
+  banner_urls   Json?
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.DateTime(0)
+  updated_at    DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  accomplishments Accomplishment[]
+  events          Event[]
+  donations       Donation[]
+
+  @@index([is_active], map: "idx_projects_is_active")
+  @@index([slug], map: "idx_projects_slug")
+  @@map("projects")
+}
+
+model Accomplishment {
+  id            String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  project_id    String   @db.Char(36)
+  title         String   @db.VarChar(200)
+  description   String?  @db.Text
+  metric_value  String?  @db.VarChar(50)
+  metric_unit   String?  @db.VarChar(50)
+  icon          String?  @db.VarChar(50)
+  display_order Int      @default(0)
+  created_at    DateTime @default(now()) @db.DateTime(0)
+  updated_at    DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "accomplishments_ibfk_1")
+
+  @@index([project_id], map: "idx_accomplishments_project_id")
+  @@map("accomplishments")
 }
 
 // ===== Views =====

@@ -10,9 +10,22 @@ const razorpay = new Razorpay({
 });
 
 /**
+ * Resolve the project_id to attach to a new donation.
+ * Falls back to ROOTS so every donation has a project (locked decision §14).
+ */
+const resolveProjectId = async (projectId) => {
+    if (projectId) {
+        const row = await db.query('SELECT id FROM projects WHERE id = ? AND is_active = true', [projectId]);
+        if (row.rows.length > 0) return row.rows[0].id;
+    }
+    const roots = await db.query("SELECT id FROM projects WHERE slug = 'roots'");
+    return roots.rows[0]?.id || null;
+};
+
+/**
  * Create Razorpay order
  */
-const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation') => {
+const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation', projectId = null) => {
     if (!amount || amount < 1) {
         throw { status: 400, message: 'Please provide a valid amount (minimum ₹1)' };
     }
@@ -29,10 +42,11 @@ const createOrder = async (userId, userName, amount, request80g = false, purpose
     const donationId = uuidv4();
     const referrerResult = await db.query('SELECT referred_by FROM users WHERE id = ?', [userId]);
     const referrerId = referrerResult.rows[0]?.referred_by || null;
+    const resolvedProjectId = await resolveProjectId(projectId);
     await db.query(
-        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, purpose]
+        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose, project_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, purpose, resolvedProjectId]
     );
 
     return {

@@ -9,6 +9,12 @@
         <option value="pending">Pending</option>
         <option value="failed">Failed</option>
     </select>
+    <select class="filter-select" [(ngModel)]="projectFilter" (change)="onFilterChange()">
+        <option value="">All Projects</option>
+        @for (p of projects; track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+        }
+    </select>
     <button class="btn btn-primary btn-export" (click)="exportDonations()">
         <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Export Excel
     </button>
@@ -28,6 +34,7 @@
                 <tr>
                     <th>Donor</th>
                     <th>Email</th>
+                    <th>Project</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Payment ID</th>
@@ -39,6 +46,7 @@
                 <tr>
                     <td><a [routerLink]="['/admin/users', slugify(donation.user_name)]" [state]="{userId: donation.user_id}" class="user-link">{{ donation.user_name }}</a></td>
                     <td>{{ donation.user_email }}</td>
+                    <td>{{ donation.project_name || '—' }}</td>
                     <td class="amount">{{ formatCurrency(donation.amount) }}</td>
                     <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
                     <td>{{ donation.razorpay_payment_id || '-' }}</td>

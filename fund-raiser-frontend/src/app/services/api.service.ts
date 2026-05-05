@@ -116,9 +116,10 @@ export class ApiService {
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
-    getAdminDonations(limit: number = 20, page: number = 1, status?: string): Observable<any> {
+    getAdminDonations(limit: number = 20, page: number = 1, status?: string, projectId?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/donations?limit=${limit}&page=${page}`;
         if (status) url += `&status=${status}`;
+        if (projectId) url += `&projectId=${projectId}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
@@ -144,6 +145,35 @@ export class ApiService {
 
     updateCertificateStatus(id: string, status: string): Observable<any> {
         return this.http.patch(`${this.apiUrl}/admin/certificates/${id}`, { status }, { headers: this.getHeaders(true) });
+    }
+
+    // --- Admin: Organization Settings ---
+    getOrgSettings(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/settings`, { headers: this.getHeaders(true) });
+    }
+
+    updateOrgSettings(updates: Record<string, string | null>): Observable<any> {
+        return this.http.put(`${this.apiUrl}/admin/settings`, updates, { headers: this.getHeaders(true) });
+    }
+
+    getOrgRequiredStatus(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/settings/required-status`, { headers: this.getHeaders(true) });
+    }
+
+    uploadOrgSignatory(file: File): Observable<any> {
+        const fd = new FormData();
+        fd.append('image', file);
+        const token = localStorage.getItem('adminToken') || '';
+        const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+        return this.http.post(`${this.apiUrl}/admin/settings/upload/signatory`, fd, { headers });
+    }
+
+    uploadOrgLogo(file: File): Observable<any> {
+        const fd = new FormData();
+        fd.append('image', file);
+        const token = localStorage.getItem('adminToken') || '';
+        const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+        return this.http.post(`${this.apiUrl}/admin/settings/upload/logo`, fd, { headers });
     }
 
     exportCertificates(): string {

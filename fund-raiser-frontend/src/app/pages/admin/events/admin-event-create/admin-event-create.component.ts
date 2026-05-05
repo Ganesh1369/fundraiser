@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../../services/event.service';
+import { ProjectService } from '../../../../services/project.service';
 import { FlatpickrDirective } from '../../../../directives/flatpickr.directive';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -45,6 +46,15 @@ import { LucideAngularModule } from 'lucide-angular';
         </div>
 
         <div class="form-group">
+          <label class="form-label">Project *</label>
+          <select formControlName="project_id" class="form-input">
+            <option value="" disabled>Select a project</option>
+            <option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</option>
+          </select>
+          <p class="form-error" *ngIf="f['project_id'].touched && f['project_id'].invalid">Project is required.</p>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Location *</label>
           <input type="text" formControlName="event_location" class="form-input" placeholder="e.g., Mumbai, India">
         </div>
@@ -70,14 +80,16 @@ import { LucideAngularModule } from 'lucide-angular';
   `,
   styleUrl: './admin-event-create.component.css'
 })
-export class AdminEventCreateComponent {
+export class AdminEventCreateComponent implements OnInit {
   eventForm: FormGroup;
   submitting = false;
   errorMessage = '';
+  projects: any[] = [];
 
   constructor(
     private fb: FormBuilder,
     private eventService: EventService,
+    private projectService: ProjectService,
     private router: Router
   ) {
     this.eventForm = this.fb.group({
@@ -86,7 +98,17 @@ export class AdminEventCreateComponent {
       event_date: ['', Validators.required],
       event_location: ['', Validators.required],
       banner_url: [''],
-      description: ['']
+      description: [''],
+      project_id: ['', Validators.required]
+    });
+  }
+
+  ngOnInit(): void {
+    this.projectService.adminList().subscribe({
+      next: (res: any) => {
+        this.projects = (res?.data || []).filter((p: any) => p.is_active);
+      },
+      error: () => { /* fall back to no project; backend will default to ROOTS */ }
     });
   }
 
