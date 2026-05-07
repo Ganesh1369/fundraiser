@@ -149,6 +149,25 @@ export class ApiService {
         return this.http.patch(`${this.apiUrl}/admin/certificates/${id}`, { status }, { headers: this.getHeaders(true) });
     }
 
+    regenerateCertificate(id: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/certificates/${id}/regenerate`, {}, { headers: this.getHeaders(true) });
+    }
+
+    /** Trigger a download of the PDF cert via authenticated fetch (the route requires Bearer token). */
+    downloadCertificateAsUser(id: string): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/user/certificates/${id}/download`, {
+            headers: this.getHeaders(),
+            responseType: 'blob'
+        });
+    }
+
+    downloadCertificateAsAdmin(id: string): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/admin/certificates/${id}/download`, {
+            headers: this.getHeaders(true),
+            responseType: 'blob'
+        });
+    }
+
     // --- Admin: Organization Settings ---
     getOrgSettings(): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/settings`, { headers: this.getHeaders(true) });

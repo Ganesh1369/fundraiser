@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const certificateService = require('../services/certificate.service');
 
 exports.getProfile = async (req, res, next) => {
     try {
@@ -99,6 +100,18 @@ exports.removeAvatar = async (req, res, next) => {
         await userService.updateProfilePic(req.user.id, null);
         res.json({ success: true, message: 'Profile picture removed' });
     } catch (error) {
+        next(error);
+    }
+};
+
+exports.downloadCertificate = async (req, res, next) => {
+    try {
+        const { absPath, downloadName } = await certificateService.getDownloadFile(
+            req.params.id, { id: req.user.id, isAdmin: false }
+        );
+        res.download(absPath, downloadName);
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
         next(error);
     }
 };

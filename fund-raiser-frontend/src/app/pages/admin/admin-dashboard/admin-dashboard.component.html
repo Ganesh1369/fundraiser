@@ -2,6 +2,19 @@
     <h1>Dashboard Overview</h1>
 </header>
 
+@if (missingOrgSettings.length > 0) {
+<a routerLink="/admin/settings" class="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 no-underline hover:bg-amber-100 transition-colors">
+    <div class="flex items-center gap-3 min-w-0">
+        <lucide-icon name="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0"></lucide-icon>
+        <div class="min-w-0">
+            <div class="text-sm font-semibold text-amber-900">Organization setup incomplete</div>
+            <div class="text-xs text-amber-700 truncate">{{ missingOrgSettings.length }} required field(s) missing — 80G certificates cannot auto-generate until filled.</div>
+        </div>
+    </div>
+    <span class="text-xs font-semibold text-amber-900 whitespace-nowrap">Complete &rarr;</span>
+</a>
+}
+
 <!-- Stats Grid -->
 <div class="stats-grid">
     <div class="stat-card">

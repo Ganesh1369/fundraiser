@@ -32,6 +32,8 @@ router.get('/leaderboard/export', adminController.exportLeaderboard);
 // 80G Certificate Management
 router.get('/certificates', adminController.getCertificateRequests);
 router.get('/certificates/export', adminController.exportCertificates);
+router.get('/certificates/:id/download', adminController.downloadCertificate);
+router.post('/certificates/:id/regenerate', adminController.regenerateCertificate);
 router.patch('/certificates/:id', adminController.updateCertificateStatus);
 
 // === Phase 2.1: Organization settings ===

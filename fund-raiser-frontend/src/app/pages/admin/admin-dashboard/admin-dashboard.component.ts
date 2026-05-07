@@ -56,6 +56,7 @@ export class AdminDashboardComponent implements OnInit {
     registrations: Registration[] = [];
     leaderboard: LeaderboardEntry[] = [];
     isLoading = false;
+    missingOrgSettings: string[] = [];
 
     constructor(
         private router: Router,
@@ -73,12 +74,16 @@ export class AdminDashboardComponent implements OnInit {
         forkJoin({
             stats: this.api.getAdminStats(),
             registrations: this.api.getAdminRegistrations(5),
-            leaderboard: this.api.getLeaderboard(5)
+            leaderboard: this.api.getLeaderboard(5),
+            orgRequired: this.api.getOrgRequiredStatus()
         }).subscribe({
             next: (res: any) => {
                 if (res.stats?.success) this.stats = res.stats.data;
                 if (res.registrations?.success) this.registrations = res.registrations.data.registrations || [];
                 if (res.leaderboard?.success) this.leaderboard = res.leaderboard.data;
+                if (res.orgRequired?.success) {
+                    this.missingOrgSettings = res.orgRequired.data?.missing || [];
+                }
                 this.isLoading = false;
                 this.cdr.detectChanges();
             },

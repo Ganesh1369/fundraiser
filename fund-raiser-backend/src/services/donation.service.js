@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('./email.service');
+const certificateService = require('./certificate.service');
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -121,6 +122,7 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         }
 
         // Auto-create 80G certificate request if requested (skip duplicates)
+        let createdCertId = null;
         if (donation.request_80g) {
             const existingCert = await client.query(
                 'SELECT id FROM certificate_requests WHERE donation_id = ?',
@@ -132,15 +134,24 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                     [userId]
                 );
                 const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
+                createdCertId = uuidv4();
                 await client.query(
-                    `INSERT INTO certificate_requests (user_id, donation_id, pan_number)
-                     VALUES (?, ?, ?)`,
-                    [userId, donation.id, panNumber]
+                    `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number, auto_generated)
+                     VALUES (?, ?, ?, ?, true)`,
+                    [createdCertId, userId, donation.id, panNumber]
                 );
+            } else {
+                createdCertId = existingCert.rows[0].id;
             }
         }
 
         await client.query('COMMIT');
+
+        // Trigger PDF generation post-commit (best-effort; failure must not affect donation status).
+        if (createdCertId) {
+            certificateService.generate(createdCertId, { auto: true, silent: true })
+                .catch(err => console.error('cert auto-gen failed:', err.message));
+        }
 
         // Send confirmation email (non-blocking)
         const userResult = await db.query('SELECT email FROM users WHERE id = ?', [userId]);

@@ -134,9 +134,40 @@ const sendCertificateApprovedEmail = async (to, name) => {
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Send 80G certificate generated email (Phase 2.1 — auto-issued PDF cert).
+ */
+const sendCertificateGeneratedEmail = async (to, name, pdfRelUrl, certificateNumber) => {
+    const downloadUrl = `${process.env.FRONTEND_URL || ''}/dashboard`;
+    const mailOptions = {
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to,
+        subject: `Your 80G Certificate ${certificateNumber} is Ready`,
+        html: emailWrapper(`
+            <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">80G Certificate Issued</p>
+            <p style="color: #171717; font-size: 15px; margin: 0 0 4px;">Dear <strong>${name}</strong>,</p>
+            <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">Your 80G donation receipt has been generated and is now available for download from your dashboard.</p>
+            <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 24px; margin: 0 0 20px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="color: #737373; padding: 8px 0; font-size: 13px;">Certificate No.</td>
+                        <td style="color: #16a34a; padding: 8px 0; font-size: 14px; font-weight: 700; text-align: right;">${certificateNumber}</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="text-align: center; margin: 0 0 20px;">
+                <a href="${downloadUrl}" style="display: inline-block; background: #22c55e; color: #ffffff; padding: 12px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">Download from Dashboard &rarr;</a>
+            </div>
+            <p style="color: #a3a3a3; font-size: 12px; text-align: center; margin: 0;">Need help? Call us at <strong style="color: #525252;">98404 71333</strong></p>
+        `)
+    };
+    return transporter.sendMail(mailOptions);
+};
+
 module.exports = {
     sendOtpEmail,
     sendPasswordResetEmail,
     sendDonationConfirmationEmail,
-    sendCertificateApprovedEmail
+    sendCertificateApprovedEmail,
+    sendCertificateGeneratedEmail
 };

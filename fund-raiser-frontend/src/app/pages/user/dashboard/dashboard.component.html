@@ -282,22 +282,34 @@
                 <div class="p-6">
                     <div class="flex flex-col gap-3">
                         @for (cert of certificateRequests; track cert.id) {
-                        <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
-                            <div class="flex flex-wrap items-center gap-3 text-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-neutral-50 rounded-xl">
+                            <div class="flex flex-wrap items-center gap-3 text-sm min-w-0">
+                                @if (cert.certificateNumber) {
+                                <span class="font-mono text-xs text-neutral-700 bg-white px-2 py-1 rounded">{{ cert.certificateNumber }}</span>
+                                }
                                 <span class="font-medium text-accent">PAN: {{ cert.panNumber }}</span>
                                 @if (cert.donationAmount) {
                                 <span class="text-neutral-500">{{ formatCurrency(cert.donationAmount) }}</span>
                                 }
                                 <span class="text-xs text-neutral-400">{{ formatDate(cert.requestedAt) }}</span>
                             </div>
-                            <span class="px-2.5 py-1 text-xs font-medium rounded-full capitalize"
-                                [ngClass]="{
-                                    'bg-primary/10 text-primary': cert.status === 'approved',
-                                    'bg-amber-50 text-amber-600': cert.status === 'pending' || cert.status === 'processing',
-                                    'bg-red-50 text-red-500': cert.status === 'rejected'
-                                }">
-                                {{ cert.status }}
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full capitalize"
+                                    [ngClass]="{
+                                        'bg-primary/10 text-primary': cert.status === 'approved',
+                                        'bg-amber-50 text-amber-600': cert.status === 'pending' || cert.status === 'processing',
+                                        'bg-red-50 text-red-500': cert.status === 'rejected'
+                                    }">
+                                    {{ cert.status }}
+                                </span>
+                                @if (cert.status === 'approved' && cert.pdfUrl) {
+                                <button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-500 transition-colors"
+                                    (click)="downloadCertificate(cert)">
+                                    <lucide-icon name="download" class="w-3.5 h-3.5"></lucide-icon>
+                                    Download
+                                </button>
+                                }
+                            </div>
                         </div>
                         }
                     </div>

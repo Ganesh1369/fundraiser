@@ -1,4 +1,5 @@
 const adminService = require('../services/admin.service');
+const certificateService = require('../services/certificate.service');
 
 exports.getDashboardStats = async (req, res, next) => {
     try {
@@ -103,6 +104,28 @@ exports.updateCertificateStatus = async (req, res, next) => {
     try {
         const data = await adminService.updateCertificateStatus(req.params.id, req.body);
         res.json({ success: true, message: 'Certificate request updated', data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+exports.regenerateCertificate = async (req, res, next) => {
+    try {
+        const data = await certificateService.regenerate(req.params.id);
+        res.json({ success: true, message: 'Certificate regenerated', data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+exports.downloadCertificate = async (req, res, next) => {
+    try {
+        const { absPath, downloadName } = await certificateService.getDownloadFile(
+            req.params.id, { id: req.user?.id, isAdmin: true }
+        );
+        res.download(absPath, downloadName);
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });
         next(error);

@@ -62,6 +62,9 @@ router.post('/certificate-request', isOrganization, userController.requestCertif
 // Get certificate request status
 router.get('/certificate-requests', isOrganization, userController.getCertificateRequests);
 
+// Download generated 80G PDF (any authenticated user; ownership checked in service)
+router.get('/certificates/:id/download', userController.downloadCertificate);
+
 // Subscribe to push notifications
 router.post('/push-subscribe', userController.subscribePush);
 

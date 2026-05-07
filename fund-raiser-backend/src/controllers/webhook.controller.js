@@ -1,5 +1,8 @@
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
+const emailService = require('../services/email.service');
+const certificateService = require('../services/certificate.service');
 
 // Razorpay Webhook Handler
 exports.razorpayWebhook = async (req, res, next) => {
@@ -49,6 +52,10 @@ exports.razorpayWebhook = async (req, res, next) => {
 async function handlePaymentCaptured(payment) {
     const client = await db.getClient();
 
+    let donationForEmail = null;
+    let userForEmail = null;
+    let createdCertId = null;
+
     try {
         await client.query('BEGIN');
 
@@ -62,7 +69,7 @@ async function handlePaymentCaptured(payment) {
 
         if (updateResult.rowCount > 0) {
             const donationResult = await client.query(
-                'SELECT id, amount, referrer_id, user_id, purpose FROM donations WHERE razorpay_order_id = ?',
+                'SELECT id, amount, referrer_id, user_id, purpose, request_80g FROM donations WHERE razorpay_order_id = ?',
                 [payment.order_id]
             );
             const donation = donationResult.rows[0];
@@ -105,6 +112,35 @@ async function handlePaymentCaptured(payment) {
                     );
                 }
             }
+
+            // Auto-create 80G cert request if requested (audit B4 fix — webhook used to skip this).
+            if (donation.purpose === 'donation' && donation.request_80g) {
+                const existingCert = await client.query(
+                    'SELECT id FROM certificate_requests WHERE donation_id = ?',
+                    [donation.id]
+                );
+                if (existingCert.rows.length === 0) {
+                    const userPan = await client.query('SELECT pan_number FROM users WHERE id = ?', [donation.user_id]);
+                    const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
+                    createdCertId = uuidv4();
+                    await client.query(
+                        `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number, auto_generated)
+                         VALUES (?, ?, ?, ?, true)`,
+                        [createdCertId, donation.user_id, donation.id, panNumber]
+                    );
+                } else {
+                    createdCertId = existingCert.rows[0].id;
+                }
+            }
+
+            // Capture data for post-commit emails (avoid running them inside the txn).
+            if (donation.purpose === 'donation') {
+                const u = await client.query('SELECT email, name FROM users WHERE id = ?', [donation.user_id]);
+                if (u.rows.length > 0) {
+                    donationForEmail = donation;
+                    userForEmail = u.rows[0];
+                }
+            }
         }
 
         await client.query('COMMIT');
@@ -115,6 +151,18 @@ async function handlePaymentCaptured(payment) {
         throw error;
     } finally {
         client.release();
+    }
+
+    // ===== Post-commit, best-effort side-effects (audit B4 fix). =====
+    if (donationForEmail && userForEmail) {
+        emailService.sendDonationConfirmationEmail(
+            userForEmail.email, userForEmail.name,
+            parseFloat(donationForEmail.amount), payment.id, new Date()
+        ).catch(err => console.error('webhook donation email failed:', err.message));
+    }
+    if (createdCertId) {
+        certificateService.generate(createdCertId, { auto: true, silent: true })
+            .catch(err => console.error('webhook cert auto-gen failed:', err.message));
     }
 }
 

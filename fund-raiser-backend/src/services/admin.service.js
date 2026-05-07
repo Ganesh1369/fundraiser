@@ -354,7 +354,9 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
 
     const result = await db.query(
         `SELECT cr.id, cr.pan_number, cr.status, cr.admin_notes,
-                cr.requested_at, cr.processed_at,
+                cr.requested_at, cr.processed_at, cr.issued_at,
+                cr.certificate_number, cr.pdf_url, cr.auto_generated,
+                cr.generation_attempts, cr.last_generation_error,
                 u.name as user_name, u.email as user_email,
                 d.amount as donation_amount, d.created_at as donation_date
          FROM certificate_requests cr
