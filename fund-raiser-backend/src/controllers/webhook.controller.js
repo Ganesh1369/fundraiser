@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('../services/email.service');
 const certificateService = require('../services/certificate.service');
+const { computePoints } = require('../services/utils/referral-points');
 
 // Razorpay Webhook Handler
 exports.razorpayWebhook = async (req, res, next) => {
@@ -69,7 +70,7 @@ async function handlePaymentCaptured(payment) {
 
         if (updateResult.rowCount > 0) {
             const donationResult = await client.query(
-                'SELECT id, amount, referrer_id, user_id, purpose, request_80g FROM donations WHERE razorpay_order_id = ?',
+                'SELECT id, amount, referrer_id, user_id, purpose, request_80g, points_formula_version FROM donations WHERE razorpay_order_id = ?',
                 [payment.order_id]
             );
             const donation = donationResult.rows[0];
@@ -87,7 +88,7 @@ async function handlePaymentCaptured(payment) {
                 );
 
                 if (!checkPoints.rows[0].points_awarded) {
-                    const pointsToAward = Math.floor(parseFloat(donation.amount));
+                    const pointsToAward = computePoints(donation.amount, donation.points_formula_version);
 
                     // Get donor name
                     const userResult = await client.query(

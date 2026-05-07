@@ -87,6 +87,14 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/user/referrals`, { headers: this.getHeaders() });
     }
 
+    getReferralPointsHistory(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/user/referrals/history`, { headers: this.getHeaders() });
+    }
+
+    subscribePush(subscription: { endpoint: string; keys: { p256dh: string; auth: string } }): Observable<any> {
+        return this.http.post(`${this.apiUrl}/user/push-subscribe`, subscription, { headers: this.getHeaders() });
+    }
+
     requestCertificate(panNumber: string, donationId?: string): Observable<any> {
         return this.http.post(`${this.apiUrl}/user/certificate-request`, { panNumber, donationId }, { headers: this.getHeaders() });
     }
@@ -113,21 +121,21 @@ export class ApiService {
 
     getAdminRegistrations(limit: number = 20, page: number = 1, userType?: string, search?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/registrations?limit=${limit}&page=${page}`;
-        if (userType) url += `&userType=${userType}`;
-        if (search) url += `&search=${search}`;
+        if (userType) url += `&userType=${encodeURIComponent(userType)}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
     getAdminDonations(limit: number = 20, page: number = 1, status?: string, projectId?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/donations?limit=${limit}&page=${page}`;
-        if (status) url += `&status=${status}`;
-        if (projectId) url += `&projectId=${projectId}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+        if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
     getLeaderboard(limit: number = 50, userType?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/leaderboard?limit=${limit}`;
-        if (userType) url += `&userType=${userType}`;
+        if (userType) url += `&userType=${encodeURIComponent(userType)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
@@ -141,7 +149,7 @@ export class ApiService {
 
     getAdminCertificates(limit: number = 20, page: number = 1, status?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/certificates?limit=${limit}&page=${page}`;
-        if (status) url += `&status=${status}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 

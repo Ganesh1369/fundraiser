@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('./email.service');
 const certificateService = require('./certificate.service');
+const { computePoints } = require('./utils/referral-points');
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -96,14 +97,14 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         }
 
         const donationResult = await client.query(
-            'SELECT id, amount, referrer_id, request_80g, purpose FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
+            'SELECT id, amount, referrer_id, request_80g, purpose, points_formula_version FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
             [razorpayOrderId, userId]
         );
         const donation = donationResult.rows[0];
 
         // Award referral points (skip for registration fees)
         if (donation.referrer_id && donation.purpose !== 'registration_fee') {
-            const pointsToAward = Math.floor(parseFloat(donation.amount));
+            const pointsToAward = computePoints(donation.amount, donation.points_formula_version);
             await client.query(
                 'UPDATE users SET referral_points = referral_points + ? WHERE id = ?',
                 [pointsToAward, donation.referrer_id]
