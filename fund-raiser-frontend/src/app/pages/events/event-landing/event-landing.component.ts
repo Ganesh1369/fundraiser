@@ -17,7 +17,7 @@ import { LucideAngularModule } from 'lucide-angular';
     <!-- Event Content -->
     <div class="min-h-screen bg-neutral-50" *ngIf="!loading && event" [ngClass]="'theme-' + event.event_type">
       <!-- Banner -->
-      <div class="relative w-full h-72 md:h-96 bg-cover bg-center" [style.backgroundImage]="'url(' + (event.banner_url || 'assets/default-event.jpg') + ')'">
+      <div class="relative w-full h-72 md:h-96 bg-cover bg-center" [style.backgroundImage]="'url(' + (event.hero_banner_url || event.banner_url || 'assets/default-event.jpg') + ')'">
         <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20 flex items-end justify-center px-5 pb-10">
           <div class="text-center text-white max-w-2xl">
             <span class="inline-block px-4 py-1.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-full mb-3">{{ event.event_type }}</span>
@@ -32,9 +32,53 @@ import { LucideAngularModule } from 'lucide-angular';
 
       <!-- Content -->
       <div class="max-w-2xl mx-auto px-5 py-10 flex flex-col gap-6">
-        <div class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
+        <a *ngIf="event.project_slug" [routerLink]="['/projects', event.project_slug]" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-primary/20 text-sm rounded-xl no-underline hover:border-primary transition-colors">
+          <lucide-icon name="heart" class="w-4 h-4 text-primary"></lucide-icon>
+          <span class="text-neutral-600">Supports</span>
+          <strong class="text-accent">{{ event.project_name }}</strong>
+          <lucide-icon name="arrow-right" class="w-4 h-4 text-neutral-400 ml-auto"></lucide-icon>
+        </a>
+
+        <div *ngIf="event.description" class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
           <h2 class="text-xl font-bold text-accent mb-4">About the Event</h2>
-          <p class="text-sm text-neutral-500 leading-relaxed whitespace-pre-line">{{ event.description }}</p>
+          <p class="text-sm text-neutral-500 leading-relaxed whitespace-pre-line m-0">{{ event.description }}</p>
+        </div>
+
+        <div *ngIf="event.schedule" class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
+          <h2 class="text-xl font-bold text-accent mb-4 flex items-center gap-2">
+            <lucide-icon name="clock" class="w-5 h-5 text-primary"></lucide-icon>
+            Schedule
+          </h2>
+          <p class="text-sm text-neutral-500 leading-relaxed whitespace-pre-line m-0">{{ event.schedule }}</p>
+        </div>
+
+        <div *ngIf="event.venue_details" class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
+          <h2 class="text-xl font-bold text-accent mb-4 flex items-center gap-2">
+            <lucide-icon name="map-pin" class="w-5 h-5 text-primary"></lucide-icon>
+            Venue
+          </h2>
+          <p class="text-sm text-neutral-500 leading-relaxed whitespace-pre-line m-0">{{ event.venue_details }}</p>
+        </div>
+
+        <div *ngIf="event.contact_name || event.contact_phone || event.contact_email" class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
+          <h2 class="text-xl font-bold text-accent mb-4 flex items-center gap-2">
+            <lucide-icon name="phone" class="w-5 h-5 text-primary"></lucide-icon>
+            Contact
+          </h2>
+          <div class="flex flex-col gap-2 text-sm text-neutral-600">
+            <div *ngIf="event.contact_name" class="flex items-center gap-2">
+              <lucide-icon name="user" class="w-4 h-4 text-neutral-400"></lucide-icon>
+              {{ event.contact_name }}
+            </div>
+            <a *ngIf="event.contact_phone" [href]="'tel:' + event.contact_phone" class="flex items-center gap-2 text-primary no-underline hover:underline">
+              <lucide-icon name="phone" class="w-4 h-4 text-neutral-400"></lucide-icon>
+              {{ event.contact_phone }}
+            </a>
+            <a *ngIf="event.contact_email" [href]="'mailto:' + event.contact_email" class="flex items-center gap-2 text-primary no-underline hover:underline">
+              <lucide-icon name="mail" class="w-4 h-4 text-neutral-400"></lucide-icon>
+              {{ event.contact_email }}
+            </a>
+          </div>
         </div>
 
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-primary-50 border border-primary-100 rounded-2xl p-6">

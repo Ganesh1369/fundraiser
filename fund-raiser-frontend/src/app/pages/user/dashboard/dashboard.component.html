@@ -81,6 +81,51 @@
             <div class="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         </div>
 
+        <!-- Projects -->
+        @if (projects.length > 0) {
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold text-accent m-0">Our Projects</h2>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+                @for (p of projects; track p.id) {
+                <a [routerLink]="['/projects', p.slug]" class="block bg-white rounded-2xl p-5 shadow-soft hover:shadow-card transition-shadow no-underline group">
+                    <div class="flex items-center gap-3 mb-4">
+                        @if (p.logo_url) {
+                        <img [src]="p.logo_url" [alt]="p.name" class="w-12 h-12 rounded-xl object-cover bg-neutral-100 shrink-0">
+                        } @else {
+                        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                            <span class="text-primary font-bold">{{ p.name.charAt(0) }}</span>
+                        </div>
+                        }
+                        <div class="min-w-0 flex-1">
+                            <div class="text-base font-semibold text-accent truncate">{{ p.name }}</div>
+                            @if (p.tagline) {
+                            <div class="text-xs text-neutral-500 truncate">{{ p.tagline }}</div>
+                            }
+                        </div>
+                        <lucide-icon name="arrow-right" class="w-4 h-4 text-neutral-300 group-hover:text-primary transition-colors shrink-0"></lucide-icon>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-neutral-50 rounded-lg py-2">
+                            <div class="text-sm font-bold text-accent">{{ formatCurrency(p.stats.totalRaised) }}</div>
+                            <div class="text-[10px] text-neutral-500 uppercase tracking-wider">Raised</div>
+                        </div>
+                        <div class="bg-neutral-50 rounded-lg py-2">
+                            <div class="text-sm font-bold text-accent">{{ p.stats.donorCount }}</div>
+                            <div class="text-[10px] text-neutral-500 uppercase tracking-wider">Donors</div>
+                        </div>
+                        <div class="bg-neutral-50 rounded-lg py-2">
+                            <div class="text-sm font-bold text-accent">{{ p.stats.eventCount }}</div>
+                            <div class="text-[10px] text-neutral-500 uppercase tracking-wider">Events</div>
+                        </div>
+                    </div>
+                </a>
+                }
+            </div>
+        </div>
+        }
+
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-2xl p-5 shadow-soft">
@@ -295,6 +340,31 @@
             </div>
             <div class="px-6 py-5">
                 <p class="text-sm text-neutral-500 mb-5">Help make our planet a healthier, greener and happier place.</p>
+
+                @if (projects.length > 1) {
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-neutral-600 mb-2">Supporting</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @for (p of projects; track p.id) {
+                        <button type="button" class="py-2.5 px-3 text-sm font-semibold rounded-xl border-2 transition-all text-left flex items-center gap-2"
+                            [class]="selectedProjectId === p.id
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-neutral-50 text-neutral-700 border-transparent hover:border-primary/30'"
+                            (click)="selectedProjectId = p.id">
+                            @if (p.logo_url) {
+                            <img [src]="p.logo_url" [alt]="p.name" class="w-5 h-5 rounded object-cover shrink-0">
+                            }
+                            <span class="truncate">{{ p.name }}</span>
+                        </button>
+                        }
+                    </div>
+                </div>
+                } @else if (selectedProject) {
+                <div class="flex items-center gap-2 px-3 py-2.5 bg-primary/5 border border-primary/20 rounded-xl mb-5">
+                    <lucide-icon name="heart" class="w-4 h-4 text-primary shrink-0"></lucide-icon>
+                    <span class="text-sm text-neutral-700">Supporting <strong class="text-accent">{{ selectedProject.name }}</strong></span>
+                </div>
+                }
 
                 <div class="grid grid-cols-4 gap-2 mb-5">
                     @for (preset of [100, 500, 1000, 5000]; track preset) {

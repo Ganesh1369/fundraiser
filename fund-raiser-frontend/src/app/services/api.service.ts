@@ -96,8 +96,10 @@ export class ApiService {
     }
 
     // --- Donations ---
-    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation'): Observable<any> {
-        return this.http.post(`${this.apiUrl}/donations/create-order`, { amount, request80g, purpose }, { headers: this.getHeaders() });
+    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null): Observable<any> {
+        const body: any = { amount, request80g, purpose };
+        if (projectId) body.projectId = projectId;
+        return this.http.post(`${this.apiUrl}/donations/create-order`, body, { headers: this.getHeaders() });
     }
 
     verifyPayment(data: any): Observable<any> {

@@ -6,11 +6,53 @@ const projectInclude = {
     }
 };
 
+const emptyStats = () => ({ totalRaised: 0, donationCount: 0, donorCount: 0, eventCount: 0 });
+
+const computeStatsForProjects = async (projectIds) => {
+    const stats = {};
+    for (const id of projectIds) stats[id] = emptyStats();
+    if (projectIds.length === 0) return stats;
+
+    const [donationAgg, donorRows, eventAgg] = await Promise.all([
+        prisma.donation.groupBy({
+            by: ['project_id'],
+            where: { project_id: { in: projectIds }, status: 'completed' },
+            _sum: { amount: true },
+            _count: { _all: true }
+        }),
+        prisma.donation.findMany({
+            where: { project_id: { in: projectIds }, status: 'completed' },
+            select: { project_id: true, user_id: true },
+            distinct: ['project_id', 'user_id']
+        }),
+        prisma.event.groupBy({
+            by: ['project_id'],
+            where: { project_id: { in: projectIds }, is_active: true },
+            _count: { _all: true }
+        })
+    ]);
+
+    for (const row of donationAgg) {
+        if (!row.project_id || !stats[row.project_id]) continue;
+        stats[row.project_id].totalRaised = row._sum.amount ? Number(row._sum.amount) : 0;
+        stats[row.project_id].donationCount = row._count._all;
+    }
+    for (const row of donorRows) {
+        if (row.project_id && stats[row.project_id]) stats[row.project_id].donorCount += 1;
+    }
+    for (const row of eventAgg) {
+        if (row.project_id && stats[row.project_id]) stats[row.project_id].eventCount = row._count._all;
+    }
+    return stats;
+};
+
 const listActive = async () => {
-    return prisma.project.findMany({
+    const projects = await prisma.project.findMany({
         where: { is_active: true },
         orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
+    const stats = await computeStatsForProjects(projects.map(p => p.id));
+    return projects.map(p => ({ ...p, stats: stats[p.id] || emptyStats() }));
 };
 
 const getBySlug = async (slug) => {
@@ -21,7 +63,8 @@ const getBySlug = async (slug) => {
     if (!project || !project.is_active) {
         throw { status: 404, message: 'Project not found' };
     }
-    return project;
+    const stats = await computeStatsForProjects([project.id]);
+    return { ...project, stats: stats[project.id] || emptyStats() };
 };
 
 const listAllForAdmin = async () => {

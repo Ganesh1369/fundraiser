@@ -93,6 +93,14 @@ export const routes: Routes = [
         ]
     },
     {
+        path: 'projects/:slug',
+        loadComponent: () => import('./pages/projects/project-landing/project-landing.component').then(m => m.ProjectLandingComponent)
+    },
+    {
+        path: 'projects/:slug/accomplishments',
+        loadComponent: () => import('./pages/projects/project-accomplishments/project-accomplishments.component').then(m => m.ProjectAccomplishmentsComponent)
+    },
+    {
         path: 'events/:id',
         loadComponent: () => import('./pages/events/event-landing/event-landing.component').then(m => m.EventLandingComponent)
     },

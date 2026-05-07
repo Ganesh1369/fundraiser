@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
+import { ProjectService } from '../../../services/project.service';
 import { ToastService } from '../../../services/toast.service';
 
 declare var Razorpay: any;
@@ -53,6 +54,15 @@ interface CertificateRequest {
     donationId: string | null;
 }
 
+interface ProjectCard {
+    id: string;
+    slug: string;
+    name: string;
+    tagline: string | null;
+    logo_url: string | null;
+    stats: { totalRaised: number; donorCount: number; eventCount: number; donationCount: number };
+}
+
 @Component({
     selector: 'app-dashboard',
     standalone: true,
@@ -67,10 +77,12 @@ export class DashboardComponent implements OnInit {
     summary: DonationSummary = { totalDonations: 0, totalAmount: 0, thisMonthAmount: 0 };
     referralStats: ReferralStats | null = null;
     certificateRequests: CertificateRequest[] = [];
+    projects: ProjectCard[] = [];
 
     activeTab = 'overview';
     donationAmount = 100;
     request80g = false;
+    selectedProjectId = '';
     selectedFilter = 'all';
     isLoading = false;
     showDonateModal = false;
@@ -87,6 +99,7 @@ export class DashboardComponent implements OnInit {
     constructor(
         private router: Router,
         private api: ApiService,
+        private projectService: ProjectService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService,
         private zone: NgZone
@@ -96,6 +109,26 @@ export class DashboardComponent implements OnInit {
         this.loadUser();
         this.loadDashboardData();
         this.loadProfile();
+        this.loadProjects();
+    }
+
+    loadProjects(): void {
+        this.projectService.listActive().subscribe({
+            next: (res: any) => {
+                if (res?.success) {
+                    this.projects = res.data || [];
+                    if (!this.selectedProjectId && this.projects.length > 0) {
+                        this.selectedProjectId = this.projects[0].id;
+                    }
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { }
+        });
+    }
+
+    get selectedProject(): ProjectCard | null {
+        return this.projects.find(p => p.id === this.selectedProjectId) || null;
     }
 
     loadUser(): void {
@@ -165,7 +198,7 @@ export class DashboardComponent implements OnInit {
 
         this.isLoading = true;
 
-        this.api.createOrder(this.donationAmount, this.request80g).subscribe({
+        this.api.createOrder(this.donationAmount, this.request80g, 'donation', this.selectedProjectId || null).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
