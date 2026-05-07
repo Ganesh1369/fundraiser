@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
-import { environment } from '../../../environment';
+import { environment } from '../../../../environments/environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface CertificateRequest {

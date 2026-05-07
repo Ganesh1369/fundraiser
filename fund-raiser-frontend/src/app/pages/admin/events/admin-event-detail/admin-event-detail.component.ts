@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { EventService } from '../../../../services/event.service';
-import { environment } from '../../../../environment';
+import { environment } from '../../../../../environments/environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface Event {

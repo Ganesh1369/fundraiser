@@ -69,6 +69,11 @@
             <span>Referral Code: <strong>{{ user.referral_code }}</strong></span>
         </div>
         }
+        @if (user.enrolled_via_event_name) {
+        <div class="profile-extra">
+            <span>Enrolled via: <strong>{{ user.enrolled_via_event_name }}</strong></span>
+        </div>
+        }
     </div>
 </div>
 
@@ -115,6 +120,22 @@
 <!-- Donations Tab -->
 @if (activeTab === 'donations') {
 <div class="card">
+    @if (donations?.byProject?.length) {
+    <div class="px-4 pt-4 pb-2">
+        <div class="text-xs uppercase tracking-wider text-neutral-500 mb-2">By project</div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-2">
+            @for (p of donations.byProject; track p.projectId) {
+            <div class="bg-neutral-50 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-accent truncate">{{ p.projectName }}</div>
+                    <div class="text-xs text-neutral-500">{{ p.donationCount }} donation(s)</div>
+                </div>
+                <div class="text-sm font-bold text-accent whitespace-nowrap">{{ formatCurrency(p.totalAmount) }}</div>
+            </div>
+            }
+        </div>
+    </div>
+    }
     @if (donations?.history?.length === 0) {
     <div class="empty-state">
         <lucide-icon name="wallet" class="empty-icon w-10 h-10"></lucide-icon>
@@ -127,6 +148,7 @@
             <thead>
                 <tr>
                     <th>Amount</th>
+                    <th>Project</th>
                     <th>Status</th>
                     <th>Payment ID</th>
                     <th>Date</th>
@@ -136,6 +158,7 @@
                 @for (d of donations?.history; track d.id) {
                 <tr>
                     <td class="amount">{{ formatCurrency(d.amount) }}</td>
+                    <td>{{ d.project_name || '--' }}</td>
                     <td><span class="status-badge" [ngClass]="d.status">{{ d.status }}</span></td>
                     <td>{{ d.razorpay_payment_id || '--' }}</td>
                     <td>{{ formatDate(d.created_at) }}</td>

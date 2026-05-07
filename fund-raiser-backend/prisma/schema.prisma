@@ -98,10 +98,12 @@ model User {
   email_verified        Boolean  @default(false)
   registration_fee_paid Boolean  @default(false)
   is_active             Boolean  @default(true)
+  enrolled_via_event_id String?  @db.Char(36)
   created_at            DateTime @default(now()) @db.DateTime(0)
   updated_at            DateTime @default(now()) @updatedAt @db.DateTime(0)
 
   referrer                User?                   @relation("Referrals", fields: [referred_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_ibfk_1")
+  enrolled_via_event      Event?                  @relation("UserEnrolledVia", fields: [enrolled_via_event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_enrolled_via")
   referred_users          User[]                  @relation("Referrals")
   donations               Donation[]              @relation("DonationOwner")
   donations_as_referrer   Donation[]              @relation("DonationReferrer")
@@ -114,6 +116,7 @@ model User {
   @@index([referred_by], map: "idx_users_referred_by")
   @@index([user_type], map: "idx_users_user_type")
   @@index([email], map: "idx_users_email")
+  @@index([enrolled_via_event_id], map: "idx_users_enrolled_via")
   @@map("users")
 }
 
@@ -140,6 +143,7 @@ model Event {
   project             Project?            @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_events_project")
   donations           Donation[]
   event_registrations EventRegistration[]
+  enrolled_users      User[]               @relation("UserEnrolledVia")
 
   @@index([is_active], map: "idx_events_is_active")
   @@index([registration_open], map: "idx_events_registration_open")

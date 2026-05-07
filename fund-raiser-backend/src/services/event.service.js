@@ -312,7 +312,7 @@ const generateReferralCode = () => {
 const registerForEvent = async (eventId, registrationData) => {
     const {
         // User Account Fields
-        name, email, phone, password, confirmPassword, user_type,
+        name, email, phone, password, confirmPassword, user_type, referralCode,
 
         // Personal Details
         date_of_birth, gender, blood_group,
@@ -383,15 +383,22 @@ const registerForEvent = async (eventId, registrationData) => {
             if (codeCheck.rows.length === 0) isUnique = true;
         }
 
+        // Audit M4: capture referrer if a valid referral code was provided.
+        let referrerId = null;
+        if (referralCode) {
+            const refRow = await db.query('SELECT id FROM users WHERE referral_code = ?', [String(referralCode).toUpperCase()]);
+            if (refRow.rows.length > 0) referrerId = refRow.rows[0].id;
+        }
+
         // Create User
         const validTypes = ['individual', 'student', 'organization'];
         const selectedType = validTypes.includes(user_type) ? user_type : 'individual';
         const age = calculateAge(date_of_birth);
         const newUserId = uuidv4();
         await db.query(
-            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, city, age, email_verified)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)`,
-            [newUserId, selectedType, name, email.toLowerCase(), phone, passwordHash, newReferralCode, city, age]
+            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, city, age, email_verified, referred_by, enrolled_via_event_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true, ?, ?)`,
+            [newUserId, selectedType, name, email.toLowerCase(), phone, passwordHash, newReferralCode, city, age, referrerId, eventId]
         );
         const newUserResult = await db.query('SELECT * FROM users WHERE id = ?', [newUserId]);
         user = newUserResult.rows[0];
@@ -415,6 +422,14 @@ const registerForEvent = async (eventId, registrationData) => {
             fitness_declaration, terms_accepted
         ]
     );
+
+    // For existing users: set enrolled_via_event_id if still unset (idempotent).
+    if (!isNewUser) {
+        await db.query(
+            'UPDATE users SET enrolled_via_event_id = ? WHERE id = ? AND enrolled_via_event_id IS NULL',
+            [eventId, userId]
+        );
+    }
 
     // 4. Generate Token
     const token = jwt.sign(

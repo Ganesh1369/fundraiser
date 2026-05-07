@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../services/api.service';
-import { environment } from '../../../environment';
+import { environment } from '../../../../environments/environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface Registration {

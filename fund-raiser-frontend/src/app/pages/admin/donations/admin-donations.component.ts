@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
 import { ProjectService } from '../../../services/project.service';
-import { environment } from '../../../environment';
+import { environment } from '../../../../environments/environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface Donation {

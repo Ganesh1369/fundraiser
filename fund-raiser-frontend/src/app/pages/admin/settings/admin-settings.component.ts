@@ -7,7 +7,7 @@ import {
 } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
-import { environment } from '../../../environment';
+import { environment } from '../../../../environments/environment';
 import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
 import { LucideAngularModule } from 'lucide-angular';
 

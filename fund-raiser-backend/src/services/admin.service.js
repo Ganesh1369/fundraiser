@@ -218,16 +218,37 @@ const exportDonations = async ({ status, fromDate, toDate, projectId }) => {
  */
 const getUserAnalytics = async (userId) => {
     const userResult = await db.query(
-        `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, pan_number, profile_pic,
-                referral_code, referral_points, created_at
-         FROM users WHERE id = ?`,
+        `SELECT u.id, u.user_type, u.name, u.age, u.email, u.phone, u.class_grade, u.school_name,
+                u.city, u.organization_name, u.pan_number, u.profile_pic,
+                u.referral_code, u.referral_points, u.created_at,
+                u.enrolled_via_event_id,
+                e.event_name AS enrolled_via_event_name
+         FROM users u
+         LEFT JOIN events e ON e.id = u.enrolled_via_event_id
+         WHERE u.id = ?`,
         [userId]
     );
     if (userResult.rows.length === 0) throw { status: 404, message: 'User not found' };
 
     const donations = await db.query(
-        `SELECT id, amount, status, razorpay_payment_id, created_at FROM donations WHERE user_id = ? AND purpose = 'donation' ORDER BY created_at DESC`,
+        `SELECT d.id, d.amount, d.status, d.razorpay_payment_id, d.created_at,
+                d.project_id, p.name AS project_name, p.slug AS project_slug
+         FROM donations d
+         LEFT JOIN projects p ON p.id = d.project_id
+         WHERE d.user_id = ? AND d.purpose = 'donation'
+         ORDER BY d.created_at DESC`,
+        [userId]
+    );
+
+    const projectBreakdown = await db.query(
+        `SELECT p.id, p.slug, p.name,
+                COALESCE(SUM(d.amount), 0) AS total_amount,
+                COUNT(d.id) AS donation_count
+         FROM donations d
+         JOIN projects p ON p.id = d.project_id
+         WHERE d.user_id = ? AND d.status = 'completed' AND d.purpose = 'donation'
+         GROUP BY p.id, p.slug, p.name
+         ORDER BY total_amount DESC`,
         [userId]
     );
 
@@ -270,7 +291,14 @@ const getUserAnalytics = async (userId) => {
         donations: {
             history: donations.rows.map(d => ({ ...d, amount: parseFloat(d.amount) })),
             totalAmount: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + parseFloat(d.amount), 0),
-            count: donations.rows.length
+            count: donations.rows.length,
+            byProject: projectBreakdown.rows.map(p => ({
+                projectId: p.id,
+                projectSlug: p.slug,
+                projectName: p.name,
+                totalAmount: parseFloat(p.total_amount),
+                donationCount: parseInt(p.donation_count)
+            }))
         },
         referrals: {
             count: parseInt(referralStats.referred_count),

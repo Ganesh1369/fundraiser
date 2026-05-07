@@ -105,6 +105,22 @@ const registerUser = async (userData) => {
         organizationName, panNumber, referralCode
     } = userData;
 
+    // Audit B1: enforce server-side that the phone OTP has been verified
+    // within the last hour. The OTP table reuses the `email` column for phone
+    // when purpose='register' (see sendOtp). Without this check, the /verify-otp
+    // step could be skipped client-side.
+    if (!phone) throw { status: 400, message: 'Phone number is required' };
+    const otpCheck = await db.query(
+        `SELECT id FROM otp_verifications
+         WHERE email = ? AND purpose = 'register' AND verified = true
+           AND created_at >= NOW() - INTERVAL 1 HOUR
+         ORDER BY created_at DESC LIMIT 1`,
+        [String(phone).toLowerCase()]
+    );
+    if (otpCheck.rows.length === 0) {
+        throw { status: 400, message: 'Phone number is not verified. Please verify the OTP and try again.' };
+    }
+
     // Check email already exists
     const existingUser = await db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
     if (existingUser.rows.length > 0) {
