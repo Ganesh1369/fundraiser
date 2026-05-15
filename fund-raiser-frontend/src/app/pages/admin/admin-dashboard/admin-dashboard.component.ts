@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterModule, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
+import { ProjectService } from '../../../services/project.service';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface DashboardStats {
@@ -43,6 +44,20 @@ interface LeaderboardEntry {
     score: number;
 }
 
+interface ProjectCard {
+    id: string;
+    slug: string;
+    name: string;
+    tagline: string | null;
+    logo_url: string | null;
+    stats: {
+        totalRaised: number;
+        donationCount: number;
+        donorCount: number;
+        eventCount: number;
+    };
+}
+
 @Component({
     selector: 'app-admin-dashboard',
     standalone: true,
@@ -55,12 +70,14 @@ export class AdminDashboardComponent implements OnInit {
     stats: DashboardStats | null = null;
     registrations: Registration[] = [];
     leaderboard: LeaderboardEntry[] = [];
+    projects: ProjectCard[] = [];
     isLoading = false;
     missingOrgSettings: string[] = [];
 
     constructor(
         private router: Router,
         private api: ApiService,
+        private projectService: ProjectService,
         private cdr: ChangeDetectorRef
     ) { }
 
@@ -75,7 +92,8 @@ export class AdminDashboardComponent implements OnInit {
             stats: this.api.getAdminStats(),
             registrations: this.api.getAdminRegistrations(5),
             leaderboard: this.api.getLeaderboard(5),
-            orgRequired: this.api.getOrgRequiredStatus()
+            orgRequired: this.api.getOrgRequiredStatus(),
+            projects: this.projectService.listActive()
         }).subscribe({
             next: (res: any) => {
                 if (res.stats?.success) this.stats = res.stats.data;
@@ -84,6 +102,7 @@ export class AdminDashboardComponent implements OnInit {
                 if (res.orgRequired?.success) {
                     this.missingOrgSettings = res.orgRequired.data?.missing || [];
                 }
+                if (res.projects?.success) this.projects = res.projects.data || [];
                 this.isLoading = false;
                 this.cdr.detectChanges();
             },

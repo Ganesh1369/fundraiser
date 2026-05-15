@@ -72,7 +72,7 @@ const getDonations = async (userId, period) => {
 
     const result = await db.query(
         `SELECT d.id, d.amount, d.currency, d.status, d.payment_method,
-                d.razorpay_payment_id, d.created_at, d.request_80g,
+                d.razorpay_payment_id, d.created_at, d.request_80g, d.project_id,
                 cr.status as certificate_status
          FROM donations d
          LEFT JOIN certificate_requests cr ON cr.donation_id = d.id
@@ -85,7 +85,8 @@ const getDonations = async (userId, period) => {
         id: d.id, amount: parseFloat(d.amount), currency: d.currency,
         status: d.status, paymentMethod: d.payment_method,
         paymentId: d.razorpay_payment_id, createdAt: d.created_at,
-        request80g: d.request_80g, certificateStatus: d.certificate_status || null
+        request80g: d.request_80g, projectId: d.project_id || null,
+        certificateStatus: d.certificate_status || null
     }));
 };
 

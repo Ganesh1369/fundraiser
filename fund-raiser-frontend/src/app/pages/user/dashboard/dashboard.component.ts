@@ -26,6 +26,7 @@ interface Donation {
     createdAt: string;
     paymentId?: string;
     request80g?: boolean;
+    projectId?: string | null;
     certificateStatus?: string | null;
 }
 
@@ -199,10 +200,19 @@ export class DashboardComponent implements OnInit {
 
     initiateDonation(): void {
         if (this.donationAmount < 1) return;
+        this.showDonateModal = false;
+        this.startDonationFlow(this.donationAmount, this.request80g, this.selectedProjectId || null);
+    }
 
+    retryDonation(d: Donation): void {
+        if (!d || d.status !== 'failed' || d.amount < 1) return;
+        this.startDonationFlow(d.amount, !!d.request80g, d.projectId || null);
+    }
+
+    private startDonationFlow(amount: number, request80g: boolean, projectId: string | null): void {
         this.isLoading = true;
 
-        this.api.createOrder(this.donationAmount, this.request80g, 'donation', this.selectedProjectId || null).subscribe({
+        this.api.createOrder(amount, request80g, 'donation', projectId).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
@@ -232,12 +242,8 @@ export class DashboardComponent implements OnInit {
                     const razorpay = new Razorpay(options);
                     razorpay.open();
                 }
-                this.showDonateModal = false;
             },
-            error: () => {
-                this.isLoading = false;
-                this.showDonateModal = false;
-            }
+            error: () => { this.isLoading = false; }
         });
     }
 

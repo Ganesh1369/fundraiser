@@ -64,6 +64,50 @@
     </div>
 </div>
 
+@if (projects.length > 0) {
+<section class="mt-6">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-semibold text-accent m-0">Projects</h2>
+        <a routerLink="/admin/projects" class="text-sm font-medium text-primary hover:text-primary-500 no-underline">Manage &rarr;</a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        @for (p of projects; track p.id) {
+        <a [routerLink]="['/admin/projects', p.id]" class="block bg-white rounded-2xl p-5 shadow-soft hover:shadow-card transition-shadow no-underline">
+            <div class="flex items-center gap-3 mb-4">
+                @if (p.logo_url) {
+                    <img [src]="p.logo_url" [alt]="p.name" class="w-10 h-10 rounded-xl object-cover bg-neutral-100 shrink-0">
+                } @else {
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <lucide-icon name="heart" class="w-5 h-5 text-primary"></lucide-icon>
+                    </div>
+                }
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-semibold text-accent truncate">{{ p.name }}</div>
+                    @if (p.tagline) {
+                        <div class="text-xs text-neutral-500 truncate">{{ p.tagline }}</div>
+                    }
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-base font-bold text-accent">{{ formatCurrency(p.stats.totalRaised) }}</div>
+                    <div class="text-xs text-neutral-500 mt-0.5">Raised</div>
+                </div>
+                <div>
+                    <div class="text-base font-bold text-accent">{{ p.stats.donorCount }}</div>
+                    <div class="text-xs text-neutral-500 mt-0.5">Donors</div>
+                </div>
+                <div>
+                    <div class="text-base font-bold text-accent">{{ p.stats.eventCount }}</div>
+                    <div class="text-xs text-neutral-500 mt-0.5">Events</div>
+                </div>
+            </div>
+        </a>
+        }
+    </div>
+</section>
+}
+
 <!-- Quick Tables -->
 <div class="dashboard-grid">
     <div class="card">
