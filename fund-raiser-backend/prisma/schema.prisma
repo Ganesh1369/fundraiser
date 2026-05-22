@@ -377,7 +377,7 @@ model Accomplishment {
 // They are read-only from the application.
 
 view Leaderboard {
-  id              String   @id @db.Char(36)
+  id              String   @unique @db.Char(36)
   name            String   @db.VarChar(100)
   email           String   @db.VarChar(255)
   city            String?  @db.VarChar(100)
@@ -391,7 +391,7 @@ view Leaderboard {
 }
 
 view LeaderboardView {
-  id              String  @id @db.Char(36)
+  id              String  @unique @db.Char(36)
   name            String  @db.VarChar(100)
   email           String  @db.VarChar(255)
   phone           String  @db.VarChar(20)
