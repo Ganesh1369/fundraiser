@@ -323,8 +323,27 @@ const registerForEvent = async (eventId, registrationData) => {
         // Other
         experience_level, medical_conditions, allergies, on_medication,
         address_line_1, address_line_2, city, state, pin_code,
-        fitness_declaration, terms_accepted
+        fitness_declaration, terms_accepted,
+        // Legacy/alternate field names from older frontend forms — accept both
+        address, pincode
     } = registrationData;
+
+    // Normalize optional fields so missing values don't break NOT NULL constraints
+    // (event_registrations.on_medication / fitness_declaration / terms_accepted are NOT NULL DEFAULT).
+    const safe = {
+        on_medication: on_medication ?? false,
+        fitness_declaration: fitness_declaration ?? false,
+        terms_accepted: terms_accepted ?? true,
+        allergies: allergies ?? null,
+        emergency_contact_relationship: emergency_contact_relationship ?? null,
+        medical_conditions: medical_conditions ?? null,
+        blood_group: blood_group ?? null,
+        address_line_1: address_line_1 ?? address ?? null,
+        address_line_2: address_line_2 ?? null,
+        pin_code: pin_code ?? pincode ?? null,
+        state: state ?? null,
+        experience_level: experience_level ?? 'beginner'
+    };
 
     // 1. Validate Event
     const eventCheck = await db.query(
@@ -415,11 +434,11 @@ const registerForEvent = async (eventId, registrationData) => {
             fitness_declaration, terms_accepted
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-            eventId, userId, date_of_birth, gender, blood_group,
-            emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
-            experience_level, medical_conditions, allergies, on_medication,
-            address_line_1, address_line_2, city, state, pin_code,
-            fitness_declaration, terms_accepted
+            eventId, userId, date_of_birth, gender, safe.blood_group,
+            emergency_contact_name, emergency_contact_phone, safe.emergency_contact_relationship,
+            safe.experience_level, safe.medical_conditions, safe.allergies, safe.on_medication,
+            safe.address_line_1, safe.address_line_2, city, safe.state, safe.pin_code,
+            safe.fitness_declaration, safe.terms_accepted
         ]
     );
 

@@ -33,7 +33,6 @@
                     <th>Phone</th>
                     <th>Type</th>
                     <th>City</th>
-                    <th>Fee</th>
                     <th>Registered</th>
                 </tr>
             </thead>
@@ -45,11 +44,6 @@
                     <td>{{ user.phone }}</td>
                     <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
                     <td>{{ user.city || '-' }}</td>
-                    <td>
-                        <span class="fee-badge" [ngClass]="user.registration_fee_paid ? 'paid' : 'unpaid'">
-                            {{ user.registration_fee_paid ? 'Paid' : 'Not Paid' }}
-                        </span>
-                    </td>
                     <td>{{ formatDate(user.created_at) }}</td>
                 </tr>
                 }
