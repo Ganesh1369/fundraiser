@@ -328,6 +328,16 @@ const registerForEvent = async (eventId, registrationData) => {
         address, pincode
     } = registrationData;
 
+    // Required fields — the flow either authenticates an existing user (email+phone+password)
+    // or creates a new one, so all three are mandatory in both branches. Validate up front
+    // to avoid leaking TypeErrors from `email.toLowerCase()` etc. as opaque 500s.
+    if (!email || !phone || !password) {
+        throw { status: 400, message: 'Email, phone and password are required' };
+    }
+    if (!date_of_birth || !gender) {
+        throw { status: 400, message: 'Date of birth and gender are required' };
+    }
+
     // Normalize optional fields so missing values don't break NOT NULL constraints
     // (event_registrations.on_medication / fitness_declaration / terms_accepted are NOT NULL DEFAULT).
     const safe = {

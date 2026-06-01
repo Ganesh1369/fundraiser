@@ -19,3 +19,12 @@ Thumbs.db
 # Local env
 .env
 .env.local
+.env.production
+
+# Local logs
+*.log
+
+# E2E test artifacts (local-only, kept out of VCS)
+.e2e-*
+e2e-*.ps1
+seed-test-user.js
