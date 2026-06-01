@@ -28,3 +28,7 @@ Thumbs.db
 .e2e-*
 e2e-*.ps1
 seed-test-user.js
+backend-e2e.*.log
+backend-e2e.log
+ng-serve.*.log
+ng-serve.log
