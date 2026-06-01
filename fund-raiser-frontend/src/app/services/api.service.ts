@@ -103,6 +103,11 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/user/certificate-requests`, { headers: this.getHeaders() });
     }
 
+    // --- Events ---
+    getActiveEvents(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/events`);
+    }
+
     // --- Donations ---
     createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null): Observable<any> {
         const body: any = { amount, request80g, purpose };
