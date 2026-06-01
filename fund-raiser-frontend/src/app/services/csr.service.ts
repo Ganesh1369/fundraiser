@@ -25,5 +25,8 @@ export class CsrService {
     adminCreate(data: any):    Observable<any> { return this.http.post  (`${this.apiUrl}/admin/csr`,       data, { headers: this.adminHeaders() }); }
     adminUpdate(id: string, data: any): Observable<any> { return this.http.put(`${this.apiUrl}/admin/csr/${id}`, data, { headers: this.adminHeaders() }); }
     adminToggle(id: string):   Observable<any> { return this.http.patch (`${this.apiUrl}/admin/csr/${id}/toggle`, {}, { headers: this.adminHeaders() }); }
+    adminReorder(items: { id: string; display_order: number }[]): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/csr/reorder`, { items }, { headers: this.adminHeaders() });
+    }
     adminDelete(id: string):   Observable<any> { return this.http.delete(`${this.apiUrl}/admin/csr/${id}`,      { headers: this.adminHeaders() }); }
 }

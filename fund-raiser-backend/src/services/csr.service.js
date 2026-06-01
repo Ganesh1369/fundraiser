@@ -63,7 +63,34 @@ const remove = async (id) => {
     }
 };
 
+/**
+ * Atomically reassign display_order for a set of CSR activities.
+ * Body shape: [{ id, display_order }, ...]. Unknown ids are rejected (transaction rolls back).
+ */
+const reorder = async (items) => {
+    if (!Array.isArray(items) || items.length === 0) {
+        throw { status: 400, message: 'items array is required' };
+    }
+    for (const it of items) {
+        if (!it || typeof it.id !== 'string' || typeof it.display_order !== 'number') {
+            throw { status: 400, message: 'each item needs { id: string, display_order: number }' };
+        }
+    }
+    try {
+        await prisma.$transaction(
+            items.map(it => prisma.csrActivity.update({
+                where: { id: it.id },
+                data: { display_order: it.display_order }
+            }))
+        );
+    } catch (err) {
+        if (err.code === 'P2025') throw { status: 404, message: 'One or more CSR activities not found' };
+        throw err;
+    }
+    return { updated: items.length };
+};
+
 module.exports = {
     listActive, listAllForAdmin, getByIdForAdmin,
-    create, update, toggleActive, remove
+    create, update, toggleActive, remove, reorder
 };

@@ -25,7 +25,7 @@ import { LucideAngularModule } from 'lucide-angular';
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Order</th>
+                                <th style="width:90px">Order</th>
                                 <th>Title</th>
                                 <th>Partner</th>
                                 <th>Link</th>
@@ -34,9 +34,15 @@ import { LucideAngularModule } from 'lucide-angular';
                             </tr>
                         </thead>
                         <tbody>
-                            @for (c of items; track c.id) {
+                            @for (c of items; track c.id; let i = $index) {
                                 <tr>
-                                    <td>{{ c.display_order }}</td>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:4px">
+                                            <button type="button" (click)="moveUp(i)" [disabled]="i === 0 || reordering" class="btn-action" title="Move up" style="padding:2px 6px">▲</button>
+                                            <span style="min-width:1.5em; text-align:center">{{ c.display_order }}</span>
+                                            <button type="button" (click)="moveDown(i)" [disabled]="i === items.length - 1 || reordering" class="btn-action" title="Move down" style="padding:2px 6px">▼</button>
+                                        </div>
+                                    </td>
                                     <td><strong>{{ c.title }}</strong>
                                         @if (c.subtitle) { <div class="tagline">{{ c.subtitle }}</div> }
                                     </td>
@@ -79,6 +85,7 @@ import { LucideAngularModule } from 'lucide-angular';
 export class AdminCsrListComponent implements OnInit {
     items: any[] = [];
     loading = true;
+    reordering = false;
 
     constructor(
         private csr: CsrService,
@@ -97,6 +104,32 @@ export class AdminCsrListComponent implements OnInit {
                 this.cdr.detectChanges();
             },
             error: (err: any) => this.handleError(err)
+        });
+    }
+
+    moveUp(i: number): void { if (i > 0) this.swap(i, i - 1); }
+    moveDown(i: number): void { if (i < this.items.length - 1) this.swap(i, i + 1); }
+
+    private swap(a: number, b: number): void {
+        if (this.reordering) return;
+        const arr = this.items.slice();
+        [arr[a], arr[b]] = [arr[b], arr[a]];
+        // Optimistic: assign sequential display_order based on new position
+        const payload = arr.map((it, idx) => ({ id: it.id, display_order: idx }));
+        const updated = arr.map((it, idx) => ({ ...it, display_order: idx }));
+        const prev = this.items;
+        this.items = updated;
+        this.reordering = true;
+        this.cdr.detectChanges();
+
+        this.csr.adminReorder(payload).subscribe({
+            next: () => { this.reordering = false; this.cdr.detectChanges(); },
+            error: (err: any) => {
+                this.items = prev;
+                this.reordering = false;
+                alert(err.error?.message || 'Failed to reorder');
+                this.handleError(err);
+            }
         });
     }
 
