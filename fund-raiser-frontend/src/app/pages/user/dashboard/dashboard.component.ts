@@ -68,6 +68,34 @@ interface ProjectCard {
     stats: { totalRaised: number; donorCount: number; eventCount: number; donationCount: number };
 }
 
+interface EventCard {
+    id: string;
+    event_name: string;
+    event_type: string;
+    event_date: string;
+    event_location: string;
+    description: string | null;
+    banner_url: string | null;
+    project_id: string | null;
+    project_name: string | null;
+    project_slug: string | null;
+}
+
+interface Accomplishment {
+    id: string;
+    title: string;
+    description: string | null;
+    metric_value: string | null;
+    metric_unit: string | null;
+    icon: string | null;
+}
+
+interface ProjectDetail extends ProjectCard {
+    description: string | null;
+    mission: string | null;
+    accomplishments: Accomplishment[];
+}
+
 @Component({
     selector: 'app-dashboard',
     standalone: true,
@@ -83,6 +111,8 @@ export class DashboardComponent implements OnInit {
     referralStats: ReferralStats | null = null;
     certificateRequests: CertificateRequest[] = [];
     projects: ProjectCard[] = [];
+    events: EventCard[] = [];
+    projectDetails: ProjectDetail[] = [];
 
     activeTab = 'overview';
     donationAmount = 100;
@@ -115,6 +145,7 @@ export class DashboardComponent implements OnInit {
         this.loadDashboardData();
         this.loadProfile();
         this.loadProjects();
+        this.loadEvents();
     }
 
     loadProjects(): void {
@@ -126,10 +157,59 @@ export class DashboardComponent implements OnInit {
                         this.selectedProjectId = this.projects[0].id;
                     }
                     this.cdr.detectChanges();
+                    this.loadDonatedProjectDetails();
                 }
             },
             error: () => { }
         });
+    }
+
+    loadEvents(): void {
+        this.api.getActiveEvents().subscribe({
+            next: (res: any) => {
+                if (res?.success) {
+                    this.events = (res.data || []).slice(0, 3);
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { }
+        });
+    }
+
+    /** Fetch full project records (with accomplishments) for projects the user has donated to.
+     *  Falls back to the first 2 active projects when the user has no donations yet. */
+    private loadDonatedProjectDetails(): void {
+        if (!this.projects.length) return;
+
+        const donatedIds = new Set(
+            this.donations
+                .filter(d => d.status === 'completed' && d.projectId)
+                .map(d => d.projectId as string)
+        );
+
+        let targets = this.projects.filter(p => donatedIds.has(p.id));
+        if (targets.length === 0) targets = this.projects.slice(0, 2);
+
+        const slugs = targets.map(p => p.slug);
+        const details: ProjectDetail[] = [];
+        let pending = slugs.length;
+        if (!pending) return;
+
+        for (const slug of slugs) {
+            this.projectService.getBySlug(slug).subscribe({
+                next: (res: any) => {
+                    if (res?.success && res.data) details.push(res.data);
+                },
+                error: () => { },
+                complete: () => {
+                    pending -= 1;
+                    if (pending === 0) {
+                        this.projectDetails = details;
+                        this.cdr.detectChanges();
+                    }
+                }
+            });
+        }
     }
 
     get selectedProject(): ProjectCard | null {
@@ -167,6 +247,8 @@ export class DashboardComponent implements OnInit {
                 if (res.referrals?.success) this.referralStats = res.referrals.data;
                 if (res.certificates?.success) this.certificateRequests = res.certificates.data;
                 this.cdr.detectChanges();
+                // Donations now known; refresh donated-to project details (no-op if projects haven't loaded yet — the projects callback will re-run this).
+                this.loadDonatedProjectDetails();
             },
             error: (err: any) => {
                 if (err.status === 401 || err.status === 403) this.logout();
@@ -394,6 +476,26 @@ export class DashboardComponent implements OnInit {
         return new Date(dateString).toLocaleDateString('en-IN', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
+    }
+
+    formatEventDate(dateString: string): string {
+        return new Date(dateString).toLocaleDateString('en-IN', {
+            weekday: 'short', day: 'numeric', month: 'short'
+        });
+    }
+
+    get hasDonatedProjects(): boolean {
+        const donatedIds = new Set(
+            this.donations
+                .filter(d => d.status === 'completed' && d.projectId)
+                .map(d => d.projectId as string)
+        );
+        return donatedIds.size > 0;
+    }
+
+    truncate(text: string | null | undefined, max: number): string {
+        if (!text) return '';
+        return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
     }
 
     downloadCertificate(cert: CertificateRequest): void {
