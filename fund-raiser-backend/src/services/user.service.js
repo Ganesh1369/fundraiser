@@ -64,10 +64,10 @@ const getDonations = async (userId, period) => {
     const params = [userId];
 
     switch (period) {
-        case 'day': dateFilter = "AND created_at >= NOW() - INTERVAL 1 DAY"; break;
-        case 'week': dateFilter = "AND created_at >= NOW() - INTERVAL 1 WEEK"; break;
-        case 'month': dateFilter = "AND created_at >= NOW() - INTERVAL 1 MONTH"; break;
-        case 'year': dateFilter = "AND created_at >= NOW() - INTERVAL 1 YEAR"; break;
+        case 'day': dateFilter = "AND d.created_at >= NOW() - INTERVAL 1 DAY"; break;
+        case 'week': dateFilter = "AND d.created_at >= NOW() - INTERVAL 1 WEEK"; break;
+        case 'month': dateFilter = "AND d.created_at >= NOW() - INTERVAL 1 MONTH"; break;
+        case 'year': dateFilter = "AND d.created_at >= NOW() - INTERVAL 1 YEAR"; break;
     }
 
     const result = await db.query(
