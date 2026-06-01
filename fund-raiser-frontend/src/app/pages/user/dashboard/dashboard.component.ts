@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
 import { ProjectService } from '../../../services/project.service';
+import { CsrService } from '../../../services/csr.service';
 import { ToastService } from '../../../services/toast.service';
 
 declare var Razorpay: any;
@@ -96,6 +97,17 @@ interface ProjectDetail extends ProjectCard {
     accomplishments: Accomplishment[];
 }
 
+interface CsrCard {
+    id: string;
+    title: string;
+    subtitle: string | null;
+    partner_name: string | null;
+    logo_url: string | null;
+    hero_image_url: string | null;
+    summary: string | null;
+    link_url: string | null;
+}
+
 @Component({
     selector: 'app-dashboard',
     standalone: true,
@@ -113,6 +125,7 @@ export class DashboardComponent implements OnInit {
     projects: ProjectCard[] = [];
     events: EventCard[] = [];
     projectDetails: ProjectDetail[] = [];
+    csr: CsrCard[] = [];
 
     activeTab = 'overview';
     donationAmount = 100;
@@ -135,6 +148,7 @@ export class DashboardComponent implements OnInit {
         private router: Router,
         private api: ApiService,
         private projectService: ProjectService,
+        private csrService: CsrService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService,
         private zone: NgZone
@@ -146,6 +160,19 @@ export class DashboardComponent implements OnInit {
         this.loadProfile();
         this.loadProjects();
         this.loadEvents();
+        this.loadCsr();
+    }
+
+    loadCsr(): void {
+        this.csrService.listActive().subscribe({
+            next: (res: any) => {
+                if (res?.success) {
+                    this.csr = res.data || [];
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { }
+        });
     }
 
     loadProjects(): void {

@@ -76,6 +76,7 @@ app.use('/api/donations', paymentLimiter, donationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', require('./routes/event.routes'));
 app.use('/api', require('./routes/project.routes'));
+app.use('/api', require('./routes/csr.routes'));
 app.use('/api/webhooks', webhookRoutes);
 
 // Health check endpoint

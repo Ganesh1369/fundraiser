@@ -87,6 +87,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/events/admin-event-detail/admin-event-detail.component').then(m => m.AdminEventDetailComponent)
             },
             {
+                path: 'csr',
+                loadComponent: () => import('./pages/admin/csr/admin-csr-list/admin-csr-list.component').then(m => m.AdminCsrListComponent)
+            },
+            {
+                path: 'csr/:id',
+                loadComponent: () => import('./pages/admin/csr/admin-csr-detail/admin-csr-detail.component').then(m => m.AdminCsrDetailComponent)
+            },
+            {
                 path: 'users/:slug',
                 loadComponent: () => import('./pages/admin/users/admin-user-detail/admin-user-detail.component').then(m => m.AdminUserDetailComponent)
             }

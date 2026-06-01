@@ -372,6 +372,27 @@ model Accomplishment {
   @@map("accomplishments")
 }
 
+// Phase 2.2 Day 1 — CSR partnerships shown as a carousel on the user dashboard.
+// Admin-managed via /api/admin/csr; public list at /api/csr/active.
+model CsrActivity {
+  id              String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  title           String   @db.VarChar(200)
+  subtitle        String?  @db.VarChar(255)
+  partner_name    String?  @db.VarChar(150)
+  logo_url        String?  @db.VarChar(500)
+  hero_image_url  String?  @db.VarChar(500)
+  summary         String?  @db.Text
+  link_url        String?  @db.VarChar(500)
+  display_order   Int      @default(0)
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now()) @db.DateTime(0)
+  updated_at      DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  @@index([is_active], map: "idx_csr_activities_is_active")
+  @@index([display_order], map: "idx_csr_activities_display_order")
+  @@map("csr_activities")
+}
+
 // ===== Views =====
 // Both views are pre-existing in prod; included so Prisma introspection stays in sync.
 // They are read-only from the application.
