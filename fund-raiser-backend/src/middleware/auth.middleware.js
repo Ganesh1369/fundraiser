@@ -105,12 +105,14 @@ const verifyAdmin = async (req, res, next) => {
     }
 };
 
-// Check if user is organization type
-const isOrganization = (req, res, next) => {
-    if (req.user.user_type !== 'organization') {
+// 80G certificates are available to individuals and organizations (both are
+// tax-eligible). Students are excluded. The dashboard mirrors this gate at
+// `dashboard.component.html` — keep the two in sync.
+const canRequestTaxCertificate = (req, res, next) => {
+    if (req.user.user_type !== 'organization' && req.user.user_type !== 'individual') {
         return res.status(403).json({
             success: false,
-            message: 'This feature is only available for organization users'
+            message: 'The 80G certificate is only available for individual and organization donors.'
         });
     }
     next();
@@ -119,5 +121,5 @@ const isOrganization = (req, res, next) => {
 module.exports = {
     verifyToken,
     verifyAdmin,
-    isOrganization
+    canRequestTaxCertificate
 };

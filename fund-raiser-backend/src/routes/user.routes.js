@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const userController = require('../controllers/user.controller');
-const { verifyToken, isOrganization } = require('../middleware/auth.middleware');
+const { verifyToken, canRequestTaxCertificate } = require('../middleware/auth.middleware');
 
 // Profile pic upload config — saves to frontend public dir
 const uploadDir = path.join(__dirname, '../../../fund-raiser-frontend/public/uploads/profile');
@@ -57,10 +57,10 @@ router.get('/referrals', userController.getReferrals);
 router.get('/referrals/history', userController.getReferralPointsHistory);
 
 // Request 80G certificate (organization only)
-router.post('/certificate-request', isOrganization, userController.requestCertificate);
+router.post('/certificate-request', canRequestTaxCertificate, userController.requestCertificate);
 
 // Get certificate request status
-router.get('/certificate-requests', isOrganization, userController.getCertificateRequests);
+router.get('/certificate-requests', canRequestTaxCertificate, userController.getCertificateRequests);
 
 // Download generated 80G PDF (any authenticated user; ownership checked in service)
 router.get('/certificates/:id/download', userController.downloadCertificate);
