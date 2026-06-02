@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +19,12 @@ export class AdminLoginComponent {
     isLoading = false;
     errorMessage = '';
 
-    constructor(private router: Router, private api: ApiService) { }
+    constructor(
+        private router: Router,
+        private api: ApiService,
+        private zone: NgZone,
+        private cdr: ChangeDetectorRef
+    ) { }
 
     onSubmit(): void {
         if (!this.username || !this.password) {
@@ -32,18 +37,32 @@ export class AdminLoginComponent {
 
         this.api.adminLogin(this.username, this.password).subscribe({
             next: (data: any) => {
-                this.isLoading = false;
-                if (data.success) {
-                    localStorage.setItem('adminToken', data.data.token);
-                    localStorage.setItem('admin', JSON.stringify(data.data.admin));
-                    this.router.navigate(['/admin']);
-                } else {
-                    this.errorMessage = data.message || 'Login failed';
-                }
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    if (data.success) {
+                        localStorage.setItem('adminToken', data.data.token);
+                        localStorage.setItem('admin', JSON.stringify(data.data.admin));
+                        this.router.navigate(['/admin']);
+                    } else {
+                        this.errorMessage = data.message || 'Login failed';
+                        this.cdr.markForCheck();
+                    }
+                });
             },
             error: (err: any) => {
-                this.isLoading = false;
-                this.errorMessage = err.error?.message || 'Connection error. Please try again.';
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    console.error('[admin-login] error', err, 'err.error =', err?.error);
+                    const body = err?.error;
+                    let msg: string | undefined;
+                    if (typeof body === 'string') {
+                        try { msg = JSON.parse(body)?.message; } catch { msg = body; }
+                    } else if (body && typeof body === 'object') {
+                        msg = body.message;
+                    }
+                    this.errorMessage = msg || err?.message || `Login failed (${err?.status ?? 'network error'})`;
+                    this.cdr.markForCheck();
+                });
             }
         });
     }
