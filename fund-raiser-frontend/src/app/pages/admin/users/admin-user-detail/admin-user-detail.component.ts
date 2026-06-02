@@ -5,11 +5,12 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../../services/api.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { EventTypePipe } from '../../../../pipes/event-type.pipe';
 
 @Component({
     selector: 'app-admin-user-detail',
     standalone: true,
-    imports: [CommonModule, RouterModule, LucideAngularModule],
+    imports: [CommonModule, RouterModule, LucideAngularModule, EventTypePipe],
     templateUrl: './admin-user-detail.component.html',
     styleUrl: './admin-user-detail.component.css'
 })

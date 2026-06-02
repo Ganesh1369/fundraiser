@@ -3,7 +3,7 @@
     <div class="bg-primary/90 backdrop-blur-md px-5 py-6 text-white">
         <a [routerLink]="['/events', event.id]" class="text-sm text-white/80 hover:text-white no-underline">&larr; Back</a>
         <div class="max-w-2xl mx-auto text-center mt-3">
-            <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">{{ event.event_type }}</span>
+            <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">{{ event.event_type | eventType }}</span>
             <h1 class="text-2xl md:text-3xl font-bold mb-1">Register for {{ event.event_name }}</h1>
             <p class="text-sm opacity-90 m-0"><lucide-icon name="calendar" class="w-4 h-4 inline-block align-middle"></lucide-icon> {{ event.event_date | date:'fullDate' }} &bull; <lucide-icon name="map-pin" class="w-4 h-4 inline-block align-middle"></lucide-icon> {{ event.event_location }}</p>
         </div>

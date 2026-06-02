@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { EventTypePipe } from '../../../pipes/event-type.pipe';
 
 interface Highlight {
   icon: string;
@@ -10,10 +11,16 @@ interface Highlight {
   description: string;
 }
 
+interface ScheduleItem {
+  time?: string;
+  title?: string;
+  description?: string;
+}
+
 @Component({
   selector: 'app-event-landing',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule, EventTypePipe],
   template: `
     <!-- Loading -->
     <div class="min-h-screen flex items-center justify-center bg-neutral-50" *ngIf="loading">
@@ -68,7 +75,7 @@ interface Highlight {
               [ngClass]="event.hero_banner_url || event.banner_url ? 'bg-primary text-white' : 'bg-primary-50 text-primary-600'">
               <span class="w-2 h-2 bg-white rounded-full animate-pulse" *ngIf="event.hero_banner_url || event.banner_url"></span>
               <span class="w-2 h-2 bg-primary rounded-full animate-pulse" *ngIf="!(event.hero_banner_url || event.banner_url)"></span>
-              {{ event.event_type }}
+              {{ event.event_type | eventType }}
             </div>
             <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-5">
               {{ event.event_name }}
@@ -108,7 +115,7 @@ interface Highlight {
               <div class="flex items-center gap-2 text-xs text-neutral-500 mb-3 uppercase tracking-wider">
                 <span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span> Event Info
               </div>
-              <div class="text-2xl font-bold text-accent mb-1 capitalize">{{ event.event_type }}</div>
+              <div class="text-2xl font-bold text-accent mb-1">{{ event.event_type | eventType }}</div>
               <div class="text-xs text-neutral-500 mb-5">{{ event.event_date | date:'MMM yyyy' }}</div>
               <div class="flex flex-col gap-2.5 text-sm text-neutral-600">
                 <div class="flex items-start gap-2"><lucide-icon name="calendar" class="w-4 h-4 text-primary mt-0.5 shrink-0"></lucide-icon> {{ event.event_date | date:'fullDate' }}</div>
@@ -130,7 +137,7 @@ interface Highlight {
               <div class="text-xs text-white/60 uppercase tracking-wider">Event Date</div>
             </div>
             <div>
-              <div class="text-xl md:text-2xl font-bold text-primary mb-1 capitalize">{{ event.event_type }}</div>
+              <div class="text-xl md:text-2xl font-bold text-primary mb-1">{{ event.event_type | eventType }}</div>
               <div class="text-xs text-white/60 uppercase tracking-wider">Category</div>
             </div>
             <div>
@@ -213,8 +220,20 @@ interface Highlight {
             <span class="text-xs font-semibold uppercase tracking-widest text-primary mb-3 block">Schedule</span>
             <h2 class="text-3xl md:text-4xl font-bold">Event <span class="text-primary">Schedule</span></h2>
           </div>
-          <div class="bg-white rounded-2xl p-8 shadow-soft">
-            <p class="text-base text-neutral-600 leading-relaxed whitespace-pre-line m-0">{{ event.schedule }}</p>
+          <div class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
+            <ng-container *ngIf="scheduleItems; else schedulePlain">
+              <ol class="relative border-l-2 border-primary/20 ml-4 md:ml-6 space-y-6 m-0 p-0 list-none">
+                <li *ngFor="let item of scheduleItems" class="pl-6 relative">
+                  <span class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary border-4 border-white shadow"></span>
+                  <div class="text-xs font-semibold uppercase tracking-wider text-primary mb-1" *ngIf="item.time">{{ item.time }}</div>
+                  <div class="text-base md:text-lg font-semibold text-accent mb-1" *ngIf="item.title">{{ item.title }}</div>
+                  <p class="text-sm text-neutral-600 leading-relaxed m-0" *ngIf="item.description">{{ item.description }}</p>
+                </li>
+              </ol>
+            </ng-container>
+            <ng-template #schedulePlain>
+              <p class="text-base text-neutral-600 leading-relaxed whitespace-pre-line m-0">{{ event.schedule }}</p>
+            </ng-template>
           </div>
         </div>
       </section>
@@ -385,6 +404,21 @@ export class EventLandingComponent implements OnInit {
   get highlights(): Highlight[] {
     const type = (this.event?.event_type || '').toLowerCase();
     return this.highlightLibrary[type] || this.genericHighlights;
+  }
+
+  get scheduleItems(): ScheduleItem[] | null {
+    const raw = this.event?.schedule;
+    if (!raw || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith('[') && !trimmed.startsWith('{')) return null;
+    try {
+      const parsed = JSON.parse(trimmed);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      const items = arr.filter((x: any) => x && typeof x === 'object');
+      return items.length ? items as ScheduleItem[] : null;
+    } catch {
+      return null;
+    }
   }
 
   get heroTagline(): string {

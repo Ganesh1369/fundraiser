@@ -25,6 +25,7 @@
                     <th>Date</th>
                     <th>Type</th>
                     <th>Status</th>
+                    <th>Event Page</th>
                     <th>Registration Link</th>
                     <th>Registrations</th>
                     <th>Actions</th>
@@ -38,12 +39,22 @@
                         <div class="event-location">{{ event.event_location }}</div>
                     </td>
                     <td>{{ formatDate(event.event_date) }}</td>
-                    <td><span class="badge event-type">{{ event.event_type }}</span></td>
+                    <td><span class="badge event-type">{{ event.event_type | eventType }}</span></td>
                     <td>
                         <span class="status-badge"
                             [ngClass]="event.registration_open ? 'status-open' : 'status-closed'">
                             {{ event.registration_open ? 'Open' : 'Closed' }}
                         </span>
+                    </td>
+                    <td class="link-cell">
+                        <div class="link-wrapper">
+                            <a [href]="getLandingLink(event.id)" target="_blank" class="reg-link">
+                                /events/{{ event.id }}
+                            </a>
+                            <button (click)="copyLandingLink(event.id)" class="btn-copy" [title]="copiedLandingId === event.id ? 'Copied!' : 'Copy link'">
+                                <lucide-icon [name]="copiedLandingId === event.id ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
                     </td>
                     <td class="link-cell">
                         <div class="link-wrapper">

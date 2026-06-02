@@ -5,11 +5,12 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
 import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
 import { LucideAngularModule } from 'lucide-angular';
+import { EventTypePipe } from '../../../pipes/event-type.pipe';
 
 @Component({
   selector: 'app-event-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FlatpickrDirective, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FlatpickrDirective, LucideAngularModule, EventTypePipe],
   templateUrl: './event-register.component.html',
   styleUrl: './event-register.component.css'
 })

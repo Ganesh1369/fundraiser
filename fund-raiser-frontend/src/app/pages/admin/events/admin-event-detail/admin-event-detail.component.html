@@ -57,7 +57,7 @@
                 <lucide-icon name="tag" class="stat-icon w-5 h-5"></lucide-icon>
                 <span class="stat-label">Type</span>
             </div>
-            <div class="stat-value small capitalize">{{ event.event_type }}</div>
+            <div class="stat-value small">{{ event.event_type | eventType }}</div>
         </div>
     </div>
 
