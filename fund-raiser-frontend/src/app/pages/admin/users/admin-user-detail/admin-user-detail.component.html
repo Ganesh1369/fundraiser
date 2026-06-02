@@ -233,7 +233,7 @@
                 @for (er of eventRegistrations; track er.event_id) {
                 <tr>
                     <td class="name-cell">{{ er.event_name }}</td>
-                    <td><span class="badge">{{ er.event_type }}</span></td>
+                    <td><span class="badge">{{ er.event_type | eventType }}</span></td>
                     <td>{{ formatDate(er.event_date) }}</td>
                     <td><span class="status-badge" [ngClass]="'reg-' + er.registration_status">{{ er.registration_status }}</span></td>
                 </tr>

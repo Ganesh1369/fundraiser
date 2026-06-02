@@ -33,11 +33,13 @@ import { LucideAngularModule } from 'lucide-angular';
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Event Type *</label>
-            <select formControlName="event_type" class="form-input">
-              <option value="marathon">Marathon</option>
-              <option value="cyclothon">Cyclothon</option>
-              <option value="walkathon">Walkathon</option>
-            </select>
+            <input type="text" formControlName="event_type" class="form-input" placeholder="e.g., Marathon, Cyclothon, Mini Marathon" maxlength="50" list="event-type-suggestions">
+            <datalist id="event-type-suggestions">
+              <option value="Marathon">
+              <option value="Cyclothon">
+              <option value="Walkathon">
+            </datalist>
+            <p class="form-error" *ngIf="f['event_type'].touched && f['event_type'].invalid">Event type is required</p>
           </div>
           <div class="form-group">
             <label class="form-label">Date *</label>
@@ -94,7 +96,7 @@ export class AdminEventCreateComponent implements OnInit {
   ) {
     this.eventForm = this.fb.group({
       event_name: ['', Validators.required],
-      event_type: ['marathon', Validators.required],
+      event_type: ['', Validators.required],
       event_date: ['', Validators.required],
       event_location: ['', Validators.required],
       banner_url: [''],

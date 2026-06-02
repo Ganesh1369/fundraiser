@@ -5,6 +5,22 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
 /**
+ * Sanitize a free-form event_type into a slug for storage.
+ * "Mini Marathon!" → "mini-marathon"; falls back to "event" if empty.
+ * Stored slug is also reused as a CSS theme class (theme-<slug>) on the frontend.
+ */
+const sanitizeEventType = (raw) => {
+    if (raw === undefined || raw === null) return undefined;
+    const slug = String(raw)
+        .toLowerCase()
+        .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 50);
+    return slug || 'event';
+};
+
+/**
  * Resolve the project_id to attach to a new event. Falls back to ROOTS so every
  * event has a project (locked decision §14).
  */
@@ -30,6 +46,7 @@ const createEvent = async (eventData) => {
 
     const eventId = uuidv4();
     const resolvedProjectId = await resolveProjectId(project_id);
+    const eventTypeSlug = sanitizeEventType(event_type) || 'event';
     await db.query(
         `INSERT INTO events (
             id, project_id, event_name, event_type, event_date, event_location,
@@ -37,7 +54,7 @@ const createEvent = async (eventData) => {
             contact_name, contact_phone, contact_email
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-            eventId, resolvedProjectId, event_name, event_type, event_date, event_location,
+            eventId, resolvedProjectId, event_name, eventTypeSlug, event_date, event_location,
             description, banner_url, hero_banner_url, schedule, venue_details,
             contact_name, contact_phone, contact_email
         ]
@@ -63,7 +80,7 @@ const getAllEvents = async ({ page = 1, limit = 20, search, type, projectId }) =
 
     if (type) {
         whereConditions.push(`e.event_type = ?`);
-        params.push(type);
+        params.push(sanitizeEventType(type));
     }
 
     if (projectId) {
@@ -133,6 +150,8 @@ const updateEvent = async (id, eventData) => {
         contact_name, contact_phone, contact_email
     } = eventData;
 
+    const eventTypeSlug = sanitizeEventType(event_type);
+
     const updateResult = await db.query(
         `UPDATE events
          SET event_name = COALESCE(?, event_name),
@@ -150,7 +169,7 @@ const updateEvent = async (id, eventData) => {
              contact_email = COALESCE(?, contact_email)
          WHERE id = ?`,
         [
-            event_name, event_type, event_date, event_location,
+            event_name, eventTypeSlug, event_date, event_location,
             description, banner_url, project_id,
             hero_banner_url, schedule, venue_details,
             contact_name, contact_phone, contact_email, id
