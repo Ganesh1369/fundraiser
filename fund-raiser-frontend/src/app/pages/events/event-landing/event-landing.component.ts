@@ -37,9 +37,9 @@ interface ScheduleItem {
             <span class="hidden sm:inline truncate max-w-[180px] md:max-w-xs">{{ event.event_name }}</span>
           </a>
           <div class="flex items-center gap-2 sm:gap-3">
-            <a href="#about" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline transition-colors">About</a>
-            <a href="#how" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline transition-colors">How it works</a>
-            <a href="#venue" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline transition-colors">Venue</a>
+            <a href="#about" (click)="scrollTo($event, 'about')" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline transition-colors cursor-pointer">About</a>
+            <a href="#how" (click)="scrollTo($event, 'how')" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline transition-colors cursor-pointer">How it works</a>
+            <a href="#venue" *ngIf="event.venue_details" (click)="scrollTo($event, 'venue')" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline transition-colors cursor-pointer">Venue</a>
             <button (click)="shareEvent()" class="relative px-3 sm:px-4 py-2 border border-neutral-200 text-neutral-700 text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors inline-flex items-center gap-1.5">
               <lucide-icon name="share-2" class="w-4 h-4"></lucide-icon>
               <span class="hidden sm:inline">Share</span>
@@ -47,8 +47,14 @@ interface ScheduleItem {
             </button>
             <a *ngIf="event.registration_open"
               [routerLink]="['/events', event.id, 'register']"
+              target="_blank" rel="noopener"
               class="px-4 sm:px-5 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors no-underline">
               Register
+            </a>
+            <a routerLink="/login"
+              target="_blank" rel="noopener"
+              class="px-4 sm:px-5 py-2 border border-neutral-200 text-neutral-700 text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors no-underline">
+              Login
             </a>
           </div>
         </div>
@@ -62,7 +68,9 @@ interface ScheduleItem {
           class="absolute inset-0 bg-cover bg-center"
           [style.backgroundImage]="'url(' + (event.hero_banner_url || event.banner_url) + ')'"></div>
         <div *ngIf="event.hero_banner_url || event.banner_url"
-          class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-black/85"></div>
+          class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/80 to-black/95"></div>
+        <div *ngIf="event.hero_banner_url || event.banner_url"
+          class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/10"></div>
         <!-- Soft blobs (only when no banner) -->
         <ng-container *ngIf="!(event.hero_banner_url || event.banner_url)">
           <div class="absolute top-20 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
@@ -77,11 +85,12 @@ interface ScheduleItem {
               <span class="w-2 h-2 bg-primary rounded-full animate-pulse" *ngIf="!(event.hero_banner_url || event.banner_url)"></span>
               {{ event.event_type | eventType }}
             </div>
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-5">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-5"
+              [ngClass]="event.hero_banner_url || event.banner_url ? 'text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]' : 'text-accent'">
               {{ event.event_name }}
             </h1>
             <p class="text-base md:text-lg max-w-lg mb-7 leading-relaxed"
-              [ngClass]="event.hero_banner_url || event.banner_url ? 'text-white/85' : 'text-neutral-500'">
+              [ngClass]="event.hero_banner_url || event.banner_url ? 'text-white/90 drop-shadow-[0_1px_6px_rgba(0,0,0,0.6)]' : 'text-neutral-500'">
               {{ heroTagline }}
             </p>
             <div class="flex flex-wrap gap-3 mb-8">
@@ -94,12 +103,6 @@ interface ScheduleItem {
                 class="px-7 py-3.5 bg-neutral-200 text-neutral-500 font-semibold rounded-xl inline-block">
                 Registration Closed
               </span>
-              <a href="#about" class="px-7 py-3.5 border-2 font-semibold rounded-xl transition-all no-underline"
-                [ngClass]="event.hero_banner_url || event.banner_url
-                  ? 'border-white/30 text-white hover:bg-white/10'
-                  : 'border-neutral-200 text-neutral-700 hover:border-primary hover:text-primary'">
-                Event Details
-              </a>
             </div>
             <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm"
               [ngClass]="event.hero_banner_url || event.banner_url ? 'text-white/85' : 'text-neutral-500'">
@@ -153,7 +156,7 @@ interface ScheduleItem {
       </section>
 
       <!-- About / Highlights -->
-      <section id="about" class="py-16 px-5 bg-white">
+      <section id="about" class="py-16 px-5 bg-white scroll-mt-20">
         <div class="max-w-6xl mx-auto">
           <div class="text-center max-w-lg mx-auto mb-12">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary mb-3 block">Highlights</span>
@@ -183,7 +186,7 @@ interface ScheduleItem {
       </section>
 
       <!-- How It Works -->
-      <section id="how" class="py-16 px-5 bg-white">
+      <section id="how" class="py-16 px-5 bg-white scroll-mt-20">
         <div class="max-w-4xl mx-auto">
           <div class="text-center max-w-lg mx-auto mb-12">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary mb-3 block">How to Join</span>
@@ -239,7 +242,7 @@ interface ScheduleItem {
       </section>
 
       <!-- Venue -->
-      <section id="venue" *ngIf="event.venue_details" class="py-16 px-5 bg-white">
+      <section id="venue" *ngIf="event.venue_details" class="py-16 px-5 bg-white scroll-mt-20">
         <div class="max-w-3xl mx-auto">
           <div class="text-center mb-8">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary mb-3 block">Where</span>
@@ -455,6 +458,11 @@ export class EventLandingComponent implements OnInit {
     } else {
       this.loading = false;
     }
+  }
+
+  scrollTo(ev: Event, id: string) {
+    ev.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   shareEvent() {
