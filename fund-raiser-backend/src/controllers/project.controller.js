@@ -19,6 +19,13 @@ exports.getBySlug = async (req, res, next) => {
     } catch (error) { handleError(res, next, error); }
 };
 
+exports.getCsrSponsorsBySlug = async (req, res, next) => {
+    try {
+        const sponsors = await projectService.getCsrSponsorsBySlug(req.params.slug);
+        res.json({ success: true, data: sponsors });
+    } catch (error) { handleError(res, next, error); }
+};
+
 exports.adminList = async (req, res, next) => {
     try {
         const projects = await projectService.listAllForAdmin();

@@ -109,10 +109,23 @@ export class ApiService {
     }
 
     // --- Donations ---
-    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null): Observable<any> {
+    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null, csrReferenceNumber?: string | null): Observable<any> {
         const body: any = { amount, request80g, purpose };
         if (projectId) body.projectId = projectId;
+        if (csrReferenceNumber) body.csrReferenceNumber = csrReferenceNumber;
         return this.http.post(`${this.apiUrl}/donations/create-order`, body, { headers: this.getHeaders() });
+    }
+
+    getCsrSponsors(projectSlug: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/projects/${projectSlug}/csr-sponsors`);
+    }
+
+    getCsrSummary(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/user/csr-summary`, { headers: this.getHeaders() });
+    }
+
+    resumeDonation(donationId: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/donations/resume`, { donationId }, { headers: this.getHeaders() });
     }
 
     verifyPayment(data: any): Observable<any> {

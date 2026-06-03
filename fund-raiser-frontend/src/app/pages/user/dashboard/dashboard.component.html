@@ -258,6 +258,112 @@
             </div>
         </section>
 
+        <!-- Corporate CSR rollup (org users only, when summary returns) -->
+        @if (csrSummary) {
+        <section class="mb-8 bg-white rounded-2xl shadow-soft overflow-hidden">
+            <div class="px-6 py-5 border-b border-neutral-100 flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-accent/10 text-accent">CSR</span>
+                        <h2 class="text-base font-semibold text-accent m-0">Your CSR contributions</h2>
+                    </div>
+                    <p class="text-xs text-neutral-500 m-0 mt-1">Aggregate view for Form CSR-2 reporting.</p>
+                </div>
+            </div>
+
+            <!-- Headline numbers -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-0 border-b border-neutral-100">
+                <div class="px-5 py-4 border-r border-neutral-100">
+                    <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Lifetime CSR</div>
+                    <div class="text-lg font-bold text-accent">{{ formatCurrency(csrSummary.totalAmount) }}</div>
+                    <div class="text-xs text-neutral-400 mt-0.5">{{ csrSummary.donationCount }} {{ csrSummary.donationCount === 1 ? 'donation' : 'donations' }}</div>
+                </div>
+                <div class="px-5 py-4 lg:border-r border-neutral-100">
+                    <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">FY {{ csrSummary.currentFy.label }}</div>
+                    <div class="text-lg font-bold text-primary">{{ formatCurrency(csrSummary.currentFy.amount) }}</div>
+                    <div class="text-xs text-neutral-400 mt-0.5">current fiscal year</div>
+                </div>
+                <div class="px-5 py-4 border-r border-neutral-100">
+                    <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">FY {{ csrSummary.lastFy.label }}</div>
+                    <div class="text-lg font-bold text-neutral-600">{{ formatCurrency(csrSummary.lastFy.amount) }}</div>
+                    <div class="text-xs text-neutral-400 mt-0.5">last fiscal year</div>
+                </div>
+                <div class="px-5 py-4">
+                    <div class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Projects funded</div>
+                    <div class="text-lg font-bold text-accent">{{ csrSummary.byProject.length }}</div>
+                    <div class="text-xs text-neutral-400 mt-0.5">{{ csrSummary.byProject.length === 1 ? 'project' : 'projects' }}</div>
+                </div>
+            </div>
+
+            <!-- By project + by FY (when there's data) -->
+            @if (csrSummary.byProject.length > 0) {
+            <div class="grid lg:grid-cols-2 gap-0">
+                <div class="px-6 py-5 lg:border-r border-neutral-100">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">By project</h3>
+                    <div class="flex flex-col gap-2.5">
+                        @for (p of csrSummary.byProject; track p.projectName) {
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-accent truncate">{{ p.projectName }}</div>
+                                <div class="text-[10px] text-neutral-400 uppercase tracking-wider">{{ p.donationCount }} {{ p.donationCount === 1 ? 'donation' : 'donations' }}</div>
+                            </div>
+                            <div class="text-sm font-semibold text-primary shrink-0 ml-3">{{ formatCurrency(p.totalAmount) }}</div>
+                        </div>
+                        }
+                    </div>
+                </div>
+                @if (csrSummary.byFy.length > 0) {
+                <div class="px-6 py-5">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">By fiscal year</h3>
+                    <div class="flex flex-col gap-2.5">
+                        @for (fy of csrSummary.byFy; track fy.label) {
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-accent">FY {{ fy.label }}</div>
+                                <div class="text-[10px] text-neutral-400 uppercase tracking-wider">{{ fy.donationCount }} {{ fy.donationCount === 1 ? 'donation' : 'donations' }}</div>
+                            </div>
+                            <div class="text-sm font-semibold text-accent">{{ formatCurrency(fy.totalAmount) }}</div>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Recent receipts (when present) -->
+            @if (csrSummary.recentReceipts.length > 0) {
+            <div class="px-6 py-5 border-t border-neutral-100">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">Recent receipts</h3>
+                <div class="flex flex-col gap-2">
+                    @for (r of csrSummary.recentReceipts; track r.donationId) {
+                    <div class="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold text-accent">{{ formatCurrency(r.amount) }} <span class="text-neutral-400 font-normal">&middot; {{ r.projectName || 'Unallocated' }}</span></div>
+                            <div class="text-[10px] text-neutral-400 mt-0.5">{{ formatDate(r.createdAt) }}@if (r.csrReferenceNumber) { &middot; Ref {{ r.csrReferenceNumber }} }@if (r.certificateNumber) { &middot; {{ r.certificateNumber }} }</div>
+                        </div>
+                        @if (r.pdfUrl && r.certificateId) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-full bg-accent text-white hover:bg-accent-700 transition-colors shrink-0 ml-3"
+                            (click)="downloadReceiptById(r.certificateId, r.donationId)">
+                            <lucide-icon name="download" class="w-3 h-3"></lucide-icon>
+                            Receipt
+                        </button>
+                        }
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+
+            @if (csrSummary.donationCount === 0) {
+            <div class="px-6 py-8 text-center">
+                <p class="text-sm text-neutral-500 m-0">No CSR donations yet. Tag your next donation as CSR to start tracking.</p>
+            </div>
+            }
+        </section>
+        }
+
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-2xl p-5 shadow-soft">
@@ -329,6 +435,19 @@
                                 <div class="text-xs text-neutral-400 mt-0.5">{{ formatDate(donation.createdAt) }}</div>
                             </div>
                             <div class="flex items-center gap-2">
+                                @if (donation.purpose === 'csr_donation') {
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-accent/10 text-accent" [title]="donation.csrReferenceNumber ? 'Ref: ' + donation.csrReferenceNumber : 'CSR donation'">
+                                    CSR
+                                </span>
+                                @if (donation.certificatePdfUrl && donation.certificateType === 'csr_receipt') {
+                                <button type="button"
+                                    class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-accent text-white hover:bg-accent-700 transition-colors"
+                                    (click)="downloadCsrReceipt(donation)" title="Download CSR receipt PDF">
+                                    <lucide-icon name="download" class="w-3 h-3"></lucide-icon>
+                                    Receipt
+                                </button>
+                                }
+                                }
                                 @if (donation.request80g) {
                                 <span class="px-2 py-0.5 text-xs font-medium rounded-full"
                                     [ngClass]="{
@@ -347,13 +466,14 @@
                                     }">
                                     {{ donation.status }}
                                 </span>
-                                @if (donation.status === 'failed') {
+                                @if (donation.status === 'pending' || donation.status === 'failed') {
                                 <button type="button"
                                     class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-primary text-white hover:bg-primary-500 transition-colors disabled:opacity-50"
                                     [disabled]="isLoading"
-                                    (click)="retryDonation(donation)">
+                                    (click)="retryDonation(donation)"
+                                    title="Resume this payment — opens Razorpay with the existing pending order">
                                     <lucide-icon name="arrow-right" class="w-3 h-3"></lucide-icon>
-                                    Retry
+                                    Resume payment
                                 </button>
                                 }
                             </div>
@@ -578,6 +698,42 @@
     </div>
     }
 
+    <!-- PAN Required Prompt (when user opts for 80G but PAN not on profile) -->
+    @if (showPanPrompt) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="cancelPanPrompt()">
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
+            <div class="px-6 py-6">
+                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <lucide-icon name="file-text" class="w-6 h-6 text-primary"></lucide-icon>
+                </div>
+                <h2 class="text-lg font-bold text-accent mb-2 text-center">PAN required for 80G</h2>
+                <p class="text-sm text-neutral-500 mb-5 text-center">Your PAN is needed to issue the 80G tax certificate. It will be saved to your profile.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
+                        [(ngModel)]="panPromptValue" placeholder="ABCDE1234F" maxlength="10">
+                </div>
+                <p class="text-xs text-neutral-400 mb-5">Format: 5 letters, 4 digits, 1 letter</p>
+                <div class="flex flex-col gap-2">
+                    <button class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+                        (click)="savePanAndContinue()" [disabled]="isLoading || (panPromptValue || '').trim().length !== 10">
+                        @if (isLoading) {
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Saving...
+                        } @else {
+                        Save PAN & Continue
+                        }
+                    </button>
+                    <button class="w-full py-2.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+                        (click)="skipCertAndContinue()" [disabled]="isLoading">Skip 80G & donate</button>
+                    <button class="w-full py-2.5 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+                        (click)="cancelPanPrompt()" [disabled]="isLoading">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
     <!-- Donate Modal -->
     @if (showDonateModal) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showDonateModal = false">
@@ -638,6 +794,21 @@
                     <input type="checkbox" [(ngModel)]="request80g" class="w-4 h-4 accent-primary">
                     <span>Request 80G certificate for this donation</span>
                 </label>
+                }
+
+                @if (isCsrEligible) {
+                <label class="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer mt-3 pt-3 border-t border-neutral-100">
+                    <input type="checkbox" [(ngModel)]="isCsrDonation" class="w-4 h-4 accent-primary">
+                    <span>Tag as <strong>CSR donation</strong> (eligible for Form CSR-2 receipt)</span>
+                </label>
+                @if (isCsrDonation) {
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-neutral-600 mb-1.5">CSR reference # (optional)</label>
+                    <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="PO #, board resolution #, CSR sanction letter #"
+                        [(ngModel)]="csrReferenceNumber" maxlength="50">
+                </div>
+                }
                 }
             </div>
             <div class="flex gap-3 px-6 py-4 border-t border-neutral-100">

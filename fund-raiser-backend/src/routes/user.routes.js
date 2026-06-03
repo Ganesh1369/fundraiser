@@ -50,6 +50,9 @@ router.get('/donations', userController.getDonations);
 // Get donation summary
 router.get('/donations/summary', userController.getDonationSummary);
 
+// CSR rollup for organization users (returns null for non-org)
+router.get('/csr-summary', userController.getCsrSummary);
+
 // Get referral statistics
 router.get('/referrals', userController.getReferrals);
 

@@ -21,12 +21,18 @@ export class ProfileComponent implements OnInit {
     isUploading = false;
     showAvatarMenu = false;
     showImageViewer = false;
+    showPostSavePrompt = false;
 
     profileForm: any = {
         name: '', phone: '',
         addressLine1: '', addressLine2: '', area: '', city: '', state: '', pincode: '',
         age: '', classGrade: '', schoolName: '',
-        organizationName: '', panNumber: '', userType: ''
+        organizationName: '', panNumber: '', userType: '',
+        corporate: {
+            cin: '', gstin: '', csrRegistrationNumber: '', incorporatedYear: null, industry: '',
+            authorizedSignatoryName: '', authorizedSignatoryDesignation: '',
+            authorizedSignatoryEmail: '', authorizedSignatoryPhone: ''
+        }
     };
 
     constructor(
@@ -76,6 +82,7 @@ export class ProfileComponent implements OnInit {
 
     populateForm(): void {
         if (!this.profile) return;
+        const c = this.profile.corporate || {};
         this.profileForm = {
             name: this.profile.name || '',
             phone: this.profile.phone || '',
@@ -90,7 +97,18 @@ export class ProfileComponent implements OnInit {
             schoolName: this.profile.schoolName || '',
             organizationName: this.profile.organizationName || '',
             panNumber: this.profile.panNumber || '',
-            userType: this.profile.userType || ''
+            userType: this.profile.userType || '',
+            corporate: {
+                cin: c.cin || '',
+                gstin: c.gstin || '',
+                csrRegistrationNumber: c.csrRegistrationNumber || '',
+                incorporatedYear: c.incorporatedYear || null,
+                industry: c.industry || '',
+                authorizedSignatoryName: c.authorizedSignatoryName || '',
+                authorizedSignatoryDesignation: c.authorizedSignatoryDesignation || '',
+                authorizedSignatoryEmail: c.authorizedSignatoryEmail || '',
+                authorizedSignatoryPhone: c.authorizedSignatoryPhone || ''
+            }
         };
     }
 
@@ -101,7 +119,6 @@ export class ProfileComponent implements OnInit {
             next: (res: any) => {
                 this.isSaving = false;
                 if (res.success) {
-                    this.toast.success('Profile updated successfully!');
                     this.loadProfile();
                     if (this.user) {
                         const updated = {
@@ -112,6 +129,7 @@ export class ProfileComponent implements OnInit {
                         localStorage.setItem('user', JSON.stringify(updated));
                         this.user = updated;
                     }
+                    this.showPostSavePrompt = true;
                 } else {
                     this.toast.error(res.message || 'Failed to update profile');
                 }
@@ -123,6 +141,20 @@ export class ProfileComponent implements OnInit {
                 this.cdr.detectChanges();
             }
         });
+    }
+
+    goToDashboardFromPrompt(): void {
+        this.showPostSavePrompt = false;
+        this.router.navigate(['/dashboard']);
+    }
+
+    goToDonateFromPrompt(): void {
+        this.showPostSavePrompt = false;
+        this.router.navigate(['/dashboard'], { queryParams: { donate: 1 } });
+    }
+
+    closePostSavePrompt(): void {
+        this.showPostSavePrompt = false;
     }
 
     toggleAvatarMenu(): void {

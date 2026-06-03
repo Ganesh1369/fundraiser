@@ -23,6 +23,10 @@ export class ProjectService {
         return this.http.get(`${this.apiUrl}/projects/${slug}`);
     }
 
+    getCsrSponsors(slug: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/projects/${slug}/csr-sponsors`);
+    }
+
     // --- Admin: projects ---
     adminList(): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/projects`, { headers: this.adminHeaders() });

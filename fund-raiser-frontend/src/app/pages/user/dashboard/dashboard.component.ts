@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
@@ -28,7 +28,12 @@ interface Donation {
     paymentId?: string;
     request80g?: boolean;
     projectId?: string | null;
+    purpose?: string;
+    csrReferenceNumber?: string | null;
+    certificateId?: string | null;
+    certificateType?: string | null;
     certificateStatus?: string | null;
+    certificatePdfUrl?: string | null;
 }
 
 interface DonationSummary {
@@ -108,6 +113,21 @@ interface CsrCard {
     link_url: string | null;
 }
 
+interface CsrSummary {
+    totalAmount: number;
+    donationCount: number;
+    currentFy: { label: string; amount: number };
+    lastFy: { label: string; amount: number };
+    byProject: { projectName: string; projectSlug: string | null; totalAmount: number; donationCount: number }[];
+    byFy: { label: string; totalAmount: number; donationCount: number }[];
+    recentReceipts: {
+        donationId: string; amount: number; createdAt: string;
+        csrReferenceNumber: string | null; projectName: string | null;
+        certificateId: string | null; certificateNumber: string | null;
+        certificateStatus: string | null; pdfUrl: string | null;
+    }[];
+}
+
 @Component({
     selector: 'app-dashboard',
     standalone: true,
@@ -126,10 +146,13 @@ export class DashboardComponent implements OnInit {
     events: EventCard[] = [];
     projectDetails: ProjectDetail[] = [];
     csr: CsrCard[] = [];
+    csrSummary: CsrSummary | null = null;
 
     activeTab = 'overview';
     donationAmount = 100;
     request80g = false;
+    isCsrDonation = false;
+    csrReferenceNumber = '';
     selectedProjectId = '';
     selectedFilter = 'all';
     isLoading = false;
@@ -143,6 +166,9 @@ export class DashboardComponent implements OnInit {
     profileIncomplete = false;
     addressIncomplete = false;
     showAddressPrompt = false;
+    showPanPrompt = false;
+    panPromptValue = '';
+    private pendingDonation: { amount: number; projectId: string | null } | null = null;
 
     constructor(
         private router: Router,
@@ -151,7 +177,8 @@ export class DashboardComponent implements OnInit {
         private csrService: CsrService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService,
-        private zone: NgZone
+        private zone: NgZone,
+        private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
@@ -161,6 +188,15 @@ export class DashboardComponent implements OnInit {
         this.loadProjects();
         this.loadEvents();
         this.loadCsr();
+        this.loadCsrSummary();
+
+        // Auto-open donate modal when arriving via /dashboard?donate=1 (e.g. from profile post-save prompt)
+        this.route.queryParamMap.subscribe(qp => {
+            if (qp.get('donate') === '1') {
+                setTimeout(() => this.onDonateClick(), 200);
+                this.router.navigate([], { queryParams: { donate: null }, queryParamsHandling: 'merge', replaceUrl: true });
+            }
+        });
     }
 
     loadCsr(): void {
@@ -172,6 +208,32 @@ export class DashboardComponent implements OnInit {
                 }
             },
             error: () => { }
+        });
+    }
+
+    loadCsrSummary(): void {
+        this.api.getCsrSummary().subscribe({
+            next: (res: any) => {
+                if (res?.success) {
+                    this.csrSummary = res.data || null;
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { }
+        });
+    }
+
+    downloadReceiptById(certId: string, donationId: string): void {
+        this.api.downloadCertificateAsUser(certId).subscribe({
+            next: (blob: Blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `csr-receipt-${donationId.slice(0, 8)}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: () => this.toast.error('Failed to download CSR receipt.')
         });
     }
 
@@ -309,19 +371,124 @@ export class DashboardComponent implements OnInit {
 
     initiateDonation(): void {
         if (this.donationAmount < 1) return;
+        if (this.request80g && !this.profile?.panNumber) {
+            this.pendingDonation = { amount: this.donationAmount, projectId: this.selectedProjectId || null };
+            this.panPromptValue = '';
+            this.showDonateModal = false;
+            this.showPanPrompt = true;
+            return;
+        }
         this.showDonateModal = false;
         this.startDonationFlow(this.donationAmount, this.request80g, this.selectedProjectId || null);
     }
 
+    get isCsrEligible(): boolean {
+        return this.user?.userType === 'organization' && !!this.profile?.corporate?.csrRegistrationNumber;
+    }
+
+    savePanAndContinue(): void {
+        const pan = (this.panPromptValue || '').trim().toUpperCase();
+        if (pan.length !== 10 || !this.pendingDonation) return;
+        this.isLoading = true;
+        this.api.updateProfile({ panNumber: pan }).subscribe({
+            next: (res: any) => {
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    if (res.success) {
+                        if (this.profile) this.profile.panNumber = pan;
+                        const pending = this.pendingDonation!;
+                        this.showPanPrompt = false;
+                        this.pendingDonation = null;
+                        this.panPromptValue = '';
+                        this.cdr.detectChanges();
+                        this.startDonationFlow(pending.amount, true, pending.projectId);
+                    } else {
+                        this.toast.error(res.message || 'Failed to save PAN');
+                        this.cdr.detectChanges();
+                    }
+                });
+            },
+            error: (err: any) => {
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    this.toast.error(err.error?.message || 'Failed to save PAN');
+                    this.cdr.detectChanges();
+                });
+            }
+        });
+    }
+
+    skipCertAndContinue(): void {
+        if (!this.pendingDonation) return;
+        const pending = this.pendingDonation;
+        this.request80g = false;
+        this.showPanPrompt = false;
+        this.pendingDonation = null;
+        this.panPromptValue = '';
+        this.startDonationFlow(pending.amount, false, pending.projectId);
+    }
+
+    cancelPanPrompt(): void {
+        this.showPanPrompt = false;
+        this.pendingDonation = null;
+        this.panPromptValue = '';
+    }
+
     retryDonation(d: Donation): void {
-        if (!d || d.status !== 'failed' || d.amount < 1) return;
-        this.startDonationFlow(d.amount, !!d.request80g, d.projectId || null);
+        if (!d || (d.status !== 'pending' && d.status !== 'failed') || d.amount < 1) return;
+        if (!confirm(`Resume payment of ${this.formatCurrency(d.amount)}? You'll be taken to Razorpay to complete the existing pending order — no new payment is started.`)) return;
+
+        this.isLoading = true;
+        this.api.resumeDonation(d.id).subscribe({
+            next: (res: any) => {
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    if (!res.success) {
+                        this.toast.error(res.message || 'Could not resume payment');
+                        this.cdr.detectChanges();
+                        return;
+                    }
+                    const data = res.data;
+                    const options = {
+                        key: data.keyId,
+                        amount: data.amount,
+                        currency: data.currency,
+                        name: 'ICE Network',
+                        description: 'ICE Network Donation (resume)',
+                        order_id: data.orderId,
+                        handler: (response: any) => {
+                            this.zone.run(() => this.verifyPayment(response, data.donationId));
+                        },
+                        prefill: { name: this.user?.name, email: this.user?.email },
+                        theme: { color: '#22c55e' },
+                        modal: {
+                            ondismiss: () => {
+                                this.zone.run(() => {
+                                    this.isLoading = false;
+                                    this.cdr.detectChanges();
+                                });
+                            }
+                        }
+                    };
+                    new Razorpay(options).open();
+                });
+            },
+            error: (err: any) => {
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    this.toast.error(err.error?.message || 'Could not resume payment');
+                    this.cdr.detectChanges();
+                });
+            }
+        });
     }
 
     private startDonationFlow(amount: number, request80g: boolean, projectId: string | null): void {
         this.isLoading = true;
+        const purpose = (this.isCsrDonation && this.isCsrEligible) ? 'csr_donation' : 'donation';
+        const csrRef = purpose === 'csr_donation' ? (this.csrReferenceNumber || '').trim() : null;
 
-        this.api.createOrder(amount, request80g, 'donation', projectId).subscribe({
+        this.api.createOrder(amount, request80g, purpose, projectId, csrRef).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
@@ -537,6 +704,21 @@ export class DashboardComponent implements OnInit {
                 URL.revokeObjectURL(url);
             },
             error: () => this.toast.error('Failed to download certificate.')
+        });
+    }
+
+    downloadCsrReceipt(d: Donation): void {
+        if (!d.certificateId || !d.certificatePdfUrl) return;
+        this.api.downloadCertificateAsUser(d.certificateId).subscribe({
+            next: (blob: Blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `csr-receipt-${d.id.slice(0, 8)}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: () => this.toast.error('Failed to download CSR receipt.')
         });
     }
 

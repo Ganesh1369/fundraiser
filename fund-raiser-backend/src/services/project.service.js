@@ -180,9 +180,47 @@ const deleteAccomplishment = async (id) => {
     }
 };
 
+/**
+ * Co-branding: list corporate sponsors who have made completed CSR donations
+ * to a given project (by slug). Aggregated by org user, ordered by total contribution desc.
+ */
+const getCsrSponsorsBySlug = async (slug) => {
+    const db = require('../config/db');
+    const project = await db.query('SELECT id, name FROM projects WHERE slug = ? AND is_active = true', [slug]);
+    if (project.rows.length === 0) throw { status: 404, message: 'Project not found' };
+    const projectId = project.rows[0].id;
+
+    const result = await db.query(
+        `SELECT
+            COALESCE(NULLIF(u.organization_name, ''), u.name) AS sponsor_name,
+            cp.industry,
+            SUM(d.amount) AS total_amount,
+            COUNT(d.id) AS donation_count
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         LEFT JOIN corporate_profiles cp ON cp.user_id = u.id
+         WHERE d.project_id = ?
+           AND d.purpose = 'csr_donation'
+           AND d.status = 'completed'
+           AND u.user_type = 'organization'
+         GROUP BY u.id, u.organization_name, u.name, cp.industry
+         ORDER BY total_amount DESC
+         LIMIT 24`,
+        [projectId]
+    );
+
+    return result.rows.map(r => ({
+        name: r.sponsor_name,
+        industry: r.industry || null,
+        totalAmount: parseFloat(r.total_amount),
+        donationCount: Number(r.donation_count)
+    }));
+};
+
 module.exports = {
     listActive,
     getBySlug,
+    getCsrSponsorsBySlug,
     listAllForAdmin,
     getByIdForAdmin,
     create,

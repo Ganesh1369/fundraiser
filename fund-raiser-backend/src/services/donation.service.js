@@ -27,16 +27,32 @@ const resolveProjectId = async (projectId) => {
 /**
  * Create Razorpay order
  */
-const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation', projectId = null) => {
+const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation', projectId = null, csrReferenceNumber = null) => {
     if (!amount || amount < 1) {
         throw { status: 400, message: 'Please provide a valid amount (minimum ₹1)' };
+    }
+
+    // CSR-donation eligibility check: only orgs with a corporate_profile may use this purpose.
+    // Silently downgrade to 'donation' otherwise — avoids accidental mis-tagging from a stale UI.
+    let effectivePurpose = purpose;
+    if (purpose === 'csr_donation') {
+        const eligibility = await db.query(
+            `SELECT u.user_type, cp.user_id AS corp_user_id
+             FROM users u LEFT JOIN corporate_profiles cp ON cp.user_id = u.id
+             WHERE u.id = ?`,
+            [userId]
+        );
+        const row = eligibility.rows[0];
+        if (!row || row.user_type !== 'organization' || !row.corp_user_id) {
+            effectivePurpose = 'donation';
+        }
     }
 
     const options = {
         amount: Math.round(amount * 100),
         currency: 'INR',
         receipt: `rcpt_${Date.now()}`,
-        notes: { userId, userName }
+        notes: { userId, userName, purpose: effectivePurpose }
     };
 
     const order = await razorpay.orders.create(options);
@@ -46,9 +62,9 @@ const createOrder = async (userId, userName, amount, request80g = false, purpose
     const referrerId = referrerResult.rows[0]?.referred_by || null;
     const resolvedProjectId = await resolveProjectId(projectId);
     await db.query(
-        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose, project_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, purpose, resolvedProjectId]
+        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose, csr_reference_number, project_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, effectivePurpose, csrReferenceNumber || null, resolvedProjectId]
     );
 
     return {
@@ -56,7 +72,45 @@ const createOrder = async (userId, userName, amount, request80g = false, purpose
         donationId: donationId,
         amount: order.amount,
         currency: order.currency,
-        keyId: process.env.RAZORPAY_KEY_ID
+        keyId: process.env.RAZORPAY_KEY_ID,
+        purpose: effectivePurpose
+    };
+};
+
+/**
+ * Resume an existing pending/failed donation — re-open Razorpay checkout
+ * against the SAME razorpay_order_id instead of creating a new order.
+ * Razorpay allows multiple payment attempts on one order until it is paid.
+ */
+const resumeDonation = async (userId, donationId) => {
+    if (!donationId) {
+        throw { status: 400, message: 'donationId is required' };
+    }
+    const row = await db.query(
+        `SELECT id, user_id, amount, currency, razorpay_order_id, status, request_80g, project_id, purpose, csr_reference_number
+         FROM donations WHERE id = ? AND user_id = ?`,
+        [donationId, userId]
+    );
+    if (row.rows.length === 0) {
+        throw { status: 404, message: 'Donation not found' };
+    }
+    const d = row.rows[0];
+    if (d.status === 'completed') {
+        throw { status: 400, message: 'Donation is already paid' };
+    }
+    if (!d.razorpay_order_id) {
+        throw { status: 400, message: 'No existing order to resume' };
+    }
+    return {
+        orderId: d.razorpay_order_id,
+        donationId: d.id,
+        amount: Math.round(parseFloat(d.amount) * 100),
+        currency: d.currency || 'INR',
+        keyId: process.env.RAZORPAY_KEY_ID,
+        request80g: !!d.request_80g,
+        projectId: d.project_id || null,
+        purpose: d.purpose,
+        csrReferenceNumber: d.csr_reference_number || null
     };
 };
 
@@ -137,12 +191,35 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                 const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
                 createdCertId = uuidv4();
                 await client.query(
-                    `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number, auto_generated)
-                     VALUES (?, ?, ?, ?, true)`,
+                    `INSERT INTO certificate_requests (id, user_id, donation_id, type, pan_number, auto_generated)
+                     VALUES (?, ?, ?, '80g', ?, true)`,
                     [createdCertId, userId, donation.id, panNumber]
                 );
             } else {
                 createdCertId = existingCert.rows[0].id;
+            }
+        }
+
+        // Auto-create CSR receipt request for CSR donations (mutually exclusive with 80G — purpose decides)
+        if (donation.purpose === 'csr_donation' && !createdCertId) {
+            const existingReceipt = await client.query(
+                'SELECT id FROM certificate_requests WHERE donation_id = ?',
+                [donation.id]
+            );
+            if (existingReceipt.rows.length === 0) {
+                const userPan = await client.query(
+                    'SELECT pan_number FROM users WHERE id = ?',
+                    [userId]
+                );
+                const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
+                createdCertId = uuidv4();
+                await client.query(
+                    `INSERT INTO certificate_requests (id, user_id, donation_id, type, pan_number, auto_generated)
+                     VALUES (?, ?, ?, 'csr_receipt', ?, true)`,
+                    [createdCertId, userId, donation.id, panNumber]
+                );
+            } else {
+                createdCertId = existingReceipt.rows[0].id;
             }
         }
 
@@ -178,4 +255,4 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
     }
 };
 
-module.exports = { createOrder, verifyPayment };
+module.exports = { createOrder, resumeDonation, verifyPayment };

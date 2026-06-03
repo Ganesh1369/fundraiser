@@ -42,6 +42,7 @@ enum ExperienceLevel {
 enum DonationPurpose {
   donation
   registration_fee
+  csr_donation
 }
 
 enum CertificateStatus {
@@ -49,6 +50,11 @@ enum CertificateStatus {
   processing
   approved
   rejected
+}
+
+enum CertificateType {
+  G80   @map("80g")
+  csr_receipt
 }
 
 enum RegistrationStatus {
@@ -196,6 +202,7 @@ model Donation {
   points_awarded         Boolean         @default(false)
   points_formula_version Int             @default(2) @db.UnsignedTinyInt
   purpose                DonationPurpose @default(donation)
+  csr_reference_number   String?         @db.VarChar(50)
   request_80g            Boolean         @default(false)
   payment_method         String?         @db.VarChar(50)
   created_at             DateTime        @default(now()) @db.DateTime(0)
@@ -214,6 +221,7 @@ model Donation {
   @@index([created_at], map: "idx_donations_created_at")
   @@index([status], map: "idx_donations_status")
   @@index([project_id], map: "idx_donations_project_id")
+  @@index([purpose, project_id], map: "idx_donations_purpose_project")
   @@map("donations")
 }
 
@@ -237,6 +245,7 @@ model CertificateRequest {
   id                    String            @id @default(dbgenerated("(UUID())")) @db.Char(36)
   user_id               String            @db.Char(36)
   donation_id           String?           @unique(map: "idx_certificate_requests_donation") @db.Char(36)
+  type                  CertificateType   @default(G80)
   pan_number            String            @db.VarChar(20)
   status                CertificateStatus @default(pending)
   admin_notes           String?           @db.Text
@@ -257,6 +266,7 @@ model CertificateRequest {
 
   @@index([user_id], map: "idx_certificate_requests_user_id")
   @@index([status], map: "idx_certificate_requests_status")
+  @@index([type], map: "idx_certificate_requests_type")
   @@map("certificate_requests")
 }
 
@@ -368,6 +378,25 @@ model Accomplishment {
 
 // Phase 2.2 Day 1 — CSR partnerships shown as a carousel on the user dashboard.
 // Admin-managed via /api/admin/csr; public list at /api/csr/active.
+model CorporateProfile {
+  user_id                          String   @id @db.Char(36)
+  cin                              String?  @db.VarChar(21)
+  gstin                            String?  @db.VarChar(15)
+  csr_registration_number          String?  @db.VarChar(50)
+  incorporated_year                Int?     @db.SmallInt
+  industry                         String?  @db.VarChar(100)
+  authorized_signatory_name        String?  @db.VarChar(150)
+  authorized_signatory_designation String?  @db.VarChar(150)
+  authorized_signatory_email       String?  @db.VarChar(255)
+  authorized_signatory_phone       String?  @db.VarChar(20)
+  created_at                       DateTime @default(now()) @db.DateTime(0)
+  updated_at                       DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  @@index([cin],   map: "idx_corporate_profiles_cin")
+  @@index([gstin], map: "idx_corporate_profiles_gstin")
+  @@map("corporate_profiles")
+}
+
 model CsrActivity {
   id              String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
   title           String   @db.VarChar(200)

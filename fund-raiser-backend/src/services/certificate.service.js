@@ -3,7 +3,8 @@ const path = require('path');
 const prisma = require('../config/prisma');
 const settingsService = require('./settings.service');
 const emailService = require('./email.service');
-const { renderCertificate } = require('./pdf.template');
+const { renderCertificate, renderCsrReceipt } = require('./pdf.template');
+const db = require('../config/db');
 
 const CERT_DIR_BASE = path.resolve(__dirname, '..', '..', 'uploads', 'certificates');
 
@@ -24,8 +25,9 @@ const indianFiscalYear = (date = new Date()) => {
  * concurrent generates pick the same seq, the second insert will fail and the
  * caller can retry. For Phase 2 volumes this is acceptable.
  */
-const allocateCertificateNumber = async (fy) => {
-    const prefix = `ICE/80G/${fy}/`;
+const allocateCertificateNumber = async (fy, type = '80g') => {
+    const seg = type === 'csr_receipt' ? 'CSR' : '80G';
+    const prefix = `ICE/${seg}/${fy}/`;
     const last = await prisma.certificateRequest.findFirst({
         where: { certificate_number: { startsWith: prefix } },
         orderBy: { certificate_number: 'desc' },
@@ -48,13 +50,15 @@ const buildDonorAddress = (user) => {
     return parts.join(', ');
 };
 
-const writePdf = (input, absPath) => new Promise((resolve, reject) => {
+const writePdf = (input, absPath, type = '80g') => new Promise((resolve, reject) => {
     ensureDir(path.dirname(absPath));
     const stream = fs.createWriteStream(absPath);
     stream.on('finish', resolve);
     stream.on('error', reject);
-    try { renderCertificate(input, stream); }
-    catch (err) { stream.destroy(); reject(err); }
+    try {
+        if (type === 'csr_receipt') renderCsrReceipt(input, stream);
+        else renderCertificate(input, stream);
+    } catch (err) { stream.destroy(); reject(err); }
 });
 
 /**
@@ -108,9 +112,21 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
         throw { status: 400, message: msg };
     }
 
+    // Prisma client may not yet expose the new `type` / `csr_reference_number` columns
+    // (regen blocked while backend running on Windows). Read them via raw mysql2.
+    const rawRow = await db.query(
+        `SELECT cr.type AS cert_type, d.csr_reference_number
+         FROM certificate_requests cr
+         LEFT JOIN donations d ON d.id = cr.donation_id
+         WHERE cr.id = ?`,
+        [certId]
+    );
+    const certType = rawRow.rows[0]?.cert_type || '80g';
+    const csrReferenceNumber = rawRow.rows[0]?.csr_reference_number || null;
+
     let certificateNumber = cert.certificate_number;
     if (!certificateNumber) {
-        certificateNumber = await allocateCertificateNumber(indianFiscalYear(new Date()));
+        certificateNumber = await allocateCertificateNumber(indianFiscalYear(new Date()), certType);
     }
 
     const settingsAll = await settingsService.getAll();
@@ -129,6 +145,7 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
 
     const donor = {
         name: cert.user.name,
+        organization_name: cert.user.organization_name,
         address: buildDonorAddress(cert.user),
         email: cert.user.email,
         phone: cert.user.phone,
@@ -139,14 +156,28 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
         amount: Number(cert.donation.amount),
         date: cert.donation.created_at,
         payment_id: cert.donation.razorpay_payment_id,
-        project_name: cert.donation.project?.name || ''
+        project_name: cert.donation.project?.name || '',
+        csr_reference_number: csrReferenceNumber
     };
+
+    // CSR receipts pull from corporate_profiles for signatory + CIN/GSTIN/CSR-1 number
+    let corporate = null;
+    if (certType === 'csr_receipt') {
+        const corpRow = await db.query(
+            `SELECT cin, gstin, csr_registration_number, industry,
+                    authorized_signatory_name, authorized_signatory_designation,
+                    authorized_signatory_email, authorized_signatory_phone
+             FROM corporate_profiles WHERE user_id = ?`,
+            [cert.user_id]
+        );
+        corporate = corpRow.rows[0] || {};
+    }
 
     const relPath = `/uploads/certificates/${cert.user_id}/${certId}.pdf`;
     const absPath = path.join(CERT_DIR_BASE, cert.user_id, `${certId}.pdf`);
 
     try {
-        await writePdf({ org, donor, donation, certificateNumber }, absPath);
+        await writePdf({ org, donor, donation, corporate, certificateNumber, type: certType }, absPath, certType);
     } catch (err) {
         await prisma.certificateRequest.update({
             where: { id: certId },

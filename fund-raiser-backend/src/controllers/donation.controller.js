@@ -3,11 +3,24 @@ const donationService = require('../services/donation.service');
 // Create Razorpay order
 exports.createOrder = async (req, res, next) => {
     try {
-        const { amount, request80g, purpose, projectId } = req.body;
+        const { amount, request80g, purpose, projectId, csrReferenceNumber } = req.body;
         const result = await donationService.createOrder(
             req.user.id, req.user.name, amount,
-            request80g || false, purpose || 'donation', projectId || null
+            request80g || false, purpose || 'donation', projectId || null,
+            csrReferenceNumber || null
         );
+        res.json({ success: true, data: result });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+// Resume an existing pending/failed donation (re-uses razorpay_order_id)
+exports.resumeDonation = async (req, res, next) => {
+    try {
+        const { donationId } = req.body;
+        const result = await donationService.resumeDonation(req.user.id, donationId);
         res.json({ success: true, data: result });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });

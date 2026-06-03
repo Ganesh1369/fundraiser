@@ -38,6 +38,15 @@ exports.getDonationSummary = async (req, res, next) => {
     }
 };
 
+exports.getCsrSummary = async (req, res, next) => {
+    try {
+        const data = await userService.getCsrSummary(req.user.id);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.getReferrals = async (req, res, next) => {
     try {
         const data = await userService.getReferrals(req.user.id, req.user.referral_code);

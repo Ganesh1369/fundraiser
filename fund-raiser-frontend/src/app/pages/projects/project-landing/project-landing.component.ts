@@ -192,6 +192,27 @@ interface Project {
                 </div>
             </section>
 
+            <!-- CSR Partners (co-branding) -->
+            <section *ngIf="csrSponsors.length > 0" class="max-w-5xl mx-auto px-5 mt-10">
+                <div class="bg-white rounded-2xl p-6 md:p-8 shadow-soft">
+                    <div class="flex items-center justify-between mb-5">
+                        <div>
+                            <h2 class="text-lg md:text-xl font-bold text-accent mb-1">CSR partners powering {{ project.name }}</h2>
+                            <p class="text-xs text-neutral-500 m-0">Corporates that have funded this project through their CSR commitment.</p>
+                        </div>
+                        <span class="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-accent/10 text-accent shrink-0">CSR</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div *ngFor="let s of csrSponsors"
+                             class="px-4 py-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                            <div class="text-sm font-semibold text-accent truncate" [title]="s.name">{{ s.name }}</div>
+                            <div *ngIf="s.industry" class="text-[10px] text-neutral-400 uppercase tracking-wider mt-0.5 truncate">{{ s.industry }}</div>
+                            <div class="text-xs font-semibold text-primary mt-1">&#8377;{{ s.totalAmount | number:'1.0-0' }}<span class="text-neutral-400 font-normal"> &middot; {{ s.donationCount }} {{ s.donationCount === 1 ? 'donation' : 'donations' }}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- CTA -->
             <section class="max-w-5xl mx-auto px-5 mt-10 mb-12">
                 <div class="bg-accent rounded-2xl p-6 md:p-8 text-center md:text-left flex flex-col md:flex-row md:items-center gap-5">
@@ -209,6 +230,7 @@ interface Project {
 })
 export class ProjectLandingComponent implements OnInit {
     project: Project | null = null;
+    csrSponsors: { name: string; industry: string | null; totalAmount: number; donationCount: number }[] = [];
     loading = true;
 
     constructor(
@@ -235,6 +257,13 @@ export class ProjectLandingComponent implements OnInit {
                 this.loading = false;
                 this.cdr.detectChanges();
             }
+        });
+        this.projectService.getCsrSponsors(slug).subscribe({
+            next: (res: any) => {
+                this.csrSponsors = res?.data || [];
+                this.cdr.detectChanges();
+            },
+            error: () => { this.csrSponsors = []; }
         });
     }
 
