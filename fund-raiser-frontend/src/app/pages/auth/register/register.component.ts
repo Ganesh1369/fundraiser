@@ -6,6 +6,18 @@ import { ApiService } from '../../../services/api.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
 
+interface CorporateData {
+    cin: string;
+    gstin: string;
+    csrRegistrationNumber: string;
+    incorporatedYear: number | null;
+    industry: string;
+    authorizedSignatoryName: string;
+    authorizedSignatoryDesignation: string;
+    authorizedSignatoryEmail: string;
+    authorizedSignatoryPhone: string;
+}
+
 interface RegistrationData {
     userType: 'student' | 'individual' | 'organization' | '';
     name: string;
@@ -19,6 +31,7 @@ interface RegistrationData {
     organizationName: string;
     panNumber: string;
     referralCode: string;
+    corporate: CorporateData;
 }
 
 @Component({
@@ -30,7 +43,7 @@ interface RegistrationData {
 })
 export class RegisterComponent {
     currentStep = 1;
-    totalSteps = 5;
+    totalSteps = 4;
     isLoading = false;
     errorMessage = '';
     successMessage = '';
@@ -38,11 +51,6 @@ export class RegisterComponent {
     isEmailTaken = false;
     showPassword = false;
     showConfirmPassword = false;
-
-    // OTP fields
-    otpSent = false;
-    otpVerified = false;
-    otp = '';
 
     data: RegistrationData = {
         userType: '',
@@ -56,7 +64,18 @@ export class RegisterComponent {
         schoolName: '',
         organizationName: '',
         panNumber: '',
-        referralCode: ''
+        referralCode: '',
+        corporate: {
+            cin: '',
+            gstin: '',
+            csrRegistrationNumber: '',
+            incorporatedYear: null,
+            industry: '',
+            authorizedSignatoryName: '',
+            authorizedSignatoryDesignation: '',
+            authorizedSignatoryEmail: '',
+            authorizedSignatoryPhone: ''
+        }
     };
 
     constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef) {
@@ -73,8 +92,7 @@ export class RegisterComponent {
             case 1: return 'Choose Your Role';
             case 2: return 'Personal Details';
             case 3: return 'Contact Information';
-            case 4: return 'Verify Your Phone';
-            case 5: return 'Additional Information';
+            case 4: return 'Additional Information';
             default: return '';
         }
     }
@@ -97,66 +115,6 @@ export class RegisterComponent {
         });
     }
 
-    sendOtp(): void {
-        if (!this.data.phone) {
-            this.errorMessage = 'Please enter your phone number first';
-            return;
-        }
-        this.isLoading = true;
-        this.errorMessage = '';
-        this.successMessage = '';
-
-        this.api.sendOtp(this.data.phone, 'register').subscribe({
-            next: (res: any) => {
-                this.isLoading = false;
-                if (res.success) {
-                    this.otpSent = true;
-                    this.successMessage = 'OTP sent to your phone!';
-                    this.currentStep = 4;
-                } else {
-                    this.errorMessage = res.message || 'Failed to send OTP';
-                }
-                this.cdr.detectChanges();
-            },
-            error: (err: any) => {
-                this.isLoading = false;
-                const msg = err.error?.message || 'Failed to send OTP';
-                this.errorMessage = msg;
-                this.isEmailTaken = msg.toLowerCase().includes('already registered');
-                this.cdr.detectChanges();
-            }
-        });
-    }
-
-    verifyOtp(): void {
-        if (!this.otp || this.otp.length !== 6) {
-            this.errorMessage = 'Please enter a valid 6-digit OTP';
-            return;
-        }
-        this.isLoading = true;
-        this.errorMessage = '';
-
-        this.api.verifyOtp(this.data.phone, this.otp, 'register').subscribe({
-            next: (res: any) => {
-                this.isLoading = false;
-                if (res.success) {
-                    this.otpVerified = true;
-                    this.successMessage = 'Phone verified successfully!';
-                    // Auto-advance after short delay
-                    setTimeout(() => this.nextStep(), 800);
-                    this.cdr.detectChanges();
-
-                } else {
-                    this.errorMessage = res.message || 'Invalid OTP';
-                }
-            },
-            error: (err: any) => {
-                this.isLoading = false;
-                this.errorMessage = err.error?.message || 'Invalid OTP. Please try again.';
-            }
-        });
-    }
-
     canProceed(): boolean {
         switch (this.currentStep) {
             case 1:
@@ -167,8 +125,6 @@ export class RegisterComponent {
                 return !!this.data.email && !!this.data.phone && !!this.data.password &&
                     this.data.password === this.data.confirmPassword && this.data.password.length >= 6;
             case 4:
-                return this.otpVerified;
-            case 5:
                 if (this.data.userType === 'student') return !!this.data.schoolName;
                 if (this.data.userType === 'organization') return !!this.data.organizationName && !!this.data.panNumber;
                 return true;
@@ -179,11 +135,6 @@ export class RegisterComponent {
 
     nextStep(): void {
         if (this.currentStep < this.totalSteps) {
-            // If moving from step 3 to 4, validate email first then send OTP
-            if (this.currentStep === 3 && !this.otpSent) {
-                this.sendOtp();
-                return;
-            }
             this.currentStep++;
             this.errorMessage = '';
             this.successMessage = '';
@@ -228,7 +179,8 @@ export class RegisterComponent {
             schoolName: this.data.schoolName,
             organizationName: this.data.organizationName,
             panNumber: this.data.panNumber,
-            referralCode: this.data.referralCode
+            referralCode: this.data.referralCode,
+            corporate: this.data.userType === 'organization' ? this.data.corporate : undefined
         }).subscribe({
             next: (result: any) => {
                 this.isLoading = false;

@@ -13,7 +13,7 @@
 
             <!-- Stepper -->
             <div class="flex items-center justify-center gap-0.5 sm:gap-1 mb-6">
-                @for (step of [1,2,3,4,5]; track step) {
+                @for (step of [1,2,3,4]; track step) {
                 <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-semibold transition-all shrink-0"
                     [ngClass]="{
                         'bg-primary text-white': currentStep >= step,
@@ -26,7 +26,7 @@
                     {{ step }}
                     }
                 </div>
-                @if (step < 5) {
+                @if (step < 4) {
                 <div class="w-3 sm:w-5 md:w-8 h-0.5 transition-colors" [ngClass]="currentStep > step ? 'bg-primary' : 'bg-neutral-300'"></div>
                 }
                 }
@@ -150,50 +150,8 @@
             </div>
             }
 
-            <!-- Step 4: OTP Verification -->
+            <!-- Step 4: Additional Information -->
             @if (currentStep === 4) {
-            <div class="mb-6">
-                @if (successMessage) {
-                <div class="flex items-center gap-2 px-4 py-3 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm mb-4">
-                    <lucide-icon name="circle-check" class="w-4 h-4"></lucide-icon>
-                    <p class="m-0">{{ successMessage }}</p>
-                </div>
-                }
-
-                @if (!otpVerified) {
-                <div class="text-center">
-                    <div class="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="smartphone" class="w-7 h-7"></lucide-icon></div>
-                    <p class="text-sm text-neutral-500 mb-5">We've sent a 6-digit code to <strong class="text-accent">{{ data.phone }}</strong></p>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Enter OTP</label>
-                        <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-center text-xl tracking-widest font-semibold placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            placeholder="000000" maxlength="6" [(ngModel)]="otp" name="otp" autocomplete="one-time-code">
-                    </div>
-                    <button type="button"
-                        class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mb-3"
-                        (click)="verifyOtp()" [disabled]="isLoading || otp.length !== 6">
-                        @if (isLoading) {
-                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                        Verifying...
-                        } @else {
-                        Verify Phone
-                        }
-                    </button>
-                    <button type="button" class="text-sm text-primary font-medium hover:text-primary-600" (click)="sendOtp()" [disabled]="isLoading">
-                        Resend OTP
-                    </button>
-                </div>
-                } @else {
-                <div class="text-center py-4">
-                    <div class="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="circle-check" class="w-8 h-8"></lucide-icon></div>
-                    <p class="text-sm font-medium text-accent">Phone verified successfully!</p>
-                </div>
-                }
-            </div>
-            }
-
-            <!-- Step 5: Additional Information -->
-            @if (currentStep === 5) {
             <div class="flex flex-col gap-4 mb-6">
                 @if (data.userType === 'student') {
                 <div>
@@ -219,9 +177,60 @@
                     <input type="text" class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
                         placeholder="Enter PAN number" [(ngModel)]="data.panNumber" name="panNumber">
                 </div>
+
+                <!-- Corporate / CSR compliance details (all optional — needed for CSR receipts) -->
+                <div class="pt-2 mt-2 border-t border-neutral-100">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">CSR & corporate details <span class="font-normal text-neutral-400 normal-case tracking-normal">(optional, used for Form CSR-2 receipts)</span></p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">CIN</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                                placeholder="U12345KA2020NPL098765" [(ngModel)]="data.corporate.cin" name="corpCin" maxlength="21">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">GSTIN</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                                placeholder="29ABCDE1234F1Z5" [(ngModel)]="data.corporate.gstin" name="corpGstin" maxlength="15">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">CSR Registration #</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                                placeholder="CSR00012345" [(ngModel)]="data.corporate.csrRegistrationNumber" name="corpCsrReg" maxlength="50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">Industry</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                placeholder="e.g., IT Services" [(ngModel)]="data.corporate.industry" name="corpIndustry" maxlength="100">
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-4 mb-3">Authorized signatory</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">Name</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                placeholder="Full name" [(ngModel)]="data.corporate.authorizedSignatoryName" name="corpSigName" maxlength="150">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">Designation</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                placeholder="e.g., Director" [(ngModel)]="data.corporate.authorizedSignatoryDesignation" name="corpSigDesignation" maxlength="150">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">Email</label>
+                            <input type="email" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                placeholder="signatory@company.com" [(ngModel)]="data.corporate.authorizedSignatoryEmail" name="corpSigEmail" maxlength="255">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-600 mb-1">Phone</label>
+                            <input type="tel" class="w-full px-3 py-2.5 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                placeholder="+91 9876543210" [(ngModel)]="data.corporate.authorizedSignatoryPhone" name="corpSigPhone" maxlength="20">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex items-start gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-sm">
                     <lucide-icon name="info" class="w-4 h-4 shrink-0"></lucide-icon>
-                    <p class="m-0">Organizations are eligible for 80G tax benefits on donations.</p>
+                    <p class="m-0">Organizations are eligible for 80G tax benefits on donations. CSR details enable Form CSR-2 receipts.</p>
                 </div>
                 }
 
@@ -249,7 +258,7 @@
                     &larr; Back
                 </button>
 
-                @if (currentStep < totalSteps && (currentStep !== 4 || otpVerified)) {
+                @if (currentStep < totalSteps) {
                 <button type="button"
                     class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     (click)="nextStep()" [disabled]="!canProceed()">
@@ -265,7 +274,7 @@
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Processing...
                     } @else {
-                    Pay &#8377;300 &amp; Register
+                    Create Account
                     }
                 </button>
                 }
