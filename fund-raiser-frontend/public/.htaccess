@@ -1,0 +1,38 @@
+# Angular SPA — route every non-file/non-directory request through index.html
+# so the client-side router can take over. Without this, deep links and
+# refreshes on routes like /dashboard or /admin/login 404 at the web server
+# before Angular ever boots.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # If the request maps to a real file or directory, serve it as-is
+    # (covers /assets/, /uploads/, /index.html, .js chunks, images, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else → SPA entry point
+    RewriteRule ^ /index.html [L]
+</IfModule>
+
+# Cache hashed JS/CSS aggressively — Angular fingerprints filenames per build
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/css               "access plus 1 year"
+    ExpiresByType image/svg+xml          "access plus 30 days"
+    ExpiresByType image/png              "access plus 30 days"
+    ExpiresByType image/jpeg             "access plus 30 days"
+    ExpiresByType image/webp             "access plus 30 days"
+</IfModule>
+
+# Never cache index.html (must always re-fetch to pick up new chunk names)
+<FilesMatch "\.(html)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
