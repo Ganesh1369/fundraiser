@@ -29,6 +29,28 @@ const upload = multer({
     }
 });
 
+// Corporate logo upload — timestamped filenames so historical receipts
+// (which embed the bytes at generation time) are unaffected by re-uploads.
+const corpLogoDir = path.join(__dirname, '../../../fund-raiser-frontend/public/uploads/corp');
+if (!fs.existsSync(corpLogoDir)) fs.mkdirSync(corpLogoDir, { recursive: true });
+
+const corpLogoUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, corpLogoDir),
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase();
+            cb(null, `corp-${req.user.id}-${Date.now()}${ext}`);
+        }
+    }),
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (allowed.includes(ext)) cb(null, true);
+        else cb(new Error('Only JPG, PNG, WebP, and SVG images are allowed'));
+    }
+});
+
 // All routes require authentication
 router.use(verifyToken);
 
@@ -43,6 +65,10 @@ router.put('/profile/avatar', upload.single('avatar'), userController.uploadAvat
 
 // Remove profile picture
 router.delete('/profile/avatar', userController.removeAvatar);
+
+// Corporate logo upload — organization users only (service-level guard)
+router.put('/profile/corporate-logo', corpLogoUpload.single('logo'), userController.uploadCorporateLogo);
+router.delete('/profile/corporate-logo', userController.removeCorporateLogo);
 
 // Get user donations with filters
 router.get('/donations', userController.getDonations);

@@ -385,6 +385,7 @@ model CorporateProfile {
   csr_registration_number          String?  @db.VarChar(50)
   incorporated_year                Int?     @db.SmallInt
   industry                         String?  @db.VarChar(100)
+  logo_url                         String?  @db.VarChar(500)
   authorized_signatory_name        String?  @db.VarChar(150)
   authorized_signatory_designation String?  @db.VarChar(150)
   authorized_signatory_email       String?  @db.VarChar(255)

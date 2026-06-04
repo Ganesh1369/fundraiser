@@ -194,6 +194,7 @@ const getCsrSponsorsBySlug = async (slug) => {
         `SELECT
             COALESCE(NULLIF(u.organization_name, ''), u.name) AS sponsor_name,
             cp.industry,
+            cp.logo_url,
             SUM(d.amount) AS total_amount,
             COUNT(d.id) AS donation_count
          FROM donations d
@@ -203,7 +204,7 @@ const getCsrSponsorsBySlug = async (slug) => {
            AND d.purpose = 'csr_donation'
            AND d.status = 'completed'
            AND u.user_type = 'organization'
-         GROUP BY u.id, u.organization_name, u.name, cp.industry
+         GROUP BY u.id, u.organization_name, u.name, cp.industry, cp.logo_url
          ORDER BY total_amount DESC
          LIMIT 24`,
         [projectId]
@@ -212,6 +213,7 @@ const getCsrSponsorsBySlug = async (slug) => {
     return result.rows.map(r => ({
         name: r.sponsor_name,
         industry: r.industry || null,
+        logoUrl: r.logo_url || null,
         totalAmount: parseFloat(r.total_amount),
         donationCount: Number(r.donation_count)
     }));

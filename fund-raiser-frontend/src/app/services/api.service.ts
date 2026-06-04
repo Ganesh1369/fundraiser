@@ -74,6 +74,18 @@ export class ApiService {
         return this.http.delete(`${this.apiUrl}/user/profile/avatar`, { headers: this.getHeaders() });
     }
 
+    uploadCorporateLogo(file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('logo', file);
+        const token = localStorage.getItem('token') || '';
+        const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+        return this.http.put(`${this.apiUrl}/user/profile/corporate-logo`, formData, { headers });
+    }
+
+    removeCorporateLogo(): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/user/profile/corporate-logo`, { headers: this.getHeaders() });
+    }
+
     getDonations(period?: string): Observable<any> {
         const params = period && period !== 'all' ? `?period=${period}` : '';
         return this.http.get(`${this.apiUrl}/user/donations${params}`, { headers: this.getHeaders() });

@@ -97,6 +97,35 @@ exports.uploadAvatar = async (req, res, next) => {
     }
 };
 
+exports.uploadCorporateLogo = async (req, res, next) => {
+    try {
+        if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+        const logoUrl = `/uploads/corp/${req.file.filename}`;
+        await userService.updateCorporateLogo(req.user.id, logoUrl);
+        res.json({ success: true, message: 'Logo uploaded', data: { logoUrl } });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+exports.removeCorporateLogo = async (req, res, next) => {
+    try {
+        const path = require('path');
+        const fs = require('fs');
+        const current = await userService.getCorporateLogo(req.user.id);
+        if (current) {
+            const filePath = path.join(__dirname, '../../../fund-raiser-frontend/public', current);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+        await userService.updateCorporateLogo(req.user.id, null);
+        res.json({ success: true, message: 'Logo removed' });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 exports.removeAvatar = async (req, res, next) => {
     try {
         const profile = await userService.getProfile(req.user.id);

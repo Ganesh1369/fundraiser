@@ -204,10 +204,15 @@ interface Project {
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                         <div *ngFor="let s of csrSponsors"
-                             class="px-4 py-3 bg-neutral-50 rounded-xl border border-neutral-100">
-                            <div class="text-sm font-semibold text-accent truncate" [title]="s.name">{{ s.name }}</div>
-                            <div *ngIf="s.industry" class="text-[10px] text-neutral-400 uppercase tracking-wider mt-0.5 truncate">{{ s.industry }}</div>
-                            <div class="text-xs font-semibold text-primary mt-1">&#8377;{{ s.totalAmount | number:'1.0-0' }}<span class="text-neutral-400 font-normal"> &middot; {{ s.donationCount }} {{ s.donationCount === 1 ? 'donation' : 'donations' }}</span></div>
+                             class="flex items-center gap-3 px-4 py-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                            <div *ngIf="s.logoUrl" class="w-12 h-12 shrink-0 rounded-lg bg-white border border-neutral-200 flex items-center justify-center overflow-hidden">
+                                <img [src]="s.logoUrl" [alt]="s.name + ' logo'" class="w-full h-full object-contain">
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-sm font-semibold text-accent truncate" [title]="s.name">{{ s.name }}</div>
+                                <div *ngIf="s.industry" class="text-[10px] text-neutral-400 uppercase tracking-wider mt-0.5 truncate">{{ s.industry }}</div>
+                                <div class="text-xs font-semibold text-primary mt-1">&#8377;{{ s.totalAmount | number:'1.0-0' }}<span class="text-neutral-400 font-normal"> &middot; {{ s.donationCount }} {{ s.donationCount === 1 ? 'donation' : 'donations' }}</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -230,7 +235,7 @@ interface Project {
 })
 export class ProjectLandingComponent implements OnInit {
     project: Project | null = null;
-    csrSponsors: { name: string; industry: string | null; totalAmount: number; donationCount: number }[] = [];
+    csrSponsors: { name: string; industry: string | null; logoUrl: string | null; totalAmount: number; donationCount: number }[] = [];
     loading = true;
 
     constructor(

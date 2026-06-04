@@ -11,6 +11,7 @@ const getProfile = async (userId) => {
                 u.organization_name, u.pan_number, u.profile_pic,
                 u.referral_code, u.referral_points, u.created_at,
                 cp.cin, cp.gstin, cp.csr_registration_number, cp.incorporated_year, cp.industry,
+                cp.logo_url AS corp_logo_url,
                 cp.authorized_signatory_name, cp.authorized_signatory_designation,
                 cp.authorized_signatory_email, cp.authorized_signatory_phone
          FROM users u
@@ -38,6 +39,7 @@ const getProfile = async (userId) => {
             csrRegistrationNumber: u.csr_registration_number,
             incorporatedYear: u.incorporated_year,
             industry: u.industry,
+            logoUrl: u.corp_logo_url || null,
             authorizedSignatoryName: u.authorized_signatory_name,
             authorizedSignatoryDesignation: u.authorized_signatory_designation,
             authorizedSignatoryEmail: u.authorized_signatory_email,
@@ -415,9 +417,33 @@ const updateProfilePic = async (userId, profilePic) => {
     await db.query('UPDATE users SET profile_pic = ? WHERE id = ?', [profilePic, userId]);
 };
 
+/**
+ * Set the corporate logo URL — organization users only. Upserts the
+ * corporate_profiles row so freshly converted org users without a sidecar
+ * still get a logo persisted.
+ */
+const updateCorporateLogo = async (userId, logoUrl) => {
+    const userRow = await db.query('SELECT user_type FROM users WHERE id = ?', [userId]);
+    if (!userRow.rows[0]) throw { status: 404, message: 'User not found' };
+    if (userRow.rows[0].user_type !== 'organization') {
+        throw { status: 403, message: 'Logo upload is for organization accounts only' };
+    }
+    await db.query(
+        `INSERT INTO corporate_profiles (user_id, logo_url) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE logo_url = VALUES(logo_url)`,
+        [userId, logoUrl]
+    );
+};
+
+const getCorporateLogo = async (userId) => {
+    const r = await db.query('SELECT logo_url FROM corporate_profiles WHERE user_id = ?', [userId]);
+    return r.rows[0]?.logo_url || null;
+};
+
 module.exports = {
     getProfile, updateProfile, updateProfilePic, getDonations, getDonationSummary,
     getCsrSummary,
+    updateCorporateLogo, getCorporateLogo,
     getReferrals, getReferralPointsHistory, requestCertificate, getCertificateRequests,
     getUserEvents
 };

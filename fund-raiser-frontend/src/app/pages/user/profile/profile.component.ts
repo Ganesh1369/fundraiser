@@ -19,6 +19,7 @@ export class ProfileComponent implements OnInit {
     isLoading = false;
     isSaving = false;
     isUploading = false;
+    isUploadingLogo = false;
     showAvatarMenu = false;
     showImageViewer = false;
     showPostSavePrompt = false;
@@ -187,6 +188,57 @@ export class ProfileComponent implements OnInit {
             error: () => {
                 this.isUploading = false;
                 this.toast.error('Failed to remove image');
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    onCorporateLogoSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            this.toast.error('Logo must be under 2MB');
+            input.value = '';
+            return;
+        }
+
+        this.isUploadingLogo = true;
+        this.api.uploadCorporateLogo(file).subscribe({
+            next: (res: any) => {
+                this.isUploadingLogo = false;
+                if (res.success) {
+                    if (!this.profile.corporate) this.profile.corporate = {};
+                    this.profile.corporate.logoUrl = res.data.logoUrl + '?t=' + Date.now();
+                    this.toast.success('Logo uploaded!');
+                }
+                this.cdr.detectChanges();
+            },
+            error: (err: any) => {
+                this.isUploadingLogo = false;
+                this.toast.error(err?.error?.message || 'Failed to upload logo. Try again.');
+                this.cdr.detectChanges();
+            }
+        });
+        input.value = '';
+    }
+
+    removeCorporateLogo(): void {
+        if (!this.profile?.corporate?.logoUrl) return;
+        this.isUploadingLogo = true;
+        this.api.removeCorporateLogo().subscribe({
+            next: (res: any) => {
+                this.isUploadingLogo = false;
+                if (res.success) {
+                    this.profile.corporate.logoUrl = null;
+                    this.toast.success('Logo removed');
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.isUploadingLogo = false;
+                this.toast.error('Failed to remove logo');
                 this.cdr.detectChanges();
             }
         });

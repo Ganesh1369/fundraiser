@@ -208,6 +208,36 @@
                 <!-- Organization Fields -->
                 @if (profileForm.userType === 'organization') {
                 <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Organization Details</h3>
+
+                <!-- Corporate logo upload — shown on co-branding strips and the corporate dashboard. -->
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-20 h-20 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden">
+                        @if (profile?.corporate?.logoUrl) {
+                            <img [src]="profile.corporate.logoUrl" alt="Organization logo" class="w-full h-full object-contain">
+                        } @else {
+                            <lucide-icon name="building-2" class="w-8 h-8 text-neutral-300"></lucide-icon>
+                        }
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-neutral-700 mb-1">Organization Logo</p>
+                        <p class="text-xs text-neutral-400 mb-2">PNG, JPG, WebP, or SVG. Max 2MB. Shown on co-branding strips when you sponsor a project.</p>
+                        <div class="flex gap-2">
+                            <button type="button" class="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 disabled:opacity-50"
+                                (click)="logoInput.click()" [disabled]="isUploadingLogo">
+                                {{ profile?.corporate?.logoUrl ? 'Replace' : 'Upload' }} logo
+                            </button>
+                            @if (profile?.corporate?.logoUrl) {
+                                <button type="button" class="px-3 py-1.5 text-xs font-medium text-neutral-500 border border-neutral-200 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
+                                    (click)="removeCorporateLogo()" [disabled]="isUploadingLogo">
+                                    Remove
+                                </button>
+                            }
+                            <input #logoInput type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="hidden"
+                                (change)="onCorporateLogoSelected($event)">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name</label>
