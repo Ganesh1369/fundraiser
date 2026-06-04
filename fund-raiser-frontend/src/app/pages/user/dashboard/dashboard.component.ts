@@ -242,13 +242,15 @@ export class DashboardComponent implements OnInit {
 
         forkJoin(calls).subscribe({
             next: (res: any) => {
-                if (res.summary?.success) this.summary = res.summary.data;
-                if (res.donations?.success) this.donations = res.donations.data;
-                if (res.referrals?.success) this.referralStats = res.referrals.data;
-                if (res.certificates?.success) this.certificateRequests = res.certificates.data;
-                this.cdr.detectChanges();
-                // Donations now known; refresh donated-to project details (no-op if projects haven't loaded yet — the projects callback will re-run this).
-                this.loadDonatedProjectDetails();
+                this.zone.run(() => {
+                    if (res.summary?.success) this.summary = res.summary.data;
+                    if (res.donations?.success) this.donations = res.donations.data;
+                    if (res.referrals?.success) this.referralStats = res.referrals.data;
+                    if (res.certificates?.success) this.certificateRequests = res.certificates.data;
+                    this.cdr.detectChanges();
+                    // Donations now known; refresh donated-to project details (no-op if projects haven't loaded yet — the projects callback will re-run this).
+                    this.loadDonatedProjectDetails();
+                });
             },
             error: (err: any) => {
                 if (err.status === 401 || err.status === 403) this.logout();
@@ -259,7 +261,9 @@ export class DashboardComponent implements OnInit {
     loadDonations(): void {
         this.api.getDonations(this.selectedFilter).subscribe({
             next: (res: any) => {
-                if (res.success) { this.donations = res.data; this.cdr.detectChanges(); }
+                this.zone.run(() => {
+                    if (res.success) { this.donations = res.data; this.cdr.detectChanges(); }
+                });
             },
             error: (err: any) => {
                 if (err.status === 401 || err.status === 403) this.logout();
@@ -270,7 +274,9 @@ export class DashboardComponent implements OnInit {
     loadCertificates(): void {
         this.api.getCertificateRequests().subscribe({
             next: (res: any) => {
-                if (res.success) { this.certificateRequests = res.data; this.cdr.detectChanges(); }
+                this.zone.run(() => {
+                    if (res.success) { this.certificateRequests = res.data; this.cdr.detectChanges(); }
+                });
             },
             error: () => { }
         });
@@ -337,12 +343,14 @@ export class DashboardComponent implements OnInit {
             donationId
         }).subscribe({
             next: (res: any) => {
-                if (res.success) {
-                    this.loadDashboardData();
-                    this.toast.success('Thank you for your donation!');
-                }
+                this.zone.run(() => {
+                    if (res.success) {
+                        this.loadDashboardData();
+                        this.toast.success('Thank you for your donation!');
+                    }
+                });
             },
-            error: () => this.toast.error('Payment verification failed. Please contact support.')
+            error: () => this.zone.run(() => this.toast.error('Payment verification failed. Please contact support.'))
         });
     }
 
