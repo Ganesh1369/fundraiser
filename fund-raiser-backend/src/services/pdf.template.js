@@ -282,7 +282,8 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
         .text(org.ice_registered_address || '', orgX, doc.y + 2, { width: orgWidth });
     const orgMeta = [
         org.ice_pan ? `PAN: ${org.ice_pan}` : null,
-        org.ice_80g_reg_number ? `80G Reg. No.: ${org.ice_80g_reg_number}` : null
+        org.ice_80g_reg_number ? `80G Reg. No.: ${org.ice_80g_reg_number}` : null,
+        org.ice_csr1_reg_number ? `CSR-1 Reg. No.: ${org.ice_csr1_reg_number}` : null
     ].filter(Boolean).join('   •   ');
     if (orgMeta) doc.text(orgMeta, orgX, doc.y + 2, { width: orgWidth });
 
@@ -352,15 +353,19 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
         ...(donation.csr_reference_number ? [['Donor reference', donation.csr_reference_number]] : [])
     ], margin, contentWidth);
 
-    // Footer note — Form CSR-2 friendly wording
+    // Footer note — Form CSR-2 friendly wording.
+    // CSR-1 reg #, when present on org_settings, substantiates the implementing-agency claim.
     doc.moveDown(0.9);
     doc.x = margin;
     const footerW = contentWidth - 200;
+    const orgName = org.ice_legal_name || 'The recipient organisation';
+    const csr1Clause = org.ice_csr1_reg_number
+        ? `${orgName} is registered as an implementing agency under Section 135 of the Companies Act, 2013 (CSR-1 Reg. No.: ${org.ice_csr1_reg_number}).`
+        : `${orgName} is a Section 80G-registered not-for-profit eligible to receive CSR contributions under Section 135 of the Companies Act, 2013.`;
     doc.font('Helvetica').fontSize(8.5).fillColor(COLORS.muted)
         .text(
             `This receipt may be retained as substantiation of the above CSR contribution for the donor company's ` +
-            `Schedule VII reporting and Form CSR-2 annual filing. ${org.ice_legal_name || 'The recipient organisation'} ` +
-            `is a registered implementing agency under Section 135 of the Companies Act, 2013.`,
+            `Schedule VII reporting and Form CSR-2 annual filing. ${csr1Clause}`,
             margin, doc.y, { width: footerW, align: 'justify', lineGap: 1.5 }
         );
 

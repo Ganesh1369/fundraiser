@@ -140,7 +140,8 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
         ice_80g_valid_to: orgValue('ice_80g_valid_to'),
         ice_signatory_name: orgValue('ice_signatory_name'),
         ice_signatory_image: orgValue('ice_signatory_image'),
-        ice_logo: orgValue('ice_logo')
+        ice_logo: orgValue('ice_logo'),
+        ice_csr1_reg_number: orgValue('ice_csr1_reg_number')
     };
 
     const donor = {
