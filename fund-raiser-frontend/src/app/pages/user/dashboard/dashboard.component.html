@@ -196,7 +196,7 @@
                         <lucide-icon name="gift" class="w-4.5 h-4.5 text-amber-500"></lucide-icon>
                     </div>
                     <h4 class="text-sm font-semibold text-accent m-0 mb-0.5">Referral Points</h4>
-                    <p class="text-xs text-neutral-500 m-0">Earn points as your network gives. Redeemable in upcoming Phase 2.2.</p>
+                    <p class="text-xs text-neutral-500 m-0">Earn points as your network gives. Redeemable soon.</p>
                 </div>
                 <div class="bg-white rounded-2xl p-4 shadow-soft">
                     <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-3">
@@ -272,14 +272,14 @@
                     </div>
                     } @else {
                     <div class="flex flex-col gap-3">
-                        @for (donation of donations; track donation.id) {
+                        @for (donation of donations.slice(0, donationsPreviewCount); track donation.id) {
                         <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
                             <div>
                                 <div class="text-sm font-semibold text-accent">{{ formatCurrency(donation.amount) }}</div>
                                 <div class="text-xs text-neutral-400 mt-0.5">{{ formatDate(donation.createdAt) }}</div>
                             </div>
                             <div class="flex items-center gap-2">
-                                @if (donation.request80g) {
+                                @if (donation.request80g && donation.status === 'completed') {
                                 <span class="px-2 py-0.5 text-xs font-medium rounded-full"
                                     [ngClass]="{
                                         'bg-primary/10 text-primary': (donation.certificateStatus || 'pending') === 'approved',
@@ -297,7 +297,7 @@
                                     }">
                                     {{ donation.status }}
                                 </span>
-                                @if (donation.status === 'failed') {
+                                @if (donation.status === 'failed' || donation.status === 'pending') {
                                 <button type="button"
                                     class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-primary text-white hover:bg-primary-500 transition-colors disabled:opacity-50"
                                     [disabled]="isLoading"
@@ -310,9 +310,103 @@
                         </div>
                         }
                     </div>
+                    @if (donations.length > donationsPreviewCount) {
+                    <button type="button"
+                        class="w-full mt-4 px-4 py-2.5 text-sm font-semibold text-primary border border-primary/30 rounded-xl hover:bg-primary/5 transition-colors"
+                        (click)="showAllDonationsModal = true">
+                        See all {{ donations.length }} transactions
+                    </button>
+                    }
                     }
                 </div>
             </div>
+
+            <!-- All-donations modal -->
+            @if (showAllDonationsModal) {
+            <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+                (click)="showAllDonationsModal = false">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col"
+                    (click)="$event.stopPropagation()">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
+                        <div>
+                            <h2 class="text-base font-semibold text-accent m-0">All transactions</h2>
+                            <p class="text-xs text-neutral-400 m-0 mt-0.5">{{ donations.length }} donation{{ donations.length === 1 ? '' : 's' }}</p>
+                        </div>
+                        <button class="text-neutral-400 hover:text-neutral-600" (click)="showAllDonationsModal = false">
+                            <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto p-6 flex-1">
+                        <div class="flex flex-col gap-3">
+                            @for (donation of donations; track donation.id) {
+                            <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                                <div>
+                                    <div class="text-sm font-semibold text-accent">{{ formatCurrency(donation.amount) }}</div>
+                                    <div class="text-xs text-neutral-400 mt-0.5">{{ formatDate(donation.createdAt) }}</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    @if (donation.request80g) {
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full"
+                                        [ngClass]="{
+                                            'bg-primary/10 text-primary': (donation.certificateStatus || 'pending') === 'approved',
+                                            'bg-amber-50 text-amber-600': (donation.certificateStatus || 'pending') === 'pending' || (donation.certificateStatus || 'pending') === 'processing',
+                                            'bg-red-50 text-red-500': (donation.certificateStatus || 'pending') === 'rejected'
+                                        }">
+                                        80G {{ donation.certificateStatus || 'pending' }}
+                                    </span>
+                                    }
+                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full capitalize"
+                                        [ngClass]="{
+                                            'bg-primary/10 text-primary': donation.status === 'completed',
+                                            'bg-amber-50 text-amber-600': donation.status === 'pending',
+                                            'bg-red-50 text-red-500': donation.status === 'failed'
+                                        }">
+                                        {{ donation.status }}
+                                    </span>
+                                    @if (donation.status === 'failed' || donation.status === 'pending') {
+                                    <button type="button"
+                                        class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-primary text-white hover:bg-primary-500 transition-colors disabled:opacity-50"
+                                        [disabled]="isLoading"
+                                        (click)="retryDonation(donation); showAllDonationsModal = false">
+                                        <lucide-icon name="arrow-right" class="w-3 h-3"></lucide-icon>
+                                        Retry
+                                    </button>
+                                    }
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- All-referrals modal -->
+            @if (showAllReferralsModal && referralStats?.recentReferrals?.length) {
+            <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+                (click)="showAllReferralsModal = false">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col"
+                    (click)="$event.stopPropagation()">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
+                        <div>
+                            <h2 class="text-base font-semibold text-accent m-0">All referrals</h2>
+                            <p class="text-xs text-neutral-400 m-0 mt-0.5">{{ referralStats!.recentReferrals!.length }} {{ referralStats!.recentReferrals!.length === 1 ? 'person' : 'people' }}</p>
+                        </div>
+                        <button class="text-neutral-400 hover:text-neutral-600" (click)="showAllReferralsModal = false">
+                            <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto p-6 flex-1">
+                        @for (referral of referralStats!.recentReferrals!; track referral.name) {
+                        <div class="flex items-center gap-3 py-2">
+                            <span class="w-7 h-7 flex items-center justify-center bg-primary/10 text-primary text-xs font-semibold rounded-full">{{ referral.name.charAt(0) }}</span>
+                            <span class="text-sm text-neutral-700">{{ referral.name }}</span>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            }
 
             <!-- Referral Card (narrower) -->
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-soft overflow-hidden">
@@ -353,11 +447,18 @@
                     @if (referralStats?.recentReferrals?.length) {
                     <div class="pt-4 border-t border-neutral-100">
                         <h4 class="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-3">Recent Referrals</h4>
-                        @for (referral of referralStats!.recentReferrals!; track referral.name) {
+                        @for (referral of referralStats!.recentReferrals!.slice(0, referralsPreviewCount); track referral.name) {
                         <div class="flex items-center gap-3 py-2">
                             <span class="w-7 h-7 flex items-center justify-center bg-primary/10 text-primary text-xs font-semibold rounded-full">{{ referral.name.charAt(0) }}</span>
                             <span class="text-sm text-neutral-700">{{ referral.name }}</span>
                         </div>
+                        }
+                        @if ((referralStats!.recentReferrals!.length) > referralsPreviewCount) {
+                        <button type="button"
+                            class="w-full mt-3 px-4 py-2 text-xs font-semibold text-primary border border-primary/30 rounded-xl hover:bg-primary/5 transition-colors"
+                            (click)="showAllReferralsModal = true">
+                            See all {{ referralStats!.recentReferrals!.length }} referrals
+                        </button>
                         }
                     </div>
                     }

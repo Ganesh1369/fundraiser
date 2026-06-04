@@ -154,16 +154,23 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                 .catch(err => console.error('cert auto-gen failed:', err.message));
         }
 
-        // Send confirmation email (non-blocking)
+        // Send confirmation email (non-blocking). Log success + failure so we
+        // can tell from the backend log whether SMTP actually accepted the message.
         const userResult = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
         if (userResult.rows.length > 0) {
+            const recipient = userResult.rows[0].email;
+            console.log(`[donation email] attempting send to ${recipient} amount=${donation.amount}`);
             emailService.sendDonationConfirmationEmail(
-                userResult.rows[0].email,
+                recipient,
                 userName,
                 parseFloat(donation.amount),
                 razorpayPaymentId,
                 new Date()
-            ).catch(err => console.error('Failed to send donation email:', err.message));
+            )
+                .then(info => console.log(`[donation email] sent to ${recipient}, messageId=${info?.messageId || '?'}`))
+                .catch(err => console.error(`[donation email] FAILED to ${recipient}:`, err.message, err.code || ''));
+        } else {
+            console.warn(`[donation email] no user row found for userId=${userId}, skipping`);
         }
 
         return {
@@ -178,4 +185,19 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
     }
 };
 
-module.exports = { createOrder, verifyPayment };
+/**
+ * Discard a pending or failed donation row. Used when the user clicks Retry —
+ * the old row is removed entirely so each donation series shows only its
+ * latest attempt on the dashboard. Completed rows are protected (DELETE only
+ * fires for status IN ('pending','failed')). Ownership is enforced by user_id.
+ */
+const cancelPending = async (userId, donationId) => {
+    const result = await db.query(
+        `DELETE FROM donations
+         WHERE id = ? AND user_id = ? AND status IN ('pending', 'failed')`,
+        [donationId, userId]
+    );
+    return { donationId, deleted: result.rowCount > 0 };
+};
+
+module.exports = { createOrder, verifyPayment, cancelPending };

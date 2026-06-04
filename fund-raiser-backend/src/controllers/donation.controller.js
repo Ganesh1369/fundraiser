@@ -15,6 +15,20 @@ exports.createOrder = async (req, res, next) => {
     }
 };
 
+// Cancel a still-pending donation (e.g. user dismissed Razorpay and wants to retry).
+// Marks status='failed' so the row stops cluttering the dashboard as "Pending".
+exports.cancelPending = async (req, res, next) => {
+    try {
+        const { donationId } = req.body;
+        if (!donationId) return res.status(400).json({ success: false, message: 'donationId is required' });
+        const result = await donationService.cancelPending(req.user.id, donationId);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 // Verify payment
 exports.verifyPayment = async (req, res, next) => {
     try {

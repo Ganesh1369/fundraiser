@@ -115,6 +115,10 @@ export class DashboardComponent implements OnInit {
     projectDetails: ProjectDetail[] = [];
 
     activeTab = 'overview';
+    showAllDonationsModal = false;
+    donationsPreviewCount = 4;
+    showAllReferralsModal = false;
+    referralsPreviewCount = 4;
     donationAmount = 100;
     request80g = false;
     selectedProjectId = '';
@@ -293,8 +297,21 @@ export class DashboardComponent implements OnInit {
     }
 
     retryDonation(d: Donation): void {
-        if (!d || d.status !== 'failed' || d.amount < 1) return;
-        this.startDonationFlow(d.amount, !!d.request80g, d.projectId || null);
+        if (!d || d.amount < 1) return;
+        if (d.status !== 'failed' && d.status !== 'pending') return;
+        // For a pending row (Razorpay dismissed), mark it failed first so the
+        // dashboard doesn't end up with stacked duplicate pending entries.
+        // The follow-up startDonationFlow runs regardless of the cancel outcome
+        // so a slow/failing cancel call doesn't block the user from retrying.
+        const launch = () => this.startDonationFlow(d.amount, !!d.request80g, d.projectId || null);
+        if (d.status === 'pending') {
+            this.api.cancelPendingDonation(d.id).subscribe({
+                next: () => launch(),
+                error: () => launch()
+            });
+        } else {
+            launch();
+        }
     }
 
     private startDonationFlow(amount: number, request80g: boolean, projectId: string | null): void {
@@ -322,6 +339,10 @@ export class DashboardComponent implements OnInit {
                             ondismiss: () => {
                                 this.zone.run(() => {
                                     this.isLoading = false;
+                                    // Donation row was created server-side before Razorpay opened
+                                    // (status='pending'). Refresh history so it shows up with a
+                                    // Retry pill instead of waiting for a manual reload.
+                                    this.loadDonations();
                                     this.cdr.detectChanges();
                                 });
                             }
@@ -347,11 +368,43 @@ export class DashboardComponent implements OnInit {
                     if (res.success) {
                         this.loadDashboardData();
                         this.toast.success('Thank you for your donation!');
+                        // 80G auto-gen runs post-commit on the server (a couple of seconds);
+                        // poll briefly so the cert flips from pending → approved on the
+                        // dashboard without a manual reload.
+                        this.pollPendingCertificates();
                     }
                 });
             },
             error: () => this.zone.run(() => this.toast.error('Payment verification failed. Please contact support.'))
         });
+    }
+
+    /**
+     * After a donation completes, the server kicks off 80G cert generation
+     * post-commit (fire-and-forget). Re-fetch cert state AND donations every 2s
+     * up to 6 times so both the cert request row and the donation history badge
+     * flip from pending → approved without a manual reload.
+     */
+    private pollPendingCertificates(remaining: number = 6): void {
+        if (remaining <= 0) return;
+        setTimeout(() => {
+            forkJoin({
+                certs: this.api.getCertificateRequests(),
+                donations: this.api.getDonations(this.selectedFilter)
+            }).subscribe({
+                next: (res: any) => {
+                    this.zone.run(() => {
+                        if (res.certs?.success) this.certificateRequests = res.certs.data;
+                        if (res.donations?.success) this.donations = res.donations.data;
+                        this.cdr.detectChanges();
+                        const stillPending =
+                            (res.certs?.data || []).some((c: any) => c.donationId && c.status === 'pending') ||
+                            (res.donations?.data || []).some((d: any) => d.request80g && d.certificateStatus === 'pending');
+                        if (stillPending) this.pollPendingCertificates(remaining - 1);
+                    });
+                }
+            });
+        }, 2000);
     }
 
     openCertificateModal(): void {

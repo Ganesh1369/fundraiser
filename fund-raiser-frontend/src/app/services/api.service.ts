@@ -119,6 +119,10 @@ export class ApiService {
         return this.http.post(`${this.apiUrl}/donations/verify`, data, { headers: this.getHeaders() });
     }
 
+    cancelPendingDonation(donationId: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/donations/cancel-pending`, { donationId }, { headers: this.getHeaders() });
+    }
+
     // --- Admin ---
     getAdminStats(): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/stats`, { headers: this.getHeaders(true) });
