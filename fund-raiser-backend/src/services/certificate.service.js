@@ -201,13 +201,24 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
         }
     });
 
-    // Email is best-effort (logged, not awaited).
-    emailService.sendCertificateGeneratedEmail?.(
-        cert.user.email,
-        cert.user.name,
-        relPath,
-        certificateNumber
-    )?.catch?.(e => console.error('cert email failed:', e.message));
+    // Email is best-effort (logged, not awaited). CSR receipts go through
+    // the CSR-flavored template; 80G certificates keep the existing copy.
+    if (certType === 'csr_receipt') {
+        const recipientName = cert.user.organization_name || cert.user.name;
+        emailService.sendCsrReceiptGeneratedEmail?.(
+            cert.user.email,
+            recipientName,
+            relPath,
+            certificateNumber
+        )?.catch?.(e => console.error('csr receipt email failed:', e.message));
+    } else {
+        emailService.sendCertificateGeneratedEmail?.(
+            cert.user.email,
+            cert.user.name,
+            relPath,
+            certificateNumber
+        )?.catch?.(e => console.error('cert email failed:', e.message));
+    }
 
     return updated;
 };

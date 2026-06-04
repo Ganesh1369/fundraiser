@@ -231,16 +231,32 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
                 .catch(err => console.error('cert auto-gen failed:', err.message));
         }
 
-        // Send confirmation email (non-blocking)
-        const userResult = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
+        // Send confirmation email (non-blocking) — CSR contributions get a
+        // CSR-flavored confirmation framed as a Section 135 partnership.
+        const userResult = await db.query('SELECT email, organization_name FROM users WHERE id = ?', [userId]);
         if (userResult.rows.length > 0) {
-            emailService.sendDonationConfirmationEmail(
-                userResult.rows[0].email,
-                userName,
-                parseFloat(donation.amount),
-                razorpayPaymentId,
-                new Date()
-            ).catch(err => console.error('Failed to send donation email:', err.message));
+            if (donation.purpose === 'csr_donation') {
+                const recipientName = userResult.rows[0].organization_name || userName;
+                const projectRow = donation.project_id
+                    ? await db.query('SELECT name FROM projects WHERE id = ?', [donation.project_id])
+                    : { rows: [] };
+                emailService.sendCsrDonationConfirmationEmail(
+                    userResult.rows[0].email,
+                    recipientName,
+                    parseFloat(donation.amount),
+                    razorpayPaymentId,
+                    new Date(),
+                    projectRow.rows[0]?.name || null
+                ).catch(err => console.error('Failed to send CSR confirmation email:', err.message));
+            } else {
+                emailService.sendDonationConfirmationEmail(
+                    userResult.rows[0].email,
+                    userName,
+                    parseFloat(donation.amount),
+                    razorpayPaymentId,
+                    new Date()
+                ).catch(err => console.error('Failed to send donation email:', err.message));
+            }
         }
 
         return {

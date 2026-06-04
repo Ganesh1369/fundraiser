@@ -135,11 +135,18 @@ async function handlePaymentCaptured(payment) {
             }
 
             // Capture data for post-commit emails (avoid running them inside the txn).
-            if (donation.purpose === 'donation') {
-                const u = await client.query('SELECT email, name FROM users WHERE id = ?', [donation.user_id]);
+            if (donation.purpose === 'donation' || donation.purpose === 'csr_donation') {
+                const u = await client.query(
+                    'SELECT email, name, organization_name FROM users WHERE id = ?',
+                    [donation.user_id]
+                );
                 if (u.rows.length > 0) {
                     donationForEmail = donation;
                     userForEmail = u.rows[0];
+                    if (donation.purpose === 'csr_donation' && donation.project_id) {
+                        const p = await client.query('SELECT name FROM projects WHERE id = ?', [donation.project_id]);
+                        userForEmail.project_name = p.rows[0]?.name || null;
+                    }
                 }
             }
         }
@@ -156,10 +163,19 @@ async function handlePaymentCaptured(payment) {
 
     // ===== Post-commit, best-effort side-effects (audit B4 fix). =====
     if (donationForEmail && userForEmail) {
-        emailService.sendDonationConfirmationEmail(
-            userForEmail.email, userForEmail.name,
-            parseFloat(donationForEmail.amount), payment.id, new Date()
-        ).catch(err => console.error('webhook donation email failed:', err.message));
+        if (donationForEmail.purpose === 'csr_donation') {
+            const recipientName = userForEmail.organization_name || userForEmail.name;
+            emailService.sendCsrDonationConfirmationEmail(
+                userForEmail.email, recipientName,
+                parseFloat(donationForEmail.amount), payment.id, new Date(),
+                userForEmail.project_name || null
+            ).catch(err => console.error('webhook CSR donation email failed:', err.message));
+        } else {
+            emailService.sendDonationConfirmationEmail(
+                userForEmail.email, userForEmail.name,
+                parseFloat(donationForEmail.amount), payment.id, new Date()
+            ).catch(err => console.error('webhook donation email failed:', err.message));
+        }
     }
     if (createdCertId) {
         certificateService.generate(createdCertId, { auto: true, silent: true })
