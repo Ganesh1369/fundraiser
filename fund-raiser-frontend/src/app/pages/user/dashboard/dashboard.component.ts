@@ -147,6 +147,7 @@ export class DashboardComponent implements OnInit {
     projectDetails: ProjectDetail[] = [];
     csr: CsrCard[] = [];
     csrSummary: CsrSummary | null = null;
+    csrCommitments: any[] = [];
 
     activeTab = 'overview';
     donationAmount = 100;
@@ -216,6 +217,15 @@ export class DashboardComponent implements OnInit {
             next: (res: any) => {
                 if (res?.success) {
                     this.csrSummary = res.data || null;
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { }
+        });
+        this.api.getCsrCommitmentsForUser().subscribe({
+            next: (res: any) => {
+                if (res?.success) {
+                    this.csrCommitments = res.data || [];
                     this.cdr.detectChanges();
                 }
             },

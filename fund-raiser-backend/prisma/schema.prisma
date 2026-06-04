@@ -417,6 +417,60 @@ model CsrActivity {
   @@map("csr_activities")
 }
 
+// Phase 2.2 — multi-tranche CSR pledges. A header row + N scheduled tranches.
+// Each tranche links to a donations row once paid; receipts are issued per
+// tranche through the existing certificate_requests pipeline.
+model CsrCommitment {
+  id                    String    @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  user_id               String    @db.Char(36)
+  project_id            String?   @db.Char(36)
+  total_amount          Decimal   @db.Decimal(15, 2)
+  currency              String    @default("INR") @db.VarChar(3)
+  period_label          String?   @db.VarChar(20)
+  notes                 String?   @db.Text
+  status                CsrCommitmentStatus @default(active)
+  created_by_admin_id   String?   @db.Char(36)
+  created_at            DateTime  @default(now()) @db.DateTime(0)
+  updated_at            DateTime  @default(now()) @updatedAt @db.DateTime(0)
+
+  @@index([user_id],    map: "idx_csr_commitments_user")
+  @@index([project_id], map: "idx_csr_commitments_project")
+  @@index([status],     map: "idx_csr_commitments_status")
+  @@map("csr_commitments")
+}
+
+model CsrCommitmentTranche {
+  id              String    @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  commitment_id   String    @db.Char(36)
+  sequence        Int       @db.SmallInt
+  planned_amount  Decimal   @db.Decimal(15, 2)
+  planned_date    DateTime? @db.Date
+  donation_id     String?   @db.Char(36)
+  status          CsrTrancheStatus @default(scheduled)
+  paid_at         DateTime? @db.DateTime(0)
+  notes           String?   @db.VarChar(255)
+  created_at      DateTime  @default(now()) @db.DateTime(0)
+  updated_at      DateTime  @default(now()) @updatedAt @db.DateTime(0)
+
+  @@unique([commitment_id, sequence], map: "uniq_tranche_seq_per_commitment")
+  @@index([commitment_id], map: "idx_csr_tranches_commitment")
+  @@index([donation_id],   map: "idx_csr_tranches_donation")
+  @@index([status],        map: "idx_csr_tranches_status")
+  @@map("csr_commitment_tranches")
+}
+
+enum CsrCommitmentStatus {
+  active
+  completed
+  cancelled
+}
+
+enum CsrTrancheStatus {
+  scheduled
+  paid
+  skipped
+}
+
 // ===== Views =====
 // Both views are pre-existing in prod; included so Prisma introspection stays in sync.
 // They are read-only from the application.

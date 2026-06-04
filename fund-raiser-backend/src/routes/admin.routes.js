@@ -35,6 +35,12 @@ router.get('/corporate-profiles', adminController.getCorporateProfiles);
 // FY-end CSR rollup xlsx (Phase 2.2) — all orgs' CSR donations for a given Indian FY
 router.get('/csr/rollup', adminController.exportCsrRollup);
 
+// CSR commitments (Phase 2.2) — multi-tranche pledges
+router.get('/csr/commitments',                              adminController.listCsrCommitments);
+router.post('/csr/commitments',                             adminController.createCsrCommitment);
+router.get('/csr/commitments/:id',                          adminController.getCsrCommitment);
+router.patch('/csr/commitments/:id/tranches/:tid/mark-paid', adminController.markTranchePaid);
+
 // 80G Certificate Management
 router.get('/certificates', adminController.getCertificateRequests);
 router.get('/certificates/export', adminController.exportCertificates);

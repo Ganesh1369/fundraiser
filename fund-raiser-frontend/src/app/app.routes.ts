@@ -63,6 +63,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/corporate-profiles/admin-corporate-profiles.component').then(m => m.AdminCorporateProfilesComponent)
             },
             {
+                path: 'csr-commitments',
+                loadComponent: () => import('./pages/admin/csr-commitments/admin-csr-commitments.component').then(m => m.AdminCsrCommitmentsComponent)
+            },
+            {
                 path: 'settings',
                 loadComponent: () => import('./pages/admin/settings/admin-settings.component').then(m => m.AdminSettingsComponent)
             },

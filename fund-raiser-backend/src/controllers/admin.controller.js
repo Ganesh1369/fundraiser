@@ -1,5 +1,6 @@
 const adminService = require('../services/admin.service');
 const certificateService = require('../services/certificate.service');
+const csrCommitmentService = require('../services/csr-commitment.service');
 
 exports.getDashboardStats = async (req, res, next) => {
     try {
@@ -105,6 +106,45 @@ exports.getCorporateProfiles = async (req, res, next) => {
         const data = await adminService.getCorporateProfiles(req.query);
         res.json({ success: true, data });
     } catch (error) {
+        next(error);
+    }
+};
+
+// ===== CSR Commitments (Phase 2.2) =====
+
+exports.createCsrCommitment = async (req, res, next) => {
+    try {
+        const data = await csrCommitmentService.createCommitment(req.admin?.id, req.body);
+        res.status(201).json({ success: true, message: 'Commitment created', data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+exports.listCsrCommitments = async (req, res, next) => {
+    try {
+        const data = await csrCommitmentService.listCommitments(req.query);
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+};
+
+exports.getCsrCommitment = async (req, res, next) => {
+    try {
+        const data = await csrCommitmentService.getCommitmentById(req.params.id);
+        res.json({ success: true, data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+exports.markTranchePaid = async (req, res, next) => {
+    try {
+        const data = await csrCommitmentService.markTranchePaid(req.params.id, req.params.tid, req.body);
+        res.json({ success: true, message: 'Tranche marked paid', data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
         next(error);
     }
 };

@@ -143,6 +143,33 @@ export class ApiService {
         );
     }
 
+    getCsrCommitmentsForUser(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/user/csr-commitments`, { headers: this.getHeaders() });
+    }
+
+    // Admin — CSR commitments
+    listAdminCsrCommitments(limit = 20, page = 1, status?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/csr/commitments?limit=${limit}&page=${page}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+        return this.http.get(url, { headers: this.getHeaders(true) });
+    }
+
+    createAdminCsrCommitment(body: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/csr/commitments`, body, { headers: this.getHeaders(true) });
+    }
+
+    getAdminCsrCommitment(id: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/csr/commitments/${id}`, { headers: this.getHeaders(true) });
+    }
+
+    markAdminCsrTranchePaid(id: string, tid: string, donationId: string): Observable<any> {
+        return this.http.patch(
+            `${this.apiUrl}/admin/csr/commitments/${id}/tranches/${tid}/mark-paid`,
+            { donationId },
+            { headers: this.getHeaders(true) }
+        );
+    }
+
     resumeDonation(donationId: string): Observable<any> {
         return this.http.post(`${this.apiUrl}/donations/resume`, { donationId }, { headers: this.getHeaders() });
     }

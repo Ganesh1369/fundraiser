@@ -1,0 +1,202 @@
+<header class="admin-header">
+    <h1>CSR Commitments</h1>
+</header>
+
+<div class="filters">
+    <span class="text-xs text-neutral-500 ml-auto">{{ pagination.total }} commitment{{ pagination.total === 1 ? '' : 's' }}</span>
+    <button class="btn btn-primary" (click)="showCreate = !showCreate">
+        <lucide-icon name="plus" [size]="16"></lucide-icon> New Commitment
+    </button>
+</div>
+
+@if (showCreate) {
+<div class="card mb-4 p-4">
+    <h3 class="text-sm font-semibold text-accent mb-3">New CSR Commitment</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 mb-1">Org email *</label>
+            <input type="email" [(ngModel)]="form.email" placeholder="org@company.com"
+                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 mb-1">Total amount (INR) *</label>
+            <input type="number" [(ngModel)]="form.totalAmount" min="0" placeholder="5000000"
+                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 mb-1">Period label</label>
+            <input type="text" [(ngModel)]="form.periodLabel" placeholder="FY 2026-27" maxlength="20"
+                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+            <input type="text" [(ngModel)]="form.notes" placeholder="Board resolution #, PO #, …"
+                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none">
+        </div>
+    </div>
+
+    <h4 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-4 mb-2">Tranche schedule</h4>
+    <div class="flex flex-col gap-2 mb-2">
+        @for (t of form.tranches; track $index) {
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-neutral-400 w-6">#{{ $index + 1 }}</span>
+            <input type="number" [(ngModel)]="t.plannedAmount" placeholder="Amount (INR)" min="0"
+                class="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-lg">
+            <input type="date" [(ngModel)]="t.plannedDate"
+                class="px-3 py-2 text-sm border border-neutral-200 rounded-lg">
+            <button type="button" class="text-neutral-400 hover:text-red-500" (click)="removeTranche($index)">
+                <lucide-icon name="x" [size]="14"></lucide-icon>
+            </button>
+        </div>
+        }
+    </div>
+    <button type="button" class="text-xs text-primary hover:underline" (click)="addTranche()">
+        + Add tranche
+    </button>
+
+    <div class="flex items-center justify-between mt-4 pt-3 border-t border-neutral-100">
+        <div class="text-xs text-neutral-500">
+            Sum: <strong [class.text-red-500]="sumMismatch()">{{ formatCurrency(trancheSum()) }}</strong>
+            / Total: <strong>{{ form.totalAmount ? formatCurrency(+form.totalAmount) : '—' }}</strong>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-4 py-2 text-sm border border-neutral-200 rounded-lg" (click)="showCreate = false" [disabled]="creating">Cancel</button>
+            <button class="px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg disabled:opacity-50" (click)="save()" [disabled]="creating">
+                {{ creating ? 'Saving…' : 'Create commitment' }}
+            </button>
+        </div>
+    </div>
+</div>
+}
+
+<div class="card">
+    @if (loading) {
+    <div class="empty-state">
+        <span class="w-6 h-6 border-2 border-neutral-200 border-t-primary rounded-full animate-spin"></span>
+    </div>
+    } @else if (commitments.length === 0) {
+    <div class="empty-state">
+        <lucide-icon name="handshake" class="empty-icon" [size]="40"></lucide-icon>
+        <h3>No CSR commitments yet</h3>
+        <p>Multi-tranche pledges from corporate donors will appear here.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Organization</th>
+                    <th>Period</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Remaining</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (c of commitments; track c.id) {
+                <tr>
+                    <td>
+                        <div class="font-semibold text-accent">{{ c.orgName }}</div>
+                        @if (c.projectName) {
+                            <div class="text-xs text-neutral-500">{{ c.projectName }}</div>
+                        }
+                    </td>
+                    <td class="text-xs">{{ c.periodLabel || '—' }}</td>
+                    <td class="font-semibold">{{ formatCurrency(c.totalAmount) }}</td>
+                    <td class="text-primary font-semibold">{{ formatCurrency(c.paidAmount) }}</td>
+                    <td class="text-neutral-500">{{ formatCurrency(c.remainingAmount) }}</td>
+                    <td class="text-xs">{{ c.paidCount }}/{{ c.trancheCount }} tranches</td>
+                    <td>
+                        <span class="status-badge" [ngClass]="c.status === 'completed' ? 'status-approved' : c.status === 'cancelled' ? 'status-rejected' : 'status-processing'">
+                            {{ c.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-action" (click)="openDetail(c.id)">
+                            <lucide-icon name="eye" [size]="14"></lucide-icon> View
+                        </button>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="load(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="load(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
+    }
+</div>
+
+@if (detail) {
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" (click)="closeDetail()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+            <div>
+                <h2 class="text-lg font-bold text-accent m-0">{{ detail.orgName }}</h2>
+                <p class="text-xs text-neutral-500 m-0">{{ detail.periodLabel || '—' }} &middot; {{ formatCurrency(detail.totalAmount) }} total</p>
+            </div>
+            <button class="text-neutral-400 hover:text-neutral-600" (click)="closeDetail()">
+                <lucide-icon name="x" [size]="20"></lucide-icon>
+            </button>
+        </div>
+        <div class="grid grid-cols-3 gap-0 border-b border-neutral-100 text-center">
+            <div class="px-4 py-3 border-r border-neutral-100">
+                <div class="text-[10px] uppercase tracking-wider text-neutral-400">Total pledged</div>
+                <div class="text-lg font-bold text-accent">{{ formatCurrency(detail.totalAmount) }}</div>
+            </div>
+            <div class="px-4 py-3 border-r border-neutral-100">
+                <div class="text-[10px] uppercase tracking-wider text-neutral-400">Paid</div>
+                <div class="text-lg font-bold text-primary">{{ formatCurrency(detail.paidAmount) }}</div>
+            </div>
+            <div class="px-4 py-3">
+                <div class="text-[10px] uppercase tracking-wider text-neutral-400">Remaining</div>
+                <div class="text-lg font-bold text-neutral-600">{{ formatCurrency(detail.remainingAmount) }}</div>
+            </div>
+        </div>
+        <div class="px-6 py-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">Tranches</h3>
+            <div class="flex flex-col gap-3">
+                @for (t of detail.tranches; track t.id) {
+                <div class="border border-neutral-100 rounded-xl p-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold text-accent">
+                                #{{ t.sequence }} &middot; {{ formatCurrency(t.plannedAmount) }}
+                                @if (t.plannedDate) { <span class="text-neutral-400 font-normal">&middot; planned {{ formatDate(t.plannedDate) }}</span> }
+                            </div>
+                            @if (t.donationId) {
+                                <div class="text-xs text-neutral-500 mt-1">
+                                    Donation: <code>{{ t.donationId.slice(0, 8) }}…</code>
+                                    @if (t.receiptNumber) { &middot; Receipt {{ t.receiptNumber }} }
+                                    @if (t.paidAt) { &middot; paid {{ formatDate(t.paidAt) }} }
+                                </div>
+                            }
+                        </div>
+                        <span class="status-badge shrink-0" [ngClass]="t.status === 'paid' ? 'status-approved' : t.status === 'skipped' ? 'status-rejected' : 'status-processing'">
+                            {{ t.status }}
+                        </span>
+                    </div>
+                    @if (t.status === 'scheduled') {
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-neutral-100">
+                        <input type="text" [(ngModel)]="donationIdInputs[t.id]" placeholder="Donation UUID to link"
+                            class="flex-1 px-3 py-2 text-xs border border-neutral-200 rounded-lg">
+                        <button class="px-3 py-2 text-xs font-semibold bg-primary text-white rounded-lg disabled:opacity-50"
+                            (click)="markPaid(detail.id, t.id)" [disabled]="markingTrancheId === t.id">
+                            {{ markingTrancheId === t.id ? 'Linking…' : 'Mark paid' }}
+                        </button>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+}

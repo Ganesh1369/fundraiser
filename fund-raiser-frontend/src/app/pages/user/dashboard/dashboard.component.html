@@ -338,6 +338,50 @@
             </div>
             }
 
+            <!-- Active multi-tranche commitments -->
+            @if (csrCommitments.length > 0) {
+            <div class="px-6 py-5 border-t border-neutral-100">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">Active CSR commitments</h3>
+                <div class="flex flex-col gap-4">
+                    @for (c of csrCommitments; track c.id) {
+                    <div class="border border-neutral-100 rounded-xl p-4">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-accent">{{ c.periodLabel || 'Commitment' }} &middot; {{ formatCurrency(c.totalAmount) }}</div>
+                                @if (c.projectName) { <div class="text-xs text-neutral-500">{{ c.projectName }}</div> }
+                            </div>
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-primary/10 text-primary shrink-0">
+                                {{ formatCurrency(c.paidAmount) }} / {{ formatCurrency(c.totalAmount) }}
+                            </span>
+                        </div>
+                        <div class="w-full h-2 bg-neutral-100 rounded-full overflow-hidden mb-3">
+                            <div class="h-full bg-primary transition-all"
+                                [style.width.%]="c.totalAmount > 0 ? (c.paidAmount / c.totalAmount * 100) : 0"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            @for (t of c.tranches; track t.id) {
+                            <div class="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
+                                [ngClass]="t.status === 'paid' ? 'bg-primary/5' : t.status === 'skipped' ? 'bg-neutral-50 text-neutral-400' : 'bg-neutral-50'">
+                                <div class="min-w-0 flex items-center gap-2">
+                                    <span class="text-[10px] text-neutral-400 w-5">#{{ t.sequence }}</span>
+                                    <span [class.line-through]="t.status === 'skipped'">
+                                        {{ formatCurrency(t.plannedAmount) }}
+                                        @if (t.plannedDate) { <span class="text-neutral-400">&middot; {{ formatDate(t.plannedDate) }}</span> }
+                                    </span>
+                                </div>
+                                <span class="text-[10px] font-semibold uppercase"
+                                    [ngClass]="t.status === 'paid' ? 'text-primary' : t.status === 'skipped' ? 'text-neutral-400' : 'text-neutral-500'">
+                                    {{ t.status }}
+                                </span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+
             <!-- Recent receipts (when present) -->
             @if (csrSummary.recentReceipts.length > 0) {
             <div class="px-6 py-5 border-t border-neutral-100">

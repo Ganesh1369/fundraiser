@@ -1,5 +1,6 @@
 const userService = require('../services/user.service');
 const certificateService = require('../services/certificate.service');
+const csrCommitmentService = require('../services/csr-commitment.service');
 
 exports.getProfile = async (req, res, next) => {
     try {
@@ -43,6 +44,19 @@ exports.getCsrSummary = async (req, res, next) => {
         const data = await userService.getCsrSummary(req.user.id);
         res.json({ success: true, data });
     } catch (error) {
+        next(error);
+    }
+};
+
+exports.getCsrCommitments = async (req, res, next) => {
+    try {
+        // service guards user_type
+        const userRow = await require('../services/user.service').getProfile(req.user.id).catch(() => null);
+        if (!userRow || userRow.userType !== 'organization') return res.json({ success: true, data: [] });
+        const data = await csrCommitmentService.getCommitmentsForUser(req.user.id);
+        res.json({ success: true, data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
         next(error);
     }
 };

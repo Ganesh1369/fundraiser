@@ -82,6 +82,9 @@ router.get('/csr-summary', userController.getCsrSummary);
 // FY-end CSR rollup xlsx download (organization users only)
 router.get('/csr-rollup', userController.exportCsrRollup);
 
+// Active CSR commitments + tranche schedule (organization users only)
+router.get('/csr-commitments', userController.getCsrCommitments);
+
 // Get referral statistics
 router.get('/referrals', userController.getReferrals);
 
