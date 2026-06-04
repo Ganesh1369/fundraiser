@@ -184,6 +184,12 @@ export class ApiService {
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
+    getAdminCorporateProfiles(limit: number = 20, page: number = 1, search?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/corporate-profiles?limit=${limit}&page=${page}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        return this.http.get(url, { headers: this.getHeaders(true) });
+    }
+
     updateCertificateStatus(id: string, status: string): Observable<any> {
         return this.http.patch(`${this.apiUrl}/admin/certificates/${id}`, { status }, { headers: this.getHeaders(true) });
     }

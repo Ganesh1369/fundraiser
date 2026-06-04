@@ -29,6 +29,9 @@ router.get('/users/:id', adminController.getUserAnalytics);
 router.get('/leaderboard', adminController.getLeaderboard);
 router.get('/leaderboard/export', adminController.exportLeaderboard);
 
+// Corporate profiles (Phase 2.2) — list of organization users with CSR compliance fields
+router.get('/corporate-profiles', adminController.getCorporateProfiles);
+
 // 80G Certificate Management
 router.get('/certificates', adminController.getCertificateRequests);
 router.get('/certificates/export', adminController.exportCertificates);

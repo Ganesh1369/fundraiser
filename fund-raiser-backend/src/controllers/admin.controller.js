@@ -100,6 +100,15 @@ exports.getCertificateRequests = async (req, res, next) => {
     }
 };
 
+exports.getCorporateProfiles = async (req, res, next) => {
+    try {
+        const data = await adminService.getCorporateProfiles(req.query);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.updateCertificateStatus = async (req, res, next) => {
     try {
         const data = await adminService.updateCertificateStatus(req.params.id, req.body);

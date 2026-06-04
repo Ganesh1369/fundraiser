@@ -487,6 +487,82 @@ const updateCertificateStatus = async (id, { status, adminNotes, certificateUrl 
 /**
  * Get user ID by URL slug (e.g. "kamalraj-ganesan" → user ID)
  */
+/**
+ * List organization users with corporate_profiles metadata + lifetime CSR totals.
+ * Includes orgs without a corporate_profiles row (LEFT JOIN) so admins can see
+ * who has signed up but not filled in compliance fields yet.
+ */
+const getCorporateProfiles = async ({ search, page = 1, limit = 20 }) => {
+    page = parseInt(page); limit = parseInt(limit);
+    const offset = (page - 1) * limit;
+    const params = [];
+    const whereConditions = [`u.user_type = 'organization'`];
+
+    if (search) {
+        whereConditions.push(`(u.organization_name LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR cp.cin LIKE ? OR cp.gstin LIKE ?)`);
+        const like = `%${search}%`;
+        params.push(like, like, like, like, like);
+    }
+    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+
+    const countResult = await db.query(
+        `SELECT COUNT(*) AS count
+         FROM users u LEFT JOIN corporate_profiles cp ON cp.user_id = u.id
+         ${whereClause}`,
+        params
+    );
+
+    const result = await db.query(
+        `SELECT u.id, u.name, u.email, u.phone, u.organization_name, u.pan_number, u.created_at,
+                cp.cin, cp.gstin, cp.csr_registration_number, cp.incorporated_year,
+                cp.industry, cp.logo_url,
+                cp.authorized_signatory_name, cp.authorized_signatory_designation,
+                cp.authorized_signatory_email, cp.authorized_signatory_phone,
+                COALESCE(SUM(CASE WHEN d.purpose = 'csr_donation' AND d.status = 'completed' THEN d.amount ELSE 0 END), 0) AS csr_lifetime_amount,
+                COUNT(CASE WHEN d.purpose = 'csr_donation' AND d.status = 'completed' THEN d.id END) AS csr_donation_count
+         FROM users u
+         LEFT JOIN corporate_profiles cp ON cp.user_id = u.id
+         LEFT JOIN donations d ON d.user_id = u.id
+         ${whereClause}
+         GROUP BY u.id, u.name, u.email, u.phone, u.organization_name, u.pan_number, u.created_at,
+                  cp.cin, cp.gstin, cp.csr_registration_number, cp.incorporated_year,
+                  cp.industry, cp.logo_url, cp.authorized_signatory_name, cp.authorized_signatory_designation,
+                  cp.authorized_signatory_email, cp.authorized_signatory_phone
+         ORDER BY csr_lifetime_amount DESC, u.created_at DESC
+         LIMIT ${limit} OFFSET ${offset}`,
+        params
+    );
+
+    return {
+        profiles: result.rows.map(r => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            phone: r.phone,
+            organizationName: r.organization_name,
+            panNumber: r.pan_number,
+            createdAt: r.created_at,
+            cin: r.cin,
+            gstin: r.gstin,
+            csrRegistrationNumber: r.csr_registration_number,
+            incorporatedYear: r.incorporated_year,
+            industry: r.industry,
+            logoUrl: r.logo_url,
+            authorizedSignatoryName: r.authorized_signatory_name,
+            authorizedSignatoryDesignation: r.authorized_signatory_designation,
+            authorizedSignatoryEmail: r.authorized_signatory_email,
+            authorizedSignatoryPhone: r.authorized_signatory_phone,
+            csrLifetimeAmount: parseFloat(r.csr_lifetime_amount),
+            csrDonationCount: Number(r.csr_donation_count)
+        })),
+        pagination: {
+            total: parseInt(countResult.rows[0].count),
+            page, limit,
+            totalPages: Math.ceil(countResult.rows[0].count / limit)
+        }
+    };
+};
+
 const getUserBySlug = async (slug) => {
     const result = await db.query(
         `SELECT id FROM users WHERE LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '')) = LOWER(REGEXP_REPLACE(?, '-', ' ')) AND is_active = true LIMIT 1`,
@@ -510,5 +586,6 @@ module.exports = {
     getDonations, exportDonations, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
     getCertificateRequests, exportCertificates, updateCertificateStatus,
+    getCorporateProfiles,
     getUserBySlug
 };

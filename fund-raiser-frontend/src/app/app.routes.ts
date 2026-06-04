@@ -59,6 +59,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/certificates/admin-certificates.component').then(m => m.AdminCertificatesComponent)
             },
             {
+                path: 'corporate-profiles',
+                loadComponent: () => import('./pages/admin/corporate-profiles/admin-corporate-profiles.component').then(m => m.AdminCorporateProfilesComponent)
+            },
+            {
                 path: 'settings',
                 loadComponent: () => import('./pages/admin/settings/admin-settings.component').then(m => m.AdminSettingsComponent)
             },
