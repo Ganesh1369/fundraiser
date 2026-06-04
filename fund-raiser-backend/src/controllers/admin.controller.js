@@ -109,6 +109,18 @@ exports.getCorporateProfiles = async (req, res, next) => {
     }
 };
 
+exports.exportCsrRollup = async (req, res, next) => {
+    try {
+        const { buffer, label } = await adminService.exportCsrRollupAdmin(req.query);
+        res.setHeader('Content-Disposition', `attachment; filename=csr-rollup-${label}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 exports.updateCertificateStatus = async (req, res, next) => {
     try {
         const data = await adminService.updateCertificateStatus(req.params.id, req.body);

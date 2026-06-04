@@ -411,6 +411,76 @@ const getUserEvents = async (userId) => {
 };
 
 /**
+ * Per-org FY CSR rollup xlsx — same shape as the admin grand total file
+ * but scoped to one organization. Throws 403 if the user isn't an org.
+ */
+const exportCsrRollupForUser = async (userId, fy) => {
+    const xlsx = require('xlsx');
+    const { fyRangeFromLabel } = require('./admin.service');
+    const { startDate, endDate, label } = fyRangeFromLabel(fy);
+
+    const userRow = await db.query(
+        `SELECT u.user_type, COALESCE(NULLIF(u.organization_name, ''), u.name) AS org_name
+         FROM users u WHERE u.id = ?`,
+        [userId]
+    );
+    if (!userRow.rows[0]) throw { status: 404, message: 'User not found' };
+    if (userRow.rows[0].user_type !== 'organization') {
+        throw { status: 403, message: 'CSR rollup is for organization accounts only' };
+    }
+
+    const result = await db.query(
+        `SELECT d.id AS donation_id, d.amount, d.created_at AS donation_date,
+                d.razorpay_payment_id, d.csr_reference_number,
+                p.name AS project_name,
+                cr.certificate_number AS receipt_number,
+                cr.status AS receipt_status,
+                cr.issued_at AS receipt_issued_at
+         FROM donations d
+         LEFT JOIN projects p ON p.id = d.project_id
+         LEFT JOIN certificate_requests cr ON cr.donation_id = d.id AND cr.type = 'csr_receipt'
+         WHERE d.user_id = ?
+           AND d.purpose = 'csr_donation'
+           AND d.status = 'completed'
+           AND d.created_at >= ? AND d.created_at < ?
+         ORDER BY d.created_at`,
+        [userId, startDate, endDate]
+    );
+
+    const rows = result.rows.map(r => ({
+        'Donation Date': r.donation_date,
+        'Project': r.project_name || '',
+        'Amount (INR)': parseFloat(r.amount),
+        'Payment ID': r.razorpay_payment_id || '',
+        'CSR Reference': r.csr_reference_number || '',
+        'Receipt #': r.receipt_number || '',
+        'Receipt Status': r.receipt_status || '',
+        'Receipt Issued At': r.receipt_issued_at || ''
+    }));
+
+    const total = result.rows.reduce((acc, r) => acc + parseFloat(r.amount), 0);
+    rows.push({
+        'Donation Date': '',
+        'Project': `TOTAL — FY ${label}`,
+        'Amount (INR)': total,
+        'Payment ID': '',
+        'CSR Reference': '',
+        'Receipt #': '',
+        'Receipt Status': `${result.rows.length} donation${result.rows.length === 1 ? '' : 's'}`,
+        'Receipt Issued At': ''
+    });
+
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(rows);
+    xlsx.utils.book_append_sheet(workbook, worksheet, `CSR ${label}`);
+    return {
+        buffer: xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
+        label,
+        orgName: userRow.rows[0].org_name
+    };
+};
+
+/**
  * Update profile picture path
  */
 const updateProfilePic = async (userId, profilePic) => {
@@ -443,6 +513,7 @@ const getCorporateLogo = async (userId) => {
 module.exports = {
     getProfile, updateProfile, updateProfilePic, getDonations, getDonationSummary,
     getCsrSummary,
+    exportCsrRollupForUser,
     updateCorporateLogo, getCorporateLogo,
     getReferrals, getReferralPointsHistory, requestCertificate, getCertificateRequests,
     getUserEvents

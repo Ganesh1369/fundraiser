@@ -79,6 +79,9 @@ router.get('/donations/summary', userController.getDonationSummary);
 // CSR rollup for organization users (returns null for non-org)
 router.get('/csr-summary', userController.getCsrSummary);
 
+// FY-end CSR rollup xlsx download (organization users only)
+router.get('/csr-rollup', userController.exportCsrRollup);
+
 // Get referral statistics
 router.get('/referrals', userController.getReferrals);
 

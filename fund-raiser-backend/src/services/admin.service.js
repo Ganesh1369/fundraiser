@@ -563,6 +563,136 @@ const getCorporateProfiles = async ({ search, page = 1, limit = 20 }) => {
     };
 };
 
+/**
+ * Resolve an Indian fiscal year label ("YYYY-YY") into a [start, end) date range.
+ * Throws on malformed input so the controller surfaces 400 instead of silently
+ * widening the query.
+ */
+const fyRangeFromLabel = (fy) => {
+    if (!fy || !/^\d{4}-\d{2}$/.test(fy)) {
+        throw { status: 400, message: 'fy query param must be in YYYY-YY format (e.g. 2026-27)' };
+    }
+    const startYear = parseInt(fy.slice(0, 4), 10);
+    const endTwo = parseInt(fy.slice(5, 7), 10);
+    if (((startYear + 1) % 100) !== endTwo) {
+        throw { status: 400, message: 'fy label end year must follow the start year (e.g. 2026-27, not 2026-29)' };
+    }
+    return {
+        startDate: new Date(startYear, 3, 1),       // April 1, FY start
+        endDate:   new Date(startYear + 1, 3, 1),   // April 1, next FY
+        label: fy
+    };
+};
+
+/**
+ * Admin: FY-end CSR rollup xlsx — every CSR donation in the FY, plus per-org
+ * subtotal rows interleaved (so the file can be filed against Form CSR-2 with
+ * minimal manual aggregation).
+ */
+const exportCsrRollupAdmin = async ({ fy }) => {
+    const { startDate, endDate, label } = fyRangeFromLabel(fy);
+
+    const result = await db.query(
+        `SELECT
+            COALESCE(NULLIF(u.organization_name, ''), u.name) AS org_name,
+            u.email AS org_email,
+            cp.cin, cp.gstin, cp.csr_registration_number,
+            d.id AS donation_id, d.amount, d.created_at AS donation_date,
+            d.razorpay_payment_id, d.csr_reference_number,
+            p.name AS project_name,
+            cr.certificate_number AS receipt_number,
+            cr.status AS receipt_status,
+            cr.issued_at AS receipt_issued_at
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         LEFT JOIN corporate_profiles cp ON cp.user_id = u.id
+         LEFT JOIN projects p ON p.id = d.project_id
+         LEFT JOIN certificate_requests cr ON cr.donation_id = d.id AND cr.type = 'csr_receipt'
+         WHERE d.purpose = 'csr_donation'
+           AND d.status = 'completed'
+           AND d.created_at >= ? AND d.created_at < ?
+         ORDER BY org_name, d.created_at`,
+        [startDate, endDate]
+    );
+
+    // Group by org and inject subtotal rows so the file works as a finance exhibit.
+    const rows = [];
+    let currentOrg = null;
+    let runningTotal = 0;
+    let orgCount = 0;
+
+    const flushSubtotal = () => {
+        if (currentOrg !== null) {
+            rows.push({
+                'Organization': `→ Subtotal: ${currentOrg}`,
+                'Email': '',
+                'CIN': '',
+                'GSTIN': '',
+                'CSR-1 Reg #': '',
+                'Donation Date': '',
+                'Project': '',
+                'Amount (INR)': runningTotal,
+                'Payment ID': '',
+                'CSR Reference': '',
+                'Receipt #': '',
+                'Receipt Status': `${orgCount} donation${orgCount === 1 ? '' : 's'}`,
+                'Receipt Issued At': ''
+            });
+        }
+    };
+
+    for (const r of result.rows) {
+        if (r.org_name !== currentOrg) {
+            flushSubtotal();
+            currentOrg = r.org_name;
+            runningTotal = 0;
+            orgCount = 0;
+        }
+        const amount = parseFloat(r.amount);
+        runningTotal += amount;
+        orgCount += 1;
+        rows.push({
+            'Organization': r.org_name,
+            'Email': r.org_email,
+            'CIN': r.cin || '',
+            'GSTIN': r.gstin || '',
+            'CSR-1 Reg #': r.csr_registration_number || '',
+            'Donation Date': r.donation_date,
+            'Project': r.project_name || '',
+            'Amount (INR)': amount,
+            'Payment ID': r.razorpay_payment_id || '',
+            'CSR Reference': r.csr_reference_number || '',
+            'Receipt #': r.receipt_number || '',
+            'Receipt Status': r.receipt_status || '',
+            'Receipt Issued At': r.receipt_issued_at || ''
+        });
+    }
+    flushSubtotal();
+
+    // Grand total row
+    const grandTotal = result.rows.reduce((acc, r) => acc + parseFloat(r.amount), 0);
+    rows.push({
+        'Organization': `GRAND TOTAL — FY ${label}`,
+        'Email': '',
+        'CIN': '',
+        'GSTIN': '',
+        'CSR-1 Reg #': '',
+        'Donation Date': '',
+        'Project': '',
+        'Amount (INR)': grandTotal,
+        'Payment ID': '',
+        'CSR Reference': '',
+        'Receipt #': '',
+        'Receipt Status': `${result.rows.length} donation${result.rows.length === 1 ? '' : 's'}`,
+        'Receipt Issued At': ''
+    });
+
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(rows);
+    xlsx.utils.book_append_sheet(workbook, worksheet, `CSR ${label}`);
+    return { buffer: xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' }), label };
+};
+
 const getUserBySlug = async (slug) => {
     const result = await db.query(
         `SELECT id FROM users WHERE LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '')) = LOWER(REGEXP_REPLACE(?, '-', ' ')) AND is_active = true LIMIT 1`,
@@ -587,5 +717,7 @@ module.exports = {
     getLeaderboard, exportLeaderboard,
     getCertificateRequests, exportCertificates, updateCertificateStatus,
     getCorporateProfiles,
+    exportCsrRollupAdmin,
+    fyRangeFromLabel,
     getUserBySlug
 };

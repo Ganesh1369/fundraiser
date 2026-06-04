@@ -15,6 +15,9 @@
         }
     </div>
     <span class="text-xs text-neutral-500 ml-auto">{{ pagination.total }} organization{{ pagination.total === 1 ? '' : 's' }}</span>
+    <button class="btn btn-primary btn-export" (click)="downloadCsrRollup()" title="Download FY-end CSR rollup (all orgs)">
+        <lucide-icon name="download" [size]="16"></lucide-icon> FY {{ currentFyLabel }} rollup
+    </button>
 </div>
 
 <div class="card">

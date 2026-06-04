@@ -32,6 +32,9 @@ router.get('/leaderboard/export', adminController.exportLeaderboard);
 // Corporate profiles (Phase 2.2) — list of organization users with CSR compliance fields
 router.get('/corporate-profiles', adminController.getCorporateProfiles);
 
+// FY-end CSR rollup xlsx (Phase 2.2) — all orgs' CSR donations for a given Indian FY
+router.get('/csr/rollup', adminController.exportCsrRollup);
+
 // 80G Certificate Management
 router.get('/certificates', adminController.getCertificateRequests);
 router.get('/certificates/export', adminController.exportCertificates);

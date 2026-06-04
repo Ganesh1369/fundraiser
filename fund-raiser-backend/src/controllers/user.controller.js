@@ -47,6 +47,19 @@ exports.getCsrSummary = async (req, res, next) => {
     }
 };
 
+exports.exportCsrRollup = async (req, res, next) => {
+    try {
+        const { buffer, label, orgName } = await userService.exportCsrRollupForUser(req.user.id, req.query.fy);
+        const safeOrg = (orgName || 'org').replace(/[^a-z0-9-_]/gi, '_').slice(0, 40);
+        res.setHeader('Content-Disposition', `attachment; filename=csr-rollup-${safeOrg}-${label}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 exports.getReferrals = async (req, res, next) => {
     try {
         const data = await userService.getReferrals(req.user.id, req.user.referral_code);

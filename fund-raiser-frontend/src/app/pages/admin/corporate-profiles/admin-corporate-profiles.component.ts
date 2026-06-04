@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
+import { environment } from '../../../../environments/environment';
 
 interface CorporateProfileRow {
     id: string;
@@ -40,6 +41,11 @@ export class AdminCorporateProfilesComponent implements OnInit {
     pagination = { page: 1, totalPages: 1, total: 0 };
     search = '';
     loading = false;
+    currentFyLabel: string = (() => {
+        const now = new Date();
+        const startYear = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
+        return `${startYear}-${String(startYear + 1).slice(-2)}`;
+    })();
 
     constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
@@ -72,6 +78,20 @@ export class AdminCorporateProfilesComponent implements OnInit {
     clearSearch(): void {
         this.search = '';
         this.load(1);
+    }
+
+    downloadCsrRollup(fy: string = this.currentFyLabel): void {
+        const token = localStorage.getItem('adminToken');
+        if (!token) return;
+        fetch(`${environment.apiUrl}/admin/csr/rollup?fy=${encodeURIComponent(fy)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.blob()).then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `csr-rollup-${fy}.xlsx`;
+            a.click();
+        }).catch(err => console.error('Rollup export failed:', err));
     }
 
     completeness(p: CorporateProfileRow): { filled: number; total: number } {

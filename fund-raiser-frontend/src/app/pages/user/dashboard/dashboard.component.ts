@@ -722,6 +722,20 @@ export class DashboardComponent implements OnInit {
         });
     }
 
+    downloadCsrRollup(fy: string): void {
+        this.api.downloadCsrRollup(fy).subscribe({
+            next: (blob: Blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `csr-rollup-${fy}.xlsx`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: () => this.toast.error('Failed to download FY rollup.')
+        });
+    }
+
     formatCurrency(amount: number): string {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency', currency: 'INR', maximumFractionDigits: 0

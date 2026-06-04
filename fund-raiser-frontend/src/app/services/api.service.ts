@@ -136,6 +136,13 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/user/csr-summary`, { headers: this.getHeaders() });
     }
 
+    downloadCsrRollup(fy: string): Observable<Blob> {
+        return this.http.get(
+            `${this.apiUrl}/user/csr-rollup?fy=${encodeURIComponent(fy)}`,
+            { headers: this.getHeaders(), responseType: 'blob' }
+        );
+    }
+
     resumeDonation(donationId: string): Observable<any> {
         return this.http.post(`${this.apiUrl}/donations/resume`, { donationId }, { headers: this.getHeaders() });
     }

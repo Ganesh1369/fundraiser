@@ -317,12 +317,19 @@
                     <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-3">By fiscal year</h3>
                     <div class="flex flex-col gap-2.5">
                         @for (fy of csrSummary.byFy; track fy.label) {
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
                                 <div class="text-sm font-medium text-accent">FY {{ fy.label }}</div>
                                 <div class="text-[10px] text-neutral-400 uppercase tracking-wider">{{ fy.donationCount }} {{ fy.donationCount === 1 ? 'donation' : 'donations' }}</div>
                             </div>
-                            <div class="text-sm font-semibold text-accent">{{ formatCurrency(fy.totalAmount) }}</div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <div class="text-sm font-semibold text-accent">{{ formatCurrency(fy.totalAmount) }}</div>
+                                <button type="button"
+                                    class="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full border border-accent/30 text-accent hover:bg-accent/5 transition-colors"
+                                    (click)="downloadCsrRollup(fy.label)" title="Download FY rollup (xlsx)">
+                                    <lucide-icon name="download" [size]="11"></lucide-icon> xlsx
+                                </button>
+                            </div>
                         </div>
                         }
                     </div>
