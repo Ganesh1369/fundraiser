@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -52,7 +52,8 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private zone: NgZone
   ) { }
 
   ngOnInit(): void {
@@ -107,19 +108,25 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
-          if (res?.data?.registrations) {
-            this.registrations = res.data.registrations;
-            this.pagination = res.data.pagination ?? this.pagination;
-          } else if (Array.isArray(res?.data)) {
-            this.registrations = res.data;
-          } else {
-            this.registrations = [];
-          }
+          this.zone.run(() => {
+            if (res?.data?.registrations) {
+              this.registrations = res.data.registrations;
+              this.pagination = res.data.pagination ?? this.pagination;
+            } else if (Array.isArray(res?.data)) {
+              this.registrations = res.data;
+            } else {
+              this.registrations = [];
+            }
+            this.cdr.markForCheck();
+          });
         },
         error: (err: any) => {
-          console.error('Registrations error:', err);
-          this.registrationsError = err?.error?.message || 'Failed to load registrations. Please try again.';
-          this.registrations = [];
+          this.zone.run(() => {
+            console.error('Registrations error:', err);
+            this.registrationsError = err?.error?.message || 'Failed to load registrations. Please try again.';
+            this.registrations = [];
+            this.cdr.markForCheck();
+          });
         }
       });
   }
