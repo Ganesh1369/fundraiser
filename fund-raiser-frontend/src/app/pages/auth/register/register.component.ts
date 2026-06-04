@@ -6,18 +6,6 @@ import { ApiService } from '../../../services/api.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { FlatpickrDirective } from '../../../directives/flatpickr.directive';
 
-interface CorporateData {
-    cin: string;
-    gstin: string;
-    csrRegistrationNumber: string;
-    incorporatedYear: number | null;
-    industry: string;
-    authorizedSignatoryName: string;
-    authorizedSignatoryDesignation: string;
-    authorizedSignatoryEmail: string;
-    authorizedSignatoryPhone: string;
-}
-
 interface RegistrationData {
     userType: 'student' | 'individual' | 'organization' | '';
     name: string;
@@ -31,7 +19,6 @@ interface RegistrationData {
     organizationName: string;
     panNumber: string;
     referralCode: string;
-    corporate: CorporateData;
 }
 
 @Component({
@@ -64,18 +51,7 @@ export class RegisterComponent {
         schoolName: '',
         organizationName: '',
         panNumber: '',
-        referralCode: '',
-        corporate: {
-            cin: '',
-            gstin: '',
-            csrRegistrationNumber: '',
-            incorporatedYear: null,
-            industry: '',
-            authorizedSignatoryName: '',
-            authorizedSignatoryDesignation: '',
-            authorizedSignatoryEmail: '',
-            authorizedSignatoryPhone: ''
-        }
+        referralCode: ''
     };
 
     constructor(private router: Router, private route: ActivatedRoute, private api: ApiService, private cdr: ChangeDetectorRef) {
@@ -179,8 +155,7 @@ export class RegisterComponent {
             schoolName: this.data.schoolName,
             organizationName: this.data.organizationName,
             panNumber: this.data.panNumber,
-            referralCode: this.data.referralCode,
-            corporate: this.data.userType === 'organization' ? this.data.corporate : undefined
+            referralCode: this.data.referralCode
         }).subscribe({
             next: (result: any) => {
                 this.isLoading = false;

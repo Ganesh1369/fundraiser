@@ -102,8 +102,7 @@ const registerUser = async (userData) => {
     const {
         userType, name, age, email, phone, password,
         classGrade, schoolName,
-        organizationName, panNumber, referralCode,
-        corporate
+        organizationName, panNumber, referralCode
     } = userData;
 
     if (!phone) throw { status: 400, message: 'Phone number is required' };
@@ -151,32 +150,6 @@ const registerUser = async (userData) => {
             organizationName || null, panNumber || null, newReferralCode, referrerId
         ]
     );
-
-    // Corporate sidecar — only if userType=organization and at least one field provided
-    if (userType === 'organization' && corporate && typeof corporate === 'object') {
-        const hasAny = Object.values(corporate).some(v => v !== undefined && v !== null && v !== '');
-        if (hasAny) {
-            await db.query(
-                `INSERT INTO corporate_profiles (
-                    user_id, cin, gstin, csr_registration_number, incorporated_year, industry,
-                    authorized_signatory_name, authorized_signatory_designation,
-                    authorized_signatory_email, authorized_signatory_phone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    userId,
-                    corporate.cin || null,
-                    corporate.gstin || null,
-                    corporate.csrRegistrationNumber || null,
-                    corporate.incorporatedYear || null,
-                    corporate.industry || null,
-                    corporate.authorizedSignatoryName || null,
-                    corporate.authorizedSignatoryDesignation || null,
-                    corporate.authorizedSignatoryEmail || null,
-                    corporate.authorizedSignatoryPhone || null
-                ]
-            );
-        }
-    }
 
     const userResult = await db.query('SELECT id, name, email, user_type, referral_code FROM users WHERE id = ?', [userId]);
     const user = userResult.rows[0];
