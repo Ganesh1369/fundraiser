@@ -177,9 +177,10 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/admin/users/by-slug/${slug}`, { headers: this.getHeaders(true) });
     }
 
-    getAdminCertificates(limit: number = 20, page: number = 1, status?: string): Observable<any> {
+    getAdminCertificates(limit: number = 20, page: number = 1, status?: string, type?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/certificates?limit=${limit}&page=${page}`;
         if (status) url += `&status=${encodeURIComponent(status)}`;
+        if (type) url += `&type=${encodeURIComponent(type)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 

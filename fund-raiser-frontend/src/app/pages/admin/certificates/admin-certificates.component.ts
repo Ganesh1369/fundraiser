@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 
 interface CertificateRequest {
     id: string;
+    type: string;
     userName: string;
     userEmail: string;
     panNumber: string;
@@ -33,6 +34,7 @@ interface CertificateRequest {
 export class AdminCertificatesComponent implements OnInit {
     certificates: CertificateRequest[] = [];
     pagination = { page: 1, totalPages: 1, total: 0 };
+    typeFilter: '' | '80g' | 'csr_receipt' = '';
 
     constructor(
         private router: Router,
@@ -44,13 +46,19 @@ export class AdminCertificatesComponent implements OnInit {
         this.loadCertificates();
     }
 
+    setTypeFilter(type: '' | '80g' | 'csr_receipt'): void {
+        this.typeFilter = type;
+        this.loadCertificates(1);
+    }
+
     loadCertificates(page: number = 1): void {
-        this.api.getAdminCertificates(20, page).subscribe({
+        this.api.getAdminCertificates(20, page, undefined, this.typeFilter || undefined).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     const requests = res.data?.requests || res.data || [];
                     this.certificates = Array.isArray(requests) ? requests.map((r: any) => ({
                         id: r.id,
+                        type: r.type || '80g',
                         userName: r.user_name,
                         userEmail: r.user_email,
                         panNumber: r.pan_number,
@@ -113,13 +121,18 @@ export class AdminCertificatesComponent implements OnInit {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
 
-        fetch(`${environment.apiUrl}/admin/certificates/export`, {
+        const qs = this.typeFilter ? `?type=${encodeURIComponent(this.typeFilter)}` : '';
+        const filename = this.typeFilter === 'csr_receipt' ? 'csr-receipts.xlsx'
+                       : this.typeFilter === '80g'         ? '80g-certificates.xlsx'
+                       : 'tax-receipts.xlsx';
+
+        fetch(`${environment.apiUrl}/admin/certificates/export${qs}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(res => res.blob()).then(blob => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = '80g-certificates.xlsx';
+            a.download = filename;
             a.click();
         }).catch(err => console.error('Export failed:', err));
     }

@@ -369,19 +369,22 @@ const exportLeaderboard = async () => {
 /**
  * Get certificate requests with filters
  */
-const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
+const getCertificateRequests = async ({ status, type, page = 1, limit = 20 }) => {
     page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
     let whereConditions = [];
 
     if (status) { whereConditions.push(`cr.status = ?`); params.push(status); }
+    if (type && ['80g', 'csr_receipt'].includes(type)) {
+        whereConditions.push(`cr.type = ?`); params.push(type);
+    }
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     const countResult = await db.query(`SELECT COUNT(*) as count FROM certificate_requests cr ${whereClause}`, params);
 
     const result = await db.query(
-        `SELECT cr.id, cr.pan_number, cr.status, cr.admin_notes,
+        `SELECT cr.id, cr.pan_number, cr.status, cr.type, cr.admin_notes,
                 cr.requested_at, cr.processed_at, cr.issued_at,
                 cr.certificate_number, cr.pdf_url, cr.auto_generated,
                 cr.generation_attempts, cr.last_generation_error,
@@ -412,16 +415,20 @@ const getCertificateRequests = async ({ status, page = 1, limit = 20 }) => {
 /**
  * Export certificate requests to Excel buffer
  */
-const exportCertificates = async ({ status }) => {
+const exportCertificates = async ({ status, type }) => {
     const params = [];
     let whereConditions = [];
 
     if (status) { whereConditions.push(`cr.status = ?`); params.push(status); }
+    if (type && ['80g', 'csr_receipt'].includes(type)) {
+        whereConditions.push(`cr.type = ?`); params.push(type);
+    }
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     const result = await db.query(
         `SELECT u.name as "User Name", u.email as "Email", u.phone as "Phone",
                 u.user_type as "User Type", u.organization_name as "Organization",
+                cr.type as "Receipt Type",
                 cr.pan_number as "PAN Number",
                 d.amount as "Donation Amount (INR)", d.created_at as "Donation Date",
                 cr.status as "Certificate Status",
@@ -434,9 +441,10 @@ const exportCertificates = async ({ status }) => {
         params
     );
 
+    const sheetName = type === 'csr_receipt' ? 'CSR Receipts' : type === '80g' ? '80G Certificates' : 'Tax Receipts';
     const workbook = xlsx.utils.book_new();
     const worksheet = xlsx.utils.json_to_sheet(result.rows);
-    xlsx.utils.book_append_sheet(workbook, worksheet, '80G Certificates');
+    xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
     return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 

@@ -1,8 +1,19 @@
 <header class="admin-header">
-    <h1>80G Certificates</h1>
+    <h1>Tax Receipts</h1>
 </header>
 
 <div class="filters">
+    <div class="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-sm">
+        <button class="px-3 py-1.5 transition-colors"
+            [ngClass]="typeFilter === '' ? 'bg-primary text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'"
+            (click)="setTypeFilter('')">All</button>
+        <button class="px-3 py-1.5 transition-colors border-l border-neutral-200"
+            [ngClass]="typeFilter === '80g' ? 'bg-primary text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'"
+            (click)="setTypeFilter('80g')">80G</button>
+        <button class="px-3 py-1.5 transition-colors border-l border-neutral-200"
+            [ngClass]="typeFilter === 'csr_receipt' ? 'bg-primary text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'"
+            (click)="setTypeFilter('csr_receipt')">CSR Receipt</button>
+    </div>
     <button class="btn btn-primary btn-export" (click)="exportCertificates()">
         <lucide-icon name="download" [size]="16"></lucide-icon> Export Excel
     </button>
@@ -21,6 +32,7 @@
             <thead>
                 <tr>
                     <th>Cert No.</th>
+                    <th>Type</th>
                     <th>User</th>
                     <th>PAN</th>
                     <th>Donation</th>
@@ -34,6 +46,11 @@
                 @for (cert of certificates; track cert.id) {
                 <tr>
                     <td><code class="text-xs">{{ cert.certificateNumber || '-' }}</code></td>
+                    <td>
+                        <span class="status-badge" [ngClass]="cert.type === 'csr_receipt' ? 'status-processing' : 'status-approved'">
+                            {{ cert.type === 'csr_receipt' ? 'CSR' : '80G' }}
+                        </span>
+                    </td>
                     <td>
                         <div>{{ cert.userName }}</div>
                         <div class="text-xs text-neutral-500">{{ cert.userEmail }}</div>
