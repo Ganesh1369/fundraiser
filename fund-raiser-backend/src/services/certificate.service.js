@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const prisma = require('../config/prisma');
+const db = require('../config/db');
 const settingsService = require('./settings.service');
 const emailService = require('./email.service');
 const { renderCertificate } = require('./pdf.template');
@@ -26,12 +26,15 @@ const indianFiscalYear = (date = new Date()) => {
  */
 const allocateCertificateNumber = async (fy) => {
     const prefix = `ICE/80G/${fy}/`;
-    const last = await prisma.certificateRequest.findFirst({
-        where: { certificate_number: { startsWith: prefix } },
-        orderBy: { certificate_number: 'desc' },
-        select: { certificate_number: true }
-    });
+    const result = await db.query(
+        `SELECT certificate_number FROM certificate_requests
+         WHERE certificate_number LIKE ?
+         ORDER BY certificate_number DESC
+         LIMIT 1`,
+        [`${prefix}%`]
+    );
     let nextSeq = 1;
+    const last = result.rows[0];
     if (last?.certificate_number) {
         const tail = last.certificate_number.slice(prefix.length);
         const parsed = parseInt(tail, 10);
@@ -57,6 +60,42 @@ const writePdf = (input, absPath) => new Promise((resolve, reject) => {
     catch (err) { stream.destroy(); reject(err); }
 });
 
+// Fetch a cert request with linked user, donation, and donation.project.
+// Returns null if the cert doesn't exist.
+const findCertWithRelations = async (certId) => {
+    const certRes = await db.query(
+        'SELECT * FROM certificate_requests WHERE id = ?',
+        [certId]
+    );
+    const cert = certRes.rows[0];
+    if (!cert) return null;
+
+    const userRes = await db.query('SELECT * FROM users WHERE id = ?', [cert.user_id]);
+    cert.user = userRes.rows[0] || null;
+
+    if (cert.donation_id) {
+        const donationRes = await db.query('SELECT * FROM donations WHERE id = ?', [cert.donation_id]);
+        cert.donation = donationRes.rows[0] || null;
+        if (cert.donation?.project_id) {
+            const projectRes = await db.query('SELECT * FROM projects WHERE id = ?', [cert.donation.project_id]);
+            cert.donation.project = projectRes.rows[0] || null;
+        } else if (cert.donation) {
+            cert.donation.project = null;
+        }
+    } else {
+        cert.donation = null;
+    }
+    return cert;
+};
+
+const markCertError = (certId, message) =>
+    db.query(
+        `UPDATE certificate_requests
+         SET last_generation_error = ?, status = 'pending'
+         WHERE id = ?`,
+        [message, certId]
+    );
+
 /**
  * Generate or regenerate the PDF for a cert request.
  * - assertRequired() runs first; missing org settings → row stays pending with error.
@@ -69,41 +108,29 @@ const writePdf = (input, absPath) => new Promise((resolve, reject) => {
  * @param {boolean} [opts.silent=true]  - swallow errors (vs. throwing for admin Regenerate UX)
  */
 const generate = async (certId, { auto = false, silent = true } = {}) => {
-    const cert = await prisma.certificateRequest.findUnique({
-        where: { id: certId },
-        include: {
-            user: true,
-            donation: { include: { project: true } }
-        }
-    });
+    const cert = await findCertWithRelations(certId);
     if (!cert) {
         if (silent) return null;
         throw { status: 404, message: 'Certificate request not found' };
     }
 
     // Bump attempts up-front so admin sees activity even if assertRequired throws.
-    await prisma.certificateRequest.update({
-        where: { id: certId },
-        data: { generation_attempts: { increment: 1 } }
-    });
+    await db.query(
+        'UPDATE certificate_requests SET generation_attempts = generation_attempts + 1 WHERE id = ?',
+        [certId]
+    );
 
     try {
         await settingsService.assertRequired();
     } catch (err) {
-        await prisma.certificateRequest.update({
-            where: { id: certId },
-            data: { last_generation_error: err.message || 'Org settings incomplete', status: 'pending' }
-        });
+        await markCertError(certId, err.message || 'Org settings incomplete');
         if (silent) return null;
         throw err;
     }
 
     if (!cert.donation) {
         const msg = 'Certificate request has no linked donation';
-        await prisma.certificateRequest.update({
-            where: { id: certId },
-            data: { last_generation_error: msg, status: 'pending' }
-        });
+        await markCertError(certId, msg);
         if (silent) return null;
         throw { status: 400, message: msg };
     }
@@ -148,26 +175,28 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
     try {
         await writePdf({ org, donor, donation, certificateNumber }, absPath);
     } catch (err) {
-        await prisma.certificateRequest.update({
-            where: { id: certId },
-            data: { last_generation_error: err.message || 'PDF render failed', status: 'pending' }
-        });
+        await markCertError(certId, err.message || 'PDF render failed');
         if (silent) return null;
         throw err;
     }
 
-    const updated = await prisma.certificateRequest.update({
-        where: { id: certId },
-        data: {
-            certificate_number: certificateNumber,
-            pdf_url: relPath,
-            status: 'approved',
-            issued_at: new Date(),
-            processed_at: new Date(),
-            last_generation_error: null,
-            auto_generated: cert.auto_generated || auto
-        }
-    });
+    const now = new Date();
+    const autoFlag = cert.auto_generated || auto;
+    await db.query(
+        `UPDATE certificate_requests
+         SET certificate_number = ?,
+             pdf_url = ?,
+             status = 'approved',
+             issued_at = ?,
+             processed_at = ?,
+             last_generation_error = NULL,
+             auto_generated = ?
+         WHERE id = ?`,
+        [certificateNumber, relPath, now, now, autoFlag ? 1 : 0, certId]
+    );
+
+    const updatedRes = await db.query('SELECT * FROM certificate_requests WHERE id = ?', [certId]);
+    const updated = updatedRes.rows[0];
 
     // Email is best-effort (logged, not awaited).
     emailService.sendCertificateGeneratedEmail?.(
@@ -183,10 +212,13 @@ const generate = async (certId, { auto = false, silent = true } = {}) => {
 const regenerate = async (certId) => generate(certId, { auto: false, silent: false });
 
 const getDownloadFile = async (certId, requestingUser) => {
-    const cert = await prisma.certificateRequest.findUnique({
-        where: { id: certId },
-        select: { id: true, user_id: true, pdf_url: true, status: true, certificate_number: true }
-    });
+    const certRes = await db.query(
+        `SELECT id, user_id, pdf_url, status, certificate_number
+         FROM certificate_requests
+         WHERE id = ?`,
+        [certId]
+    );
+    const cert = certRes.rows[0];
     if (!cert) throw { status: 404, message: 'Certificate not found' };
 
     const isOwner = cert.user_id === requestingUser?.id;

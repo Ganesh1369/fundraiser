@@ -1,4 +1,4 @@
-const prisma = require('../config/prisma');
+const db = require('../config/db');
 
 // In-process cache (60s TTL). Bust on any write.
 // Acceptable because values change rarely and historical PDFs are immutable on disk.
@@ -17,10 +17,10 @@ const getAll = async () => {
     const now = Date.now();
     if (cache.data && now - cache.ts < CACHE_TTL_MS) return cache.data;
 
-    const rows = await prisma.orgSetting.findMany({
-        orderBy: { setting_key: 'asc' }
-    });
-    const indexed = Object.fromEntries(rows.map(r => [r.setting_key, r]));
+    const result = await db.query(
+        'SELECT setting_key, setting_value, setting_type, label, is_required, updated_at, updated_by FROM org_settings ORDER BY setting_key ASC'
+    );
+    const indexed = Object.fromEntries(result.rows.map(r => [r.setting_key, r]));
     cache = { data: indexed, ts: now };
     return indexed;
 };
@@ -39,16 +39,29 @@ const updateMany = async (updates, adminId) => {
         throw { status: 400, message: `Unknown setting keys: ${unknownKeys.join(', ')}` };
     }
 
-    const ops = Object.entries(updates).map(([key, value]) =>
-        prisma.orgSetting.update({
-            where: { setting_key: key },
-            data: {
-                setting_value: value == null ? null : String(value),
-                updated_by: adminId || null
-            }
-        })
-    );
-    await prisma.$transaction(ops);
+    const entries = Object.entries(updates);
+    if (entries.length === 0) {
+        bustCache();
+        return getAll();
+    }
+
+    const conn = await db.getClient();
+    try {
+        await conn.beginTransaction();
+        for (const [key, value] of entries) {
+            await conn.query(
+                'UPDATE org_settings SET setting_value = ?, updated_by = ? WHERE setting_key = ?',
+                [value == null ? null : String(value), adminId || null, key]
+            );
+        }
+        await conn.commit();
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+
     bustCache();
     return getAll();
 };
@@ -61,13 +74,10 @@ const setOne = async (key, value, adminId) => {
     if (!(key in all)) {
         throw { status: 400, message: `Unknown setting key: ${key}` };
     }
-    await prisma.orgSetting.update({
-        where: { setting_key: key },
-        data: {
-            setting_value: value == null ? null : String(value),
-            updated_by: adminId || null
-        }
-    });
+    await db.query(
+        'UPDATE org_settings SET setting_value = ?, updated_by = ? WHERE setting_key = ?',
+        [value == null ? null : String(value), adminId || null, key]
+    );
     bustCache();
 };
 
