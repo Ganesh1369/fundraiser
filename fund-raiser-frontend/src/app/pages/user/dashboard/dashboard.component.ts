@@ -127,6 +127,19 @@ export class DashboardComponent implements OnInit {
     showDonateModal = false;
     showCertificateModal = false;
     panNumber = '';
+
+    // Post-payment verify overlay — friendly waiting state while the server
+    // confirms with Razorpay + writes the donation. Dismissible (verify
+    // continues in background even if the user closes it).
+    showVerifyingOverlay = false;
+    verifyingMessageIndex = 0;
+    private verifyingMessageTimer: any = null;
+    readonly verifyingMessages = [
+        'Thanks for your contribution!',
+        'Verifying your payment with the bank…',
+        'Almost there…',
+        'Wrapping up — saving your donation…'
+    ];
     selectedDonationId = '';
     linkCopied = false;
 
@@ -357,6 +370,7 @@ export class DashboardComponent implements OnInit {
     }
 
     verifyPayment(response: any, donationId: string): void {
+        this.startVerifyingOverlay();
         this.api.verifyPayment({
             razorpayOrderId: response.razorpay_order_id,
             razorpayPaymentId: response.razorpay_payment_id,
@@ -365,6 +379,7 @@ export class DashboardComponent implements OnInit {
         }).subscribe({
             next: (res: any) => {
                 this.zone.run(() => {
+                    this.stopVerifyingOverlay();
                     if (res.success) {
                         this.loadDashboardData();
                         this.toast.success('Thank you for your donation!');
@@ -375,8 +390,44 @@ export class DashboardComponent implements OnInit {
                     }
                 });
             },
-            error: () => this.zone.run(() => this.toast.error('Payment verification failed. Please contact support.'))
+            error: () => this.zone.run(() => {
+                this.stopVerifyingOverlay();
+                this.toast.error('Payment verification failed. Please contact support.');
+            })
         });
+    }
+
+    hasValidPanOnProfile(): boolean {
+        const pan = (this.profile?.panNumber || '').trim();
+        return /^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(pan);
+    }
+
+    closeVerifyingOverlay(): void {
+        this.stopVerifyingOverlay();
+    }
+
+    private startVerifyingOverlay(): void {
+        this.verifyingMessageIndex = 0;
+        this.showVerifyingOverlay = true;
+        this.cdr.detectChanges();
+        // Rotate copy every 2.2s. Overlay self-dismisses on verify response,
+        // so the timer is bounded by the network round-trip in practice.
+        this.verifyingMessageTimer = setInterval(() => {
+            this.zone.run(() => {
+                this.verifyingMessageIndex =
+                    (this.verifyingMessageIndex + 1) % this.verifyingMessages.length;
+                this.cdr.detectChanges();
+            });
+        }, 2200);
+    }
+
+    private stopVerifyingOverlay(): void {
+        if (this.verifyingMessageTimer) {
+            clearInterval(this.verifyingMessageTimer);
+            this.verifyingMessageTimer = null;
+        }
+        this.showVerifyingOverlay = false;
+        this.cdr.detectChanges();
     }
 
     /**

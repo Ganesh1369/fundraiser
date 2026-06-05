@@ -122,27 +122,40 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
             await client.query('UPDATE users SET registration_fee_paid = true WHERE id = ?', [userId]);
         }
 
-        // Auto-create 80G certificate request if requested (skip duplicates)
+        // Auto-create 80G certificate request if requested (skip duplicates).
+        // Hard gate on PAN: a cert is legally invalid without a real PAN, so if
+        // the user has none on file we skip creation entirely and clear the
+        // request_80g flag — the donation still completes. The user can request
+        // the cert manually later via the dashboard once they've added a PAN.
         let createdCertId = null;
         if (donation.request_80g) {
-            const existingCert = await client.query(
-                'SELECT id FROM certificate_requests WHERE donation_id = ?',
-                [donation.id]
+            const userPan = await client.query(
+                'SELECT pan_number FROM users WHERE id = ?',
+                [userId]
             );
-            if (existingCert.rows.length === 0) {
-                const userPan = await client.query(
-                    'SELECT pan_number FROM users WHERE id = ?',
-                    [userId]
-                );
-                const panNumber = userPan.rows[0]?.pan_number || 'PENDING';
-                createdCertId = uuidv4();
+            const panNumber = userPan.rows[0]?.pan_number;
+            const panValid = panNumber && /^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(panNumber);
+
+            if (!panValid) {
                 await client.query(
-                    `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number, auto_generated)
-                     VALUES (?, ?, ?, ?, true)`,
-                    [createdCertId, userId, donation.id, panNumber]
+                    'UPDATE donations SET request_80g = false WHERE id = ?',
+                    [donation.id]
                 );
             } else {
-                createdCertId = existingCert.rows[0].id;
+                const existingCert = await client.query(
+                    'SELECT id FROM certificate_requests WHERE donation_id = ?',
+                    [donation.id]
+                );
+                if (existingCert.rows.length === 0) {
+                    createdCertId = uuidv4();
+                    await client.query(
+                        `INSERT INTO certificate_requests (id, user_id, donation_id, pan_number, auto_generated)
+                         VALUES (?, ?, ?, ?, true)`,
+                        [createdCertId, userId, donation.id, panNumber.toUpperCase()]
+                    );
+                } else {
+                    createdCertId = existingCert.rows[0].id;
+                }
             }
         }
 
