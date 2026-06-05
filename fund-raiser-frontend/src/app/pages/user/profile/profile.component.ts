@@ -102,7 +102,6 @@ export class ProfileComponent implements OnInit {
                 this.isSaving = false;
                 if (res.success) {
                     this.toast.success('Profile updated successfully!');
-                    this.loadProfile();
                     if (this.user) {
                         const updated = {
                             ...this.user,
@@ -112,6 +111,10 @@ export class ProfileComponent implements OnInit {
                         localStorage.setItem('user', JSON.stringify(updated));
                         this.user = updated;
                     }
+                    // Send the user back to the dashboard so the donate flow
+                    // (the common reason for landing here from the 80G gate)
+                    // can be resumed in one round-trip.
+                    this.router.navigate(['/dashboard']);
                 } else {
                     this.toast.error(res.message || 'Failed to update profile');
                 }
