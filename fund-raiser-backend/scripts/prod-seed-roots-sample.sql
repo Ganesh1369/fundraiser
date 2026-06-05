@@ -18,19 +18,17 @@ INSERT INTO `projects` (`slug`, `name`, `display_order`, `is_active`)
 SELECT 'roots', 'ROOTS', 1, true
 WHERE NOT EXISTS (SELECT 1 FROM `projects` WHERE `slug` = 'roots');
 
+-- logo_url and banner_urls left NULL until real artwork is uploaded via the
+-- admin Projects UI. Templates fall back to a name-initial tile when null.
 UPDATE `projects`
 SET
     `name`        = 'ROOTS',
     `tagline`     = 'Reclaiming our city, one tree at a time.',
-    `logo_url`    = '/assets/projects/roots-logo.svg',
+    `logo_url`    = NULL,
     `description` = 'ROOTS is ICE Network''s urban reforestation and community greening pillar. We work with residents, schools, and local bodies to plant native trees, restore neglected green spaces, and build long-term stewardship of the urban canopy across our city.',
     `vision`      = 'A city where every neighbourhood is shaded by native trees, where children grow up alongside the species their grandparents knew, and where green space is not a privilege but a shared civic right.',
     `mission`     = 'Plant the right tree in the right place, with the right people. ROOTS partners with schools, RWAs, and municipal bodies to run native-species drives, train volunteer canopy stewards, and maintain a public map of every tree planted — from sapling to maturity.',
-    `banner_urls` = JSON_ARRAY(
-        '/assets/projects/roots-banner-1.jpg',
-        '/assets/projects/roots-banner-2.jpg',
-        '/assets/projects/roots-banner-3.jpg'
-    ),
+    `banner_urls` = NULL,
     `display_order` = 1,
     `is_active`     = true
 WHERE `slug` = 'roots';
