@@ -15,6 +15,10 @@ const webhookRoutes = require('./routes/webhook.routes');
 
 const app = express();
 
+// Trust the upstream proxy (Hostinger CDN / LiteSpeed) — required for
+// accurate client IP via X-Forwarded-For, used by express-rate-limit.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 
