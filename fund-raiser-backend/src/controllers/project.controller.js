@@ -19,6 +19,16 @@ exports.getBySlug = async (req, res, next) => {
     } catch (error) { handleError(res, next, error); }
 };
 
+exports.getRecentDonors = async (req, res, next) => {
+    try {
+        const donors = await projectService.getRecentDonorsForProject(
+            req.params.slug,
+            req.query.limit
+        );
+        res.json({ success: true, data: donors });
+    } catch (error) { handleError(res, next, error); }
+};
+
 exports.adminList = async (req, res, next) => {
     try {
         const projects = await projectService.listAllForAdmin();

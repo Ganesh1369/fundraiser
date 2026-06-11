@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
@@ -150,6 +150,7 @@ export class DashboardComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private projectService: ProjectService,
         private cdr: ChangeDetectorRef,
@@ -163,6 +164,47 @@ export class DashboardComponent implements OnInit {
         this.loadProfile();
         this.loadProjects();
         this.loadEvents();
+        this.handleDonateDeepLink();
+    }
+
+    /**
+     * Deep-link entry from the project page Donate CTA.
+     *   /dashboard?donate=1&projectId=<id>&amount=<n>
+     * Pre-fills the modal and opens it once projects are loaded.
+     * Skips the address gate — the donate modal itself handles address requirements.
+     */
+    private handleDonateDeepLink(): void {
+        const q = this.route.snapshot.queryParamMap;
+        if (q.get('donate') !== '1') return;
+
+        const projectId = q.get('projectId');
+        const amountStr = q.get('amount');
+        if (amountStr) {
+            const parsed = parseInt(amountStr, 10);
+            if (!isNaN(parsed) && parsed > 0) this.donationAmount = parsed;
+        }
+
+        // Poll for projects to load (project.service.listActive can take ~200ms).
+        // Cap at 5s so a backend hiccup never strands the user with no modal.
+        const started = Date.now();
+        const tick = () => {
+            if (this.projects.length) {
+                if (projectId && this.projects.some(p => p.id === projectId)) {
+                    this.selectedProjectId = projectId;
+                }
+                this.showDonateModal = true;
+                this.cdr.detectChanges();
+                return;
+            }
+            if (Date.now() - started > 5000) {
+                // Backend slow — open anyway with whatever's selected.
+                this.showDonateModal = true;
+                this.cdr.detectChanges();
+                return;
+            }
+            setTimeout(tick, 150);
+        };
+        setTimeout(tick, 150);
     }
 
     loadProjects(): void {

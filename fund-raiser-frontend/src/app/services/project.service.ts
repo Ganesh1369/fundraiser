@@ -23,6 +23,10 @@ export class ProjectService {
         return this.http.get(`${this.apiUrl}/projects/${slug}`);
     }
 
+    getRecentDonors(slug: string, limit: number = 10): Observable<any> {
+        return this.http.get(`${this.apiUrl}/projects/${slug}/recent-donors?limit=${limit}`);
+    }
+
     // --- Admin: projects ---
     adminList(): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/projects`, { headers: this.adminHeaders() });
