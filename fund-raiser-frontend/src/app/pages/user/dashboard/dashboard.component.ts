@@ -173,13 +173,13 @@ export class DashboardComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private projectService: ProjectService,
         private csrService: CsrService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService,
         private zone: NgZone,
-        private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
@@ -190,14 +190,48 @@ export class DashboardComponent implements OnInit {
         this.loadEvents();
         this.loadCsr();
         this.loadCsrSummary();
+        this.handleDonateDeepLink();
+    }
 
-        // Auto-open donate modal when arriving via /dashboard?donate=1 (e.g. from profile post-save prompt)
-        this.route.queryParamMap.subscribe(qp => {
-            if (qp.get('donate') === '1') {
-                setTimeout(() => this.onDonateClick(), 200);
-                this.router.navigate([], { queryParams: { donate: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    /**
+     * Deep-link entry from the project page Donate CTA.
+     *   /dashboard?donate=1&projectId=<id>&amount=<n>
+     * Pre-fills the modal and opens it once projects are loaded.
+     * Skips the address gate — the donate modal itself handles address requirements.
+     */
+    private handleDonateDeepLink(): void {
+        const q = this.route.snapshot.queryParamMap;
+        if (q.get('donate') !== '1') return;
+
+        const projectId = q.get('projectId');
+        const amountStr = q.get('amount');
+        if (amountStr) {
+            const parsed = parseInt(amountStr, 10);
+            if (!isNaN(parsed) && parsed > 0) this.donationAmount = parsed;
+        }
+
+        // Poll for projects to load (project.service.listActive can take ~200ms).
+        // Cap at 5s so a backend hiccup never strands the user with no modal.
+        const started = Date.now();
+        const tick = () => {
+            if (this.projects.length) {
+                if (projectId && this.projects.some(p => p.id === projectId)) {
+                    this.selectedProjectId = projectId;
+                }
+                this.showDonateModal = true;
+                this.cdr.detectChanges();
+                // Strip the deep-link params so a back/refresh doesn't re-open the modal.
+                this.router.navigate([], { queryParams: { donate: null, projectId: null, amount: null, custom: null }, queryParamsHandling: 'merge', replaceUrl: true });
+                return;
             }
-        });
+            if (Date.now() - started > 5000) {
+                this.showDonateModal = true;
+                this.cdr.detectChanges();
+                return;
+            }
+            setTimeout(tick, 150);
+        };
+        setTimeout(tick, 150);
     }
 
     loadCsr(): void {

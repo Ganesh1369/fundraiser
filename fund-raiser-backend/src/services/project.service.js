@@ -1,4 +1,6 @@
 const prisma = require('../config/prisma');
+const db = require('../config/db');
+const settingsService = require('./settings.service');
 
 const projectInclude = {
     accomplishments: {
@@ -46,6 +48,19 @@ const computeStatsForProjects = async (projectIds) => {
     return stats;
 };
 
+const fetchRelatedEventsFor = async (projectId, limit = 6) => {
+    const result = await db.query(
+        `SELECT id, event_name, event_type, event_date, event_location,
+                banner_url, registration_open
+         FROM events
+         WHERE project_id = ? AND is_active = true
+         ORDER BY event_date ASC
+         LIMIT ?`,
+        [projectId, limit]
+    );
+    return result.rows;
+};
+
 const listActive = async () => {
     const projects = await prisma.project.findMany({
         where: { is_active: true },
@@ -63,8 +78,51 @@ const getBySlug = async (slug) => {
     if (!project || !project.is_active) {
         throw { status: 404, message: 'Project not found' };
     }
-    const stats = await computeStatsForProjects([project.id]);
-    return { ...project, stats: stats[project.id] || emptyStats() };
+    const [stats, relatedEvents, trust] = await Promise.all([
+        computeStatsForProjects([project.id]),
+        fetchRelatedEventsFor(project.id),
+        settingsService.getPublicTrust().catch(() => null),
+    ]);
+    return {
+        ...project,
+        stats: stats[project.id] || emptyStats(),
+        relatedEvents,
+        trust,
+    };
+};
+
+/**
+ * Live donor ticker — last N completed donations to this project.
+ * Only exposes donor first-name + city (no last-name, no email, no PAN).
+ */
+const getRecentDonorsForProject = async (slug, limit = 10) => {
+    const projectRow = await db.query('SELECT id FROM projects WHERE slug = ?', [slug]);
+    if (!projectRow.rows.length) throw { status: 404, message: 'Project not found' };
+    const projectId = projectRow.rows[0].id;
+
+    const safeLimit = Math.max(1, Math.min(50, parseInt(limit, 10) || 10));
+    const result = await db.query(
+        `SELECT u.name, u.city, u.user_type, u.organization_name,
+                d.amount, d.created_at
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         WHERE d.project_id = ? AND d.status = 'completed'
+         ORDER BY d.created_at DESC
+         LIMIT ?`,
+        [projectId, safeLimit]
+    );
+
+    return result.rows.map(r => {
+        const displayName = r.user_type === 'organization' && r.organization_name
+            ? r.organization_name
+            : (r.name || '').split(' ')[0];
+        return {
+            displayName,
+            city: r.city || null,
+            amount: Number(r.amount) || 0,
+            donatedAt: r.created_at,
+        };
+    });
 };
 
 const listAllForAdmin = async () => {
@@ -185,7 +243,6 @@ const deleteAccomplishment = async (id) => {
  * to a given project (by slug). Aggregated by org user, ordered by total contribution desc.
  */
 const getCsrSponsorsBySlug = async (slug) => {
-    const db = require('../config/db');
     const project = await db.query('SELECT id, name FROM projects WHERE slug = ? AND is_active = true', [slug]);
     if (project.rows.length === 0) throw { status: 404, message: 'Project not found' };
     const projectId = project.rows[0].id;
@@ -223,6 +280,7 @@ module.exports = {
     listActive,
     getBySlug,
     getCsrSponsorsBySlug,
+    getRecentDonorsForProject,
     listAllForAdmin,
     getByIdForAdmin,
     create,

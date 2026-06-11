@@ -11,7 +11,9 @@ import {
   ArrowRight, ChevronLeft, Menu, X, Clock, Send, ChartNoAxesCombined,
   Smartphone, Plus, CircleX, Pencil, Camera, ChevronRight, ArrowLeft, Trash2,
   Phone, Receipt, Star,
-  Folder, Award, CheckCircle, RefreshCw, Settings, Upload
+  Folder, Award, CheckCircle, RefreshCw, Settings, Upload,
+  ShieldCheck, Lock, BadgeCheck, Leaf, Megaphone,
+  TreeDeciduous, School, Sprout, BarChart
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -31,7 +33,12 @@ export const appConfig: ApplicationConfig = {
         ArrowRight, ChevronLeft, Menu, X, Clock, Send, ChartNoAxesCombined,
         Smartphone, Plus, CircleX, Pencil, Camera, ChevronRight, ArrowLeft, Trash2,
         Phone, Receipt, Star,
-        Folder, Award, CheckCircle, RefreshCw, Settings, Upload
+        Folder, Award, CheckCircle, RefreshCw, Settings, Upload,
+        ShieldCheck, Lock, BadgeCheck, Leaf, Megaphone,
+        School, Sprout,
+        // Aliases — accomplishment seed uses these legacy names.
+        Tree: TreeDeciduous,
+        Chart: BarChart,
       })
     )
   ]

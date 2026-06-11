@@ -1,6 +1,6 @@
-import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
@@ -12,19 +12,37 @@ import { ApiService } from '../../../services/api.service';
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
     email = '';
     password = '';
     showPassword = false;
     isLoading = false;
     errorMessage = '';
 
+    /** Bounce already-authed users straight to the dashboard — '/' is now the login route. */
+    ngOnInit(): void {
+        if (typeof window === 'undefined') return;
+        const token = localStorage.getItem('token');
+        if (token) this.postLoginNavigate();
+    }
+
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private zone: NgZone,
         private cdr: ChangeDetectorRef
     ) { }
+
+    /** Project-page Donate CTA passes ?returnUrl=… so we resume the deep-link after auth. */
+    private postLoginNavigate(): void {
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        if (returnUrl && returnUrl.startsWith('/')) {
+            this.router.navigateByUrl(returnUrl).catch(() => this.router.navigate(['/dashboard']));
+            return;
+        }
+        this.router.navigate(['/dashboard']);
+    }
 
     onSubmit(): void {
         if (!this.email || !this.password) {
@@ -42,7 +60,7 @@ export class LoginComponent {
                     if (data.success) {
                         localStorage.setItem('token', data.data.token);
                         localStorage.setItem('user', JSON.stringify(data.data.user));
-                        this.router.navigate(['/dashboard']);
+                        this.postLoginNavigate();
                     } else {
                         this.errorMessage = data.message || 'Login failed';
                         this.cdr.markForCheck();

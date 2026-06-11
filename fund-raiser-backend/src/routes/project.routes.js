@@ -7,6 +7,7 @@ const { verifyAdmin } = require('../middleware/auth.middleware');
 router.get('/projects', projectController.listActive);
 router.get('/projects/:slug', projectController.getBySlug);
 router.get('/projects/:slug/csr-sponsors', projectController.getCsrSponsorsBySlug);
+router.get('/projects/:slug/recent-donors', projectController.getRecentDonors);
 
 // Admin Routes
 router.get('/admin/projects', verifyAdmin, projectController.adminList);

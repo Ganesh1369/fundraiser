@@ -93,11 +93,32 @@ const assertRequired = async () => {
     }
 };
 
+/**
+ * Public-safe trust block — what we show anonymously on the project page
+ * footer and near the Pay button. Keys map to ICE's compliance numbers.
+ * Returns nulls for unset keys so the frontend can hide rows gracefully.
+ */
+const getPublicTrust = async () => {
+    const all = await getAll();
+    const val = (k) => (all[k]?.setting_value || null);
+    return {
+        legalName:       val('ice_legal_name'),
+        registeredAddress: val('ice_registered_address'),
+        pan:             val('ice_pan'),
+        reg80gNumber:    val('ice_80g_reg_number'),
+        reg80gValidFrom: val('ice_80g_valid_from'),
+        reg80gValidTo:   val('ice_80g_valid_to'),
+        regCsr1Number:   val('ice_csr1_reg_number'),
+        signatoryName:   val('ice_signatory_name'),
+    };
+};
+
 module.exports = {
     getAll,
     updateMany,
     setOne,
     getMissingRequired,
     assertRequired,
-    bustCache
+    bustCache,
+    getPublicTrust,
 };
