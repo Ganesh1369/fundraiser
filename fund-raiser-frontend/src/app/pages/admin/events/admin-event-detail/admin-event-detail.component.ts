@@ -19,6 +19,28 @@ interface Event {
   event_location?: string | null;
 }
 
+interface EventReport {
+  donations: {
+    totalRaised: number;
+    uniqueDonors: number;
+    donationCount: number;
+    avgPerDonor: number;
+    byStatus: { status: string; count: number; amount: number }[];
+  };
+  registrations: {
+    total: number;
+    newSignups: number;
+    existingUsers: number;
+    byStatus: { status: string; count: number }[];
+    byUserType: { userType: string; count: number }[];
+  };
+  conversion: {
+    registeredToDonated: number;
+    efficiency: number | null;
+  };
+  timeline: { day: string; count: number }[];
+}
+
 interface Registration {
   name: string;
   email: string;
@@ -47,6 +69,8 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
   exporting = false;
   error: string | null = null;
   registrationsError: string | null = null;
+  report: EventReport | null = null;
+  reportLoading = false;
 
   private destroy$ = new Subject<void>();
 
@@ -86,6 +110,7 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
           this.loading = false;
           if (this.event) {
             this.loadRegistrations();
+            this.loadReport();
             this.cdr.detectChanges();
 
           } else {
@@ -99,6 +124,38 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
         }
       });
 
+  }
+
+  loadReport(): void {
+    if (!this.event) return;
+    this.reportLoading = true;
+    this.eventService.getEventReport(String(this.event.id))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          this.zone.run(() => {
+            this.report = res?.data || null;
+            this.reportLoading = false;
+            this.cdr.markForCheck();
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.reportLoading = false;
+            this.cdr.markForCheck();
+          });
+        }
+      });
+  }
+
+  formatPercent(ratio: number | null | undefined): string {
+    if (ratio === null || ratio === undefined || isNaN(ratio)) return '—';
+    return (ratio * 100).toFixed(1) + '%';
+  }
+
+  get maxTimelineCount(): number {
+    if (!this.report?.timeline?.length) return 1;
+    return Math.max(1, ...this.report.timeline.map(d => d.count));
   }
 
   loadRegistrations(page: number = 1): void {

@@ -12,6 +12,7 @@ router.post('/events/:id/register', eventController.registerForEvent);
 router.post('/admin/events', verifyAdmin, eventController.createEvent);
 router.get('/admin/events', verifyAdmin, eventController.getAllEvents);
 router.get('/admin/events/:id', verifyAdmin, eventController.getEventById);
+router.get('/admin/events/:id/report', verifyAdmin, eventController.getEventReport);
 router.put('/admin/events/:id', verifyAdmin, eventController.updateEvent);
 router.patch('/admin/events/:id/toggle', verifyAdmin, eventController.toggleEventStatus);
 router.get('/admin/events/:id/registrations', verifyAdmin, eventController.getEventRegistrations);
