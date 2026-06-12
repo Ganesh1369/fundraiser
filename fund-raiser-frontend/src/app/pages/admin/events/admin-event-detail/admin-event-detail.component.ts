@@ -15,6 +15,8 @@ interface Event {
   event_type: string;
   registration_open: boolean;
   registration_count: number;
+  total_cost?: number | string | null;
+  event_location?: string | null;
 }
 
 interface Registration {
@@ -172,6 +174,13 @@ export class AdminEventDetailComponent implements OnInit, OnDestroy {
     return isNaN(d.getTime())
       ? '—'
       : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  formatCurrency(amount: number | string | null | undefined): string {
+    if (amount === null || amount === undefined || amount === '') return '—';
+    const n = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(n)) return '—';
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
   }
 
 }

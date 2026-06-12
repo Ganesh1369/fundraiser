@@ -147,6 +147,11 @@ export class DashboardComponent implements OnInit {
     profileIncomplete = false;
     addressIncomplete = false;
     showAddressPrompt = false;
+    showPanPrompt = false;
+    panPromptValue = '';
+    panPromptFirstName = '';
+    panPromptLastName = '';
+    private pendingDonation: { amount: number; projectId: string | null } | null = null;
 
     constructor(
         private router: Router,
@@ -347,8 +352,87 @@ export class DashboardComponent implements OnInit {
 
     initiateDonation(): void {
         if (this.donationAmount < 1) return;
+        if (this.request80g && !this.profile?.panNumber) {
+            this.pendingDonation = { amount: this.donationAmount, projectId: this.selectedProjectId || null };
+            this.panPromptValue = '';
+            const { first, last } = this.splitName(this.profile?.name || this.user?.name || '');
+            this.panPromptFirstName = first;
+            this.panPromptLastName = last;
+            this.showDonateModal = false;
+            this.showPanPrompt = true;
+            return;
+        }
         this.showDonateModal = false;
         this.startDonationFlow(this.donationAmount, this.request80g, this.selectedProjectId || null);
+    }
+
+    private splitName(full: string): { first: string; last: string } {
+        const parts = (full || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return { first: '', last: '' };
+        if (parts.length === 1) return { first: parts[0], last: '' };
+        return { first: parts[0], last: parts.slice(1).join(' ') };
+    }
+
+    savePanAndContinue(): void {
+        const pan = (this.panPromptValue || '').trim().toUpperCase();
+        if (pan.length !== 10 || !this.pendingDonation) return;
+        const combinedName = `${(this.panPromptFirstName || '').trim()} ${(this.panPromptLastName || '').trim()}`.trim();
+        const payload: any = { panNumber: pan };
+        if (combinedName) payload.name = combinedName;
+        this.isLoading = true;
+        this.api.updateProfile(payload).subscribe({
+            next: (res: any) => {
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    if (res.success) {
+                        if (this.profile) {
+                            this.profile.panNumber = pan;
+                            if (combinedName) this.profile.name = combinedName;
+                        }
+                        if (combinedName && this.user) {
+                            this.user = { ...this.user, name: combinedName };
+                            localStorage.setItem('user', JSON.stringify(this.user));
+                        }
+                        const pending = this.pendingDonation!;
+                        this.showPanPrompt = false;
+                        this.pendingDonation = null;
+                        this.panPromptValue = '';
+                        this.panPromptFirstName = '';
+                        this.panPromptLastName = '';
+                        this.cdr.detectChanges();
+                        this.startDonationFlow(pending.amount, true, pending.projectId);
+                    } else {
+                        this.toast.error(res.message || 'Failed to save PAN');
+                        this.cdr.detectChanges();
+                    }
+                });
+            },
+            error: (err: any) => {
+                this.zone.run(() => {
+                    this.isLoading = false;
+                    this.toast.error(err.error?.message || 'Failed to save PAN');
+                    this.cdr.detectChanges();
+                });
+            }
+        });
+    }
+
+    skipCertAndContinue(): void {
+        if (!this.pendingDonation) return;
+        const pending = this.pendingDonation;
+        this.request80g = false;
+        this.showPanPrompt = false;
+        this.pendingDonation = null;
+        this.panPromptValue = '';
+        this.startDonationFlow(pending.amount, false, pending.projectId);
+    }
+
+    cancelPanPrompt(): void {
+        this.showPanPrompt = false;
+        this.pendingDonation = null;
+        this.panPromptValue = '';
+        this.panPromptFirstName = '';
+        this.panPromptLastName = '';
     }
 
     retryDonation(d: Donation): void {

@@ -629,6 +629,58 @@
     </div>
     }
 
+    <!-- PAN Required Prompt (when user opts for 80G but PAN not on profile) -->
+    @if (showPanPrompt) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="cancelPanPrompt()">
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
+            <div class="px-6 py-6">
+                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <lucide-icon name="file-text" class="w-6 h-6 text-primary"></lucide-icon>
+                </div>
+                <h2 class="text-lg font-bold text-accent mb-2 text-center">PAN required for 80G</h2>
+                <p class="text-sm text-neutral-500 mb-4 text-center">Your PAN is needed to issue the 80G tax certificate. It will be saved to your profile.</p>
+                <div class="flex items-start gap-2.5 p-3 mb-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800">
+                    <lucide-icon name="info" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
+                    <p class="m-0">Enter your name <strong>exactly as on your PAN</strong>. This updates your profile name and appears on the 80G receipt.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">First Name *</label>
+                        <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="panPromptFirstName" placeholder="First">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Last Name *</label>
+                        <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="panPromptLastName" placeholder="Last">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number *</label>
+                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
+                        [(ngModel)]="panPromptValue" placeholder="ABCDE1234F" maxlength="10">
+                </div>
+                <p class="text-xs text-neutral-400 mb-5">Format: 5 letters, 4 digits, 1 letter</p>
+                <div class="flex flex-col gap-2">
+                    <button class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+                        (click)="savePanAndContinue()" [disabled]="isLoading || (panPromptValue || '').trim().length !== 10 || !(panPromptFirstName || '').trim() || !(panPromptLastName || '').trim()">
+                        @if (isLoading) {
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Saving...
+                        } @else {
+                        Save PAN & Continue
+                        }
+                    </button>
+                    <button class="w-full py-2.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+                        (click)="skipCertAndContinue()" [disabled]="isLoading">Skip 80G & donate</button>
+                    <button class="w-full py-2.5 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+                        (click)="cancelPanPrompt()" [disabled]="isLoading">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
     <!-- Verifying Payment Overlay -->
     <!-- Shown after Razorpay closes, while the server confirms the payment. -->
     <!-- Dismissible: verification continues on the server even if user closes. -->

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../services/api.service';
+import { ProjectService } from '../../../services/project.service';
 import { environment } from '../../../../environments/environment';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -16,6 +17,8 @@ interface Registration {
     user_type: string;
     city: string;
     created_at: string;
+    enrolled_event_name?: string | null;
+    first_project_name?: string | null;
 }
 
 @Component({
@@ -29,7 +32,11 @@ interface Registration {
 export class AdminRegistrationsComponent implements OnInit, OnDestroy {
     registrations: Registration[] = [];
     userTypeFilter = '';
+    eventFilter = '';
+    projectFilter = '';
     searchQuery = '';
+    events: { id: string; event_name: string }[] = [];
+    projects: { id: string; name: string }[] = [];
     pagination = { page: 1, totalPages: 1, total: 0 };
 
     private searchSubject = new Subject<string>();
@@ -38,10 +45,13 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
     constructor(
         private router: Router,
         private api: ApiService,
+        private projectService: ProjectService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
+        this.loadEvents();
+        this.loadProjects();
         this.loadRegistrations();
 
         this.searchSubject.pipe(
@@ -54,13 +64,33 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
         });
     }
 
+    loadEvents(): void {
+        this.api.getActiveEvents().subscribe({
+            next: (res: any) => {
+                this.events = (res?.data || []).map((e: any) => ({ id: e.id, event_name: e.event_name }));
+                this.cdr.detectChanges();
+            },
+            error: () => { }
+        });
+    }
+
+    loadProjects(): void {
+        this.projectService.adminList().subscribe({
+            next: (res: any) => {
+                this.projects = (res?.data || []).map((p: any) => ({ id: p.id, name: p.name }));
+                this.cdr.detectChanges();
+            },
+            error: () => { }
+        });
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
     }
 
     loadRegistrations(page: number = 1): void {
-        this.api.getAdminRegistrations(20, page, this.userTypeFilter, this.searchQuery).subscribe({
+        this.api.getAdminRegistrations(20, page, this.userTypeFilter, this.searchQuery, this.eventFilter, this.projectFilter).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.registrations = res.data.registrations || [];
@@ -82,7 +112,13 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
 
-        fetch(`${environment.apiUrl}/admin/registrations/export`, {
+        const params = new URLSearchParams();
+        if (this.userTypeFilter) params.append('userType', this.userTypeFilter);
+        if (this.eventFilter) params.append('eventId', this.eventFilter);
+        if (this.projectFilter) params.append('projectId', this.projectFilter);
+        const qs = params.toString() ? `?${params.toString()}` : '';
+
+        fetch(`${environment.apiUrl}/admin/registrations/export${qs}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(res => res.blob()).then(blob => {
             const url = window.URL.createObjectURL(blob);

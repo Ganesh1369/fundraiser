@@ -4,15 +4,27 @@
 
 <div class="filters">
     <select class="filter-select" [(ngModel)]="userTypeFilter" (change)="onFilterChange()">
-        <option value="">All Types</option>
+        <option value="">All types</option>
         <option value="student">Students</option>
         <option value="individual">Individuals</option>
         <option value="organization">Organizations</option>
     </select>
+    <select class="filter-select" [(ngModel)]="eventFilter" (change)="onFilterChange()">
+        <option value="">All events</option>
+        @for (e of events; track e.id) {
+            <option [value]="e.id">{{ e.event_name }}</option>
+        }
+    </select>
+    <select class="filter-select" [(ngModel)]="projectFilter" (change)="onFilterChange()">
+        <option value="">All projects</option>
+        @for (p of projects; track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+        }
+    </select>
     <input type="text" class="filter-input" placeholder="Search by name or email..." [value]="searchQuery"
         (input)="onSearchInput($any($event.target).value)">
     <button class="btn btn-primary btn-export" (click)="exportRegistrations()">
-        <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Export Excel
+        <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Download Excel
     </button>
 </div>
 
@@ -20,8 +32,8 @@
     @if (registrations.length === 0) {
     <div class="empty-state">
         <lucide-icon name="users" class="empty-icon w-10 h-10"></lucide-icon>
-        <h3>No registration data</h3>
-        <p>There are no user registrations yet.</p>
+        <h3>No registrations found</h3>
+        <p>No users match the selected filters.</p>
     </div>
     } @else {
     <div class="table-wrapper">
@@ -33,6 +45,8 @@
                     <th>Phone</th>
                     <th>Type</th>
                     <th>City</th>
+                    <th>Enrolled via Event</th>
+                    <th>First Donated Project</th>
                     <th>Registered</th>
                 </tr>
             </thead>
@@ -43,7 +57,9 @@
                     <td>{{ user.email }}</td>
                     <td>{{ user.phone }}</td>
                     <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
-                    <td>{{ user.city || '-' }}</td>
+                    <td>{{ user.city || '—' }}</td>
+                    <td>{{ user.enrolled_event_name || '—' }}</td>
+                    <td>{{ user.first_project_name || '—' }}</td>
                     <td>{{ formatDate(user.created_at) }}</td>
                 </tr>
                 }
