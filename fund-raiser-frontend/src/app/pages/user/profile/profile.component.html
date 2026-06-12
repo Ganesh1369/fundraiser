@@ -205,6 +205,34 @@
                 </div>
                 }
 
+                <!-- Tax & 80G (individuals + students) -->
+                @if (profileForm.userType === 'individual' || profileForm.userType === 'student') {
+                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1 pt-4 border-t border-neutral-100">Tax &amp; 80G</h3>
+                <p class="text-xs text-neutral-400 mb-3">Required for 80G income-tax exemption receipts.</p>
+                <div class="flex items-start gap-2.5 p-3 mb-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800">
+                    <lucide-icon name="info" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
+                    <p class="m-0">Your name on the 80G certificate must match the name on your PAN <strong>exactly</strong>. Editing the first/last name below updates your profile name automatically.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">First Name (as on PAN)</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.firstName" (ngModelChange)="onPanNameInput()" placeholder="First name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Last Name (as on PAN)</label>
+                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            [(ngModel)]="profileForm.lastName" (ngModelChange)="onPanNameInput()" placeholder="Last name">
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number</label>
+                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
+                        [(ngModel)]="profileForm.panNumber" placeholder="ABCDE1234F" maxlength="10">
+                    <p class="text-xs text-neutral-400 mt-1.5">Format: 5 letters, 4 digits, 1 letter</p>
+                </div>
+                }
+
                 <!-- Organization Fields -->
                 @if (profileForm.userType === 'organization') {
                 <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Organization Details</h3>
@@ -238,9 +266,13 @@
                     </div>
                 </div>
 
+                <div class="flex items-start gap-2.5 p-3 mb-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800">
+                    <lucide-icon name="info" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
+                    <p class="m-0">Organization name must match the name on PAN <strong>exactly</strong> for 80G receipts.</p>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name</label>
+                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name (as on PAN)</label>
                         <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                             [(ngModel)]="profileForm.organizationName" placeholder="Organization name">
                     </div>

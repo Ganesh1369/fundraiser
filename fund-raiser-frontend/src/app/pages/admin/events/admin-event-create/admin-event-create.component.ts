@@ -56,9 +56,16 @@ import { LucideAngularModule } from 'lucide-angular';
           <p class="form-error" *ngIf="f['project_id'].touched && f['project_id'].invalid">Project is required.</p>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Location *</label>
-          <input type="text" formControlName="event_location" class="form-input" placeholder="e.g., Mumbai, India">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Location *</label>
+            <input type="text" formControlName="event_location" class="form-input" placeholder="e.g., Mumbai, India">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Cost to Run (INR)</label>
+            <input type="number" formControlName="total_cost" class="form-input" placeholder="e.g., 250000" min="0" step="any">
+            <p class="form-hint">Internal only — used for fundraising efficiency reports. Not shown to donors.</p>
+          </div>
         </div>
 
         <div class="form-group">
@@ -99,6 +106,7 @@ export class AdminEventCreateComponent implements OnInit {
       event_type: ['', Validators.required],
       event_date: ['', Validators.required],
       event_location: ['', Validators.required],
+      total_cost: [null],
       banner_url: [''],
       description: [''],
       project_id: ['', Validators.required]

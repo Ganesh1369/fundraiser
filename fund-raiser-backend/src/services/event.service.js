@@ -38,7 +38,7 @@ const resolveProjectId = async (projectId) => {
  */
 const createEvent = async (eventData) => {
     const {
-        event_name, event_type, event_date, event_location,
+        event_name, event_type, event_date, event_location, total_cost,
         description, banner_url, project_id,
         hero_banner_url, schedule, venue_details,
         contact_name, contact_phone, contact_email
@@ -49,12 +49,12 @@ const createEvent = async (eventData) => {
     const eventTypeSlug = sanitizeEventType(event_type) || 'event';
     await db.query(
         `INSERT INTO events (
-            id, project_id, event_name, event_type, event_date, event_location,
+            id, project_id, event_name, event_type, event_date, event_location, total_cost,
             description, banner_url, hero_banner_url, schedule, venue_details,
             contact_name, contact_phone, contact_email
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-            eventId, resolvedProjectId, event_name, eventTypeSlug, event_date, event_location,
+            eventId, resolvedProjectId, event_name, eventTypeSlug, event_date, event_location, total_cost,
             description, banner_url, hero_banner_url, schedule, venue_details,
             contact_name, contact_phone, contact_email
         ]
@@ -144,7 +144,7 @@ const getEventById = async (id) => {
  */
 const updateEvent = async (id, eventData) => {
     const {
-        event_name, event_type, event_date, event_location,
+        event_name, event_type, event_date, event_location, total_cost,
         description, banner_url, project_id,
         hero_banner_url, schedule, venue_details,
         contact_name, contact_phone, contact_email
@@ -158,6 +158,7 @@ const updateEvent = async (id, eventData) => {
              event_type = COALESCE(?, event_type),
              event_date = COALESCE(?, event_date),
              event_location = COALESCE(?, event_location),
+             total_cost = COALESCE(?, total_cost),
              description = COALESCE(?, description),
              banner_url = COALESCE(?, banner_url),
              project_id = COALESCE(?, project_id),
@@ -169,7 +170,7 @@ const updateEvent = async (id, eventData) => {
              contact_email = COALESCE(?, contact_email)
          WHERE id = ?`,
         [
-            event_name, eventTypeSlug, event_date, event_location,
+            event_name, eventTypeSlug, event_date, event_location, total_cost,
             description, banner_url, project_id,
             hero_banner_url, schedule, venue_details,
             contact_name, contact_phone, contact_email, id

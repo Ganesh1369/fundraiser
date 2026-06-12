@@ -19,6 +19,8 @@ interface Donation {
     created_at: string;
     project_name?: string;
     project_slug?: string;
+    event_name?: string;
+    event_id?: string;
 }
 
 @Component({
@@ -33,7 +35,9 @@ export class AdminDonationsComponent implements OnInit {
     donations: Donation[] = [];
     donationStatusFilter = '';
     projectFilter = '';
+    eventFilter = '';
     projects: any[] = [];
+    events: { id: string; event_name: string }[] = [];
     pagination = { page: 1, totalPages: 1, total: 0 };
 
     constructor(
@@ -45,6 +49,7 @@ export class AdminDonationsComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadProjects();
+        this.loadEvents();
         this.loadDonations();
     }
 
@@ -58,8 +63,18 @@ export class AdminDonationsComponent implements OnInit {
         });
     }
 
+    loadEvents(): void {
+        this.api.getActiveEvents().subscribe({
+            next: (res: any) => {
+                this.events = (res?.data || []).map((e: any) => ({ id: e.id, event_name: e.event_name }));
+                this.cdr.detectChanges();
+            },
+            error: () => { }
+        });
+    }
+
     loadDonations(page: number = 1): void {
-        this.api.getAdminDonations(20, page, this.donationStatusFilter, this.projectFilter).subscribe({
+        this.api.getAdminDonations(20, page, this.donationStatusFilter, this.projectFilter, this.eventFilter).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.donations = res.data.donations || [];
@@ -84,6 +99,7 @@ export class AdminDonationsComponent implements OnInit {
         const params = new URLSearchParams();
         if (this.donationStatusFilter) params.append('status', this.donationStatusFilter);
         if (this.projectFilter) params.append('projectId', this.projectFilter);
+        if (this.eventFilter) params.append('eventId', this.eventFilter);
         const qs = params.toString() ? `?${params.toString()}` : '';
 
         fetch(`${environment.apiUrl}/admin/donations/export${qs}`, {

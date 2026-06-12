@@ -183,17 +183,20 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/admin/stats`, { headers: this.getHeaders(true) });
     }
 
-    getAdminRegistrations(limit: number = 20, page: number = 1, userType?: string, search?: string): Observable<any> {
+    getAdminRegistrations(limit: number = 20, page: number = 1, userType?: string, search?: string, eventId?: string, projectId?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/registrations?limit=${limit}&page=${page}`;
         if (userType) url += `&userType=${encodeURIComponent(userType)}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (eventId) url += `&eventId=${encodeURIComponent(eventId)}`;
+        if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
-    getAdminDonations(limit: number = 20, page: number = 1, status?: string, projectId?: string): Observable<any> {
+    getAdminDonations(limit: number = 20, page: number = 1, status?: string, projectId?: string, eventId?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/donations?limit=${limit}&page=${page}`;
         if (status) url += `&status=${encodeURIComponent(status)}`;
         if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
+        if (eventId) url += `&eventId=${encodeURIComponent(eventId)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 

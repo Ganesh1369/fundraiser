@@ -60,28 +60,49 @@ const getDashboardStats = cached('stats', 30000, _getDashboardStats);
 /**
  * Get registrations with filters
  */
-const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 20, search }) => {
+const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 20, search, eventId, projectId }) => {
     page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
-    let whereConditions = ['is_active = true'];
+    let whereConditions = ['u.is_active = true'];
 
-    if (userType) { whereConditions.push(`user_type = ?`); params.push(userType); }
-    if (fromDate) { whereConditions.push(`created_at >= ?`); params.push(fromDate); }
-    if (toDate) { whereConditions.push(`created_at <= ?`); params.push(toDate); }
+    if (userType) { whereConditions.push(`u.user_type = ?`); params.push(userType); }
+    if (fromDate) { whereConditions.push(`u.created_at >= ?`); params.push(fromDate); }
+    if (toDate) { whereConditions.push(`u.created_at <= ?`); params.push(toDate); }
     if (search) {
-        whereConditions.push(`(name LIKE ? OR email LIKE ? OR phone LIKE ?)`);
+        whereConditions.push(`(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)`);
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (eventId) { whereConditions.push(`u.enrolled_via_event_id = ?`); params.push(eventId); }
+    if (projectId) {
+        // Donor whose first completed donation went to <projectId>, OR whose enrolled event belongs to <projectId>.
+        whereConditions.push(`(EXISTS (SELECT 1 FROM donations d WHERE d.user_id = u.id AND d.status = 'completed' AND d.project_id = ?)
+                              OR EXISTS (SELECT 1 FROM events e WHERE e.id = u.enrolled_via_event_id AND e.project_id = ?))`);
+        params.push(projectId, projectId);
     }
 
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
-    const countResult = await db.query(`SELECT COUNT(*) as count FROM users ${whereClause}`, params);
+    const countResult = await db.query(`SELECT COUNT(*) as count FROM users u ${whereClause}`, params);
 
     const result = await db.query(
-        `SELECT id, user_type, name, age, email, phone, class_grade, school_name,
-                city, organization_name, referral_code, referral_points, registration_fee_paid, created_at
-         FROM users ${whereClause}
-         ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+        `SELECT u.id, u.user_type, u.name, u.age, u.email, u.phone, u.class_grade, u.school_name,
+                u.city, u.organization_name, u.referral_code, u.referral_points, u.registration_fee_paid, u.created_at,
+                u.enrolled_via_event_id, ev.event_name AS enrolled_event_name,
+                fp.project_id AS first_project_id, fp.project_name AS first_project_name
+         FROM users u
+         LEFT JOIN events ev ON ev.id = u.enrolled_via_event_id
+         LEFT JOIN (
+             SELECT d.user_id, d.project_id, p.name AS project_name
+             FROM donations d
+             JOIN projects p ON p.id = d.project_id
+             WHERE d.status = 'completed' AND d.purpose = 'donation'
+             AND d.created_at = (
+                 SELECT MIN(d2.created_at) FROM donations d2
+                 WHERE d2.user_id = d.user_id AND d2.status = 'completed' AND d2.purpose = 'donation' AND d2.project_id IS NOT NULL
+             )
+         ) fp ON fp.user_id = u.id
+         ${whereClause}
+         ORDER BY u.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
         params
     );
 
@@ -98,13 +119,19 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
 /**
  * Export registrations to Excel buffer
  */
-const exportRegistrations = async ({ userType, fromDate, toDate }) => {
+const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projectId }) => {
     const params = [];
     let whereConditions = ['u.is_active = true'];
 
     if (userType) { whereConditions.push(`u.user_type = ?`); params.push(userType); }
     if (fromDate) { whereConditions.push(`u.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`u.created_at <= ?`); params.push(toDate); }
+    if (eventId) { whereConditions.push(`u.enrolled_via_event_id = ?`); params.push(eventId); }
+    if (projectId) {
+        whereConditions.push(`(EXISTS (SELECT 1 FROM donations d WHERE d.user_id = u.id AND d.status = 'completed' AND d.project_id = ?)
+                              OR EXISTS (SELECT 1 FROM events e2 WHERE e2.id = u.enrolled_via_event_id AND e2.project_id = ?))`);
+        params.push(projectId, projectId);
+    }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const result = await db.query(
@@ -118,11 +145,24 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
                 u.referral_code as "Referral Code",
                 r.name as "Referred By",
                 u.referral_points as "Referral Points",
+                ev.event_name as "Enrolled via Event",
+                fp.project_name as "First Donated Project",
                 u.email_verified as "Email Verified",
                 u.registration_fee_paid as "Fee Paid",
                 u.created_at as "Registered At"
          FROM users u
          LEFT JOIN users r ON r.id = u.referred_by
+         LEFT JOIN events ev ON ev.id = u.enrolled_via_event_id
+         LEFT JOIN (
+             SELECT d.user_id, p.name AS project_name
+             FROM donations d
+             JOIN projects p ON p.id = d.project_id
+             WHERE d.status = 'completed' AND d.purpose = 'donation'
+             AND d.created_at = (
+                 SELECT MIN(d2.created_at) FROM donations d2
+                 WHERE d2.user_id = d.user_id AND d2.status = 'completed' AND d2.purpose = 'donation' AND d2.project_id IS NOT NULL
+             )
+         ) fp ON fp.user_id = u.id
          ${whereClause} ORDER BY u.created_at DESC`,
         params
     );
@@ -136,7 +176,7 @@ const exportRegistrations = async ({ userType, fromDate, toDate }) => {
 /**
  * Get donations with filters
  */
-const getDonations = async ({ status, fromDate, toDate, projectId, page = 1, limit = 20 }) => {
+const getDonations = async ({ status, fromDate, toDate, projectId, eventId, page = 1, limit = 20 }) => {
     page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
@@ -146,18 +186,21 @@ const getDonations = async ({ status, fromDate, toDate, projectId, page = 1, lim
     if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
     if (projectId) { whereConditions.push(`d.project_id = ?`); params.push(projectId); }
+    if (eventId) { whereConditions.push(`d.event_id = ?`); params.push(eventId); }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const countResult = await db.query(`SELECT COUNT(*) as count FROM donations d ${whereClause}`, params);
 
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
-                d.razorpay_payment_id, d.created_at, d.project_id,
+                d.razorpay_payment_id, d.created_at, d.project_id, d.event_id,
                 u.name as user_name, u.email as user_email, u.user_type,
-                p.name as project_name, p.slug as project_slug
+                p.name as project_name, p.slug as project_slug,
+                e.event_name as event_name
          FROM donations d
          JOIN users u ON u.id = d.user_id
          LEFT JOIN projects p ON p.id = d.project_id
+         LEFT JOIN events e ON e.id = d.event_id
          ${whereClause} ORDER BY d.created_at DESC
          LIMIT ${limit} OFFSET ${offset}`,
         params
@@ -176,7 +219,7 @@ const getDonations = async ({ status, fromDate, toDate, projectId, page = 1, lim
 /**
  * Export donations to Excel buffer
  */
-const exportDonations = async ({ status, fromDate, toDate, projectId }) => {
+const exportDonations = async ({ status, fromDate, toDate, projectId, eventId }) => {
     const params = [];
     let whereConditions = [`d.purpose = 'donation'`];
 
@@ -184,6 +227,7 @@ const exportDonations = async ({ status, fromDate, toDate, projectId }) => {
     if (fromDate) { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
     if (projectId) { whereConditions.push(`d.project_id = ?`); params.push(projectId); }
+    if (eventId) { whereConditions.push(`d.event_id = ?`); params.push(eventId); }
     const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const result = await db.query(

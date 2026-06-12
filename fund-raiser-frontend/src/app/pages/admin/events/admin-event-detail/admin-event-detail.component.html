@@ -59,6 +59,13 @@
             </div>
             <div class="stat-value small">{{ event.event_type | eventType }}</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <lucide-icon name="indian-rupee" class="stat-icon w-5 h-5"></lucide-icon>
+                <span class="stat-label">Cost to Run (internal)</span>
+            </div>
+            <div class="stat-value small">{{ formatCurrency(event.total_cost) }}</div>
+        </div>
     </div>
 
     <!-- Registrations Table -->

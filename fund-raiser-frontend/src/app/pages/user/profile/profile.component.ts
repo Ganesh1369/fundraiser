@@ -25,7 +25,7 @@ export class ProfileComponent implements OnInit {
     showPostSavePrompt = false;
 
     profileForm: any = {
-        name: '', phone: '',
+        name: '', firstName: '', lastName: '', phone: '',
         addressLine1: '', addressLine2: '', area: '', city: '', state: '', pincode: '',
         age: '', classGrade: '', schoolName: '',
         organizationName: '', panNumber: '', userType: '',
@@ -84,8 +84,11 @@ export class ProfileComponent implements OnInit {
     populateForm(): void {
         if (!this.profile) return;
         const c = this.profile.corporate || {};
+        const { first, last } = this.splitName(this.profile.name || '');
         this.profileForm = {
             name: this.profile.name || '',
+            firstName: first,
+            lastName: last,
             phone: this.profile.phone || '',
             addressLine1: this.profile.addressLine1 || '',
             addressLine2: this.profile.addressLine2 || '',
@@ -111,6 +114,18 @@ export class ProfileComponent implements OnInit {
                 authorizedSignatoryPhone: c.authorizedSignatoryPhone || ''
             }
         };
+    }
+
+    onPanNameInput(): void {
+        const combined = `${(this.profileForm.firstName || '').trim()} ${(this.profileForm.lastName || '').trim()}`.trim();
+        if (combined) this.profileForm.name = combined;
+    }
+
+    private splitName(full: string): { first: string; last: string } {
+        const parts = (full || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return { first: '', last: '' };
+        if (parts.length === 1) return { first: parts[0], last: '' };
+        return { first: parts[0], last: parts.slice(1).join(' ') };
     }
 
     saveProfile(): void {

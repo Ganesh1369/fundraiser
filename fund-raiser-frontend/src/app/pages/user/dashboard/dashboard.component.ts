@@ -169,6 +169,8 @@ export class DashboardComponent implements OnInit {
     showAddressPrompt = false;
     showPanPrompt = false;
     panPromptValue = '';
+    panPromptFirstName = '';
+    panPromptLastName = '';
     private pendingDonation: { amount: number; projectId: string | null } | null = null;
 
     constructor(
@@ -418,12 +420,22 @@ export class DashboardComponent implements OnInit {
         if (this.request80g && !this.profile?.panNumber) {
             this.pendingDonation = { amount: this.donationAmount, projectId: this.selectedProjectId || null };
             this.panPromptValue = '';
+            const { first, last } = this.splitName(this.profile?.name || this.user?.name || '');
+            this.panPromptFirstName = first;
+            this.panPromptLastName = last;
             this.showDonateModal = false;
             this.showPanPrompt = true;
             return;
         }
         this.showDonateModal = false;
         this.startDonationFlow(this.donationAmount, this.request80g, this.selectedProjectId || null);
+    }
+
+    private splitName(full: string): { first: string; last: string } {
+        const parts = (full || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return { first: '', last: '' };
+        if (parts.length === 1) return { first: parts[0], last: '' };
+        return { first: parts[0], last: parts.slice(1).join(' ') };
     }
 
     get isCsrEligible(): boolean {
@@ -433,17 +445,29 @@ export class DashboardComponent implements OnInit {
     savePanAndContinue(): void {
         const pan = (this.panPromptValue || '').trim().toUpperCase();
         if (pan.length !== 10 || !this.pendingDonation) return;
+        const combinedName = `${(this.panPromptFirstName || '').trim()} ${(this.panPromptLastName || '').trim()}`.trim();
+        const payload: any = { panNumber: pan };
+        if (combinedName) payload.name = combinedName;
         this.isLoading = true;
-        this.api.updateProfile({ panNumber: pan }).subscribe({
+        this.api.updateProfile(payload).subscribe({
             next: (res: any) => {
                 this.zone.run(() => {
                     this.isLoading = false;
                     if (res.success) {
-                        if (this.profile) this.profile.panNumber = pan;
+                        if (this.profile) {
+                            this.profile.panNumber = pan;
+                            if (combinedName) this.profile.name = combinedName;
+                        }
+                        if (combinedName && this.user) {
+                            this.user = { ...this.user, name: combinedName };
+                            localStorage.setItem('user', JSON.stringify(this.user));
+                        }
                         const pending = this.pendingDonation!;
                         this.showPanPrompt = false;
                         this.pendingDonation = null;
                         this.panPromptValue = '';
+                        this.panPromptFirstName = '';
+                        this.panPromptLastName = '';
                         this.cdr.detectChanges();
                         this.startDonationFlow(pending.amount, true, pending.projectId);
                     } else {
@@ -476,6 +500,8 @@ export class DashboardComponent implements OnInit {
         this.showPanPrompt = false;
         this.pendingDonation = null;
         this.panPromptValue = '';
+        this.panPromptFirstName = '';
+        this.panPromptLastName = '';
     }
 
     retryDonation(d: Donation): void {
