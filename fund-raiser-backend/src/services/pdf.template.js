@@ -21,6 +21,17 @@ const COLORS = {
 const fmtCurrency = (amount) =>
     'Rs. ' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Treat unconfigured org_settings rows (literal "TODO:…", "TODO_…", "TODO/…" or blank)
+// as missing so the template falls back instead of printing the placeholder verbatim.
+// Real cause sits in prod data, but we fail-soft here to stop ugly receipts.
+const clean = (s) => {
+    if (typeof s !== 'string') return s || null;
+    const t = s.trim();
+    if (!t) return null;
+    if (/^todo[\s:_/-]/i.test(t)) return null;
+    return t;
+};
+
 const fmtDate = (d) => {
     const dt = d instanceof Date ? d : new Date(d);
     return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -121,15 +132,25 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
 
     const orgX = margin + 75;
     const orgWidth = contentWidth - 75;
+    const legalName = clean(org.ice_legal_name);
+    const regAddr   = clean(org.ice_registered_address);
+    const orgPan    = clean(org.ice_pan);
+    const reg80g    = clean(org.ice_80g_reg_number);
+
     doc.font('Helvetica-Bold').fontSize(16).fillColor(COLORS.accent)
-        .text(org.ice_legal_name || '', orgX, headerTop + 4, { width: orgWidth });
-    doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
-        .text(org.ice_registered_address || '', orgX, doc.y + 2, { width: orgWidth });
+        .text(legalName || '', orgX, headerTop + 4, { width: orgWidth });
+    if (regAddr) {
+        doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
+            .text(regAddr, orgX, doc.y + 2, { width: orgWidth });
+    }
     const orgMeta = [
-        org.ice_pan ? `PAN: ${org.ice_pan}` : null,
-        org.ice_80g_reg_number ? `80G Reg. No.: ${org.ice_80g_reg_number}` : null
+        orgPan   ? `PAN: ${orgPan}` : null,
+        reg80g   ? `80G Reg. No.: ${reg80g}` : null
     ].filter(Boolean).join('   •   ');
-    if (orgMeta) doc.text(orgMeta, orgX, doc.y + 2, { width: orgWidth });
+    if (orgMeta) {
+        doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
+            .text(orgMeta, orgX, doc.y + 2, { width: orgWidth });
+    }
 
     // Bottom rule under header
     const headerBottomY = Math.max(headerTop + 60, doc.y) + 12;
@@ -168,7 +189,7 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
         `(${rupeesInWords(donation.amount)}) from the donor whose details are set out below. ` +
         `The donation was received on ${fmtDate(donation.date)} via Razorpay ` +
         `(payment reference ${donation.payment_id || 'N/A'}).`;
-    doc.text(intro, margin, doc.y, { align: 'justify', width: contentWidth, lineGap: 2 });
+    doc.text(intro, margin, doc.y, { align: 'left', width: contentWidth, lineGap: 2 });
 
     if (donation.project_name) {
         doc.moveDown(0.4);
@@ -202,11 +223,11 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
         const footerW = contentWidth - 200;
         doc.font('Helvetica').fontSize(8.5).fillColor(COLORS.muted)
             .text(
-                `Donations to ${org.ice_legal_name || 'this organisation'} are eligible for deduction under Section 80G of ` +
+                `Donations to ${legalName || 'this organisation'} are eligible for deduction under Section 80G of ` +
                 `the Income Tax Act, 1961. 80G certificate valid ` +
                 `${org.ice_80g_valid_from ? 'from ' + fmtDate(org.ice_80g_valid_from) : ''}` +
                 `${org.ice_80g_valid_to ? ' to ' + fmtDate(org.ice_80g_valid_to) : ''}.`,
-                margin, doc.y, { width: footerW, align: 'justify', lineGap: 1.5 }
+                margin, doc.y, { width: footerW, align: 'left', lineGap: 1.5 }
             );
     }
 
@@ -216,6 +237,7 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
     const sigX = margin + contentWidth - sigBoxW;
     const sigY = pageHeight - margin - sigBoxH;
 
+    const signatory = clean(org.ice_signatory_name);
     if (org.ice_signatory_image) {
         safeImage(doc, org.ice_signatory_image, {
             x: sigX, y: sigY, width: sigBoxW, height: 50, fit: [sigBoxW, 50]
@@ -224,9 +246,11 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
     doc.lineWidth(0.5).strokeColor(COLORS.border)
         .moveTo(sigX, sigY + 55).lineTo(sigX + sigBoxW, sigY + 55).stroke();
     doc.font('Helvetica-Bold').fontSize(10).fillColor(COLORS.text)
-        .text(org.ice_signatory_name || 'Authorised Signatory', sigX, sigY + 60, { width: sigBoxW, align: 'center' });
-    doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted)
-        .text(`for ${org.ice_legal_name || ''}`, sigX, sigY + 75, { width: sigBoxW, align: 'center' });
+        .text(signatory || 'Authorised Signatory', sigX, sigY + 60, { width: sigBoxW, align: 'center' });
+    if (legalName) {
+        doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted)
+            .text(`for ${legalName}`, sigX, sigY + 75, { width: sigBoxW, align: 'center' });
+    }
 
     doc.end();
 };
@@ -276,16 +300,27 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
 
     const orgX = margin + 75;
     const orgWidth = contentWidth - 75;
+    const legalName = clean(org.ice_legal_name);
+    const regAddr   = clean(org.ice_registered_address);
+    const orgPan    = clean(org.ice_pan);
+    const reg80g    = clean(org.ice_80g_reg_number);
+    const regCsr1   = clean(org.ice_csr1_reg_number);
+
     doc.font('Helvetica-Bold').fontSize(16).fillColor(COLORS.accent)
-        .text(org.ice_legal_name || '', orgX, headerTop + 4, { width: orgWidth });
-    doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
-        .text(org.ice_registered_address || '', orgX, doc.y + 2, { width: orgWidth });
+        .text(legalName || '', orgX, headerTop + 4, { width: orgWidth });
+    if (regAddr) {
+        doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
+            .text(regAddr, orgX, doc.y + 2, { width: orgWidth });
+    }
     const orgMeta = [
-        org.ice_pan ? `PAN: ${org.ice_pan}` : null,
-        org.ice_80g_reg_number ? `80G Reg. No.: ${org.ice_80g_reg_number}` : null,
-        org.ice_csr1_reg_number ? `CSR-1 Reg. No.: ${org.ice_csr1_reg_number}` : null
+        orgPan  ? `PAN: ${orgPan}` : null,
+        reg80g  ? `80G Reg. No.: ${reg80g}` : null,
+        regCsr1 ? `CSR-1 Reg. No.: ${regCsr1}` : null
     ].filter(Boolean).join('   •   ');
-    if (orgMeta) doc.text(orgMeta, orgX, doc.y + 2, { width: orgWidth });
+    if (orgMeta) {
+        doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
+            .text(orgMeta, orgX, doc.y + 2, { width: orgWidth });
+    }
 
     const headerBottomY = Math.max(headerTop + 60, doc.y) + 12;
     doc.lineWidth(0.5).strokeColor(COLORS.border)
@@ -321,7 +356,7 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
         `their obligations under Section 135 of the Companies Act, 2013. ` +
         `Contribution received on ${fmtDate(donation.date)} via Razorpay ` +
         `(payment reference ${donation.payment_id || 'N/A'}).`;
-    doc.text(intro, margin, doc.y, { align: 'justify', width: contentWidth, lineGap: 2 });
+    doc.text(intro, margin, doc.y, { align: 'left', width: contentWidth, lineGap: 2 });
 
     if (donation.project_name) {
         doc.moveDown(0.4);
@@ -358,15 +393,15 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
     doc.moveDown(0.9);
     doc.x = margin;
     const footerW = contentWidth - 200;
-    const orgName = org.ice_legal_name || 'The recipient organisation';
-    const csr1Clause = org.ice_csr1_reg_number
-        ? `${orgName} is registered as an implementing agency under Section 135 of the Companies Act, 2013 (CSR-1 Reg. No.: ${org.ice_csr1_reg_number}).`
+    const orgName = legalName || 'The recipient organisation';
+    const csr1Clause = regCsr1
+        ? `${orgName} is registered as an implementing agency under Section 135 of the Companies Act, 2013 (CSR-1 Reg. No.: ${regCsr1}).`
         : `${orgName} is a Section 80G-registered not-for-profit eligible to receive CSR contributions under Section 135 of the Companies Act, 2013.`;
     doc.font('Helvetica').fontSize(8.5).fillColor(COLORS.muted)
         .text(
             `This receipt may be retained as substantiation of the above CSR contribution for the donor company's ` +
             `Schedule VII reporting and Form CSR-2 annual filing. ${csr1Clause}`,
-            margin, doc.y, { width: footerW, align: 'justify', lineGap: 1.5 }
+            margin, doc.y, { width: footerW, align: 'left', lineGap: 1.5 }
         );
 
     // Signature
@@ -375,6 +410,7 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
     const sigX = margin + contentWidth - sigBoxW;
     const sigY = pageHeight - margin - sigBoxH;
 
+    const signatory = clean(org.ice_signatory_name);
     if (org.ice_signatory_image) {
         safeImage(doc, org.ice_signatory_image, {
             x: sigX, y: sigY, width: sigBoxW, height: 50, fit: [sigBoxW, 50]
@@ -383,9 +419,11 @@ const renderCsrReceipt = ({ org, donor, donation, corporate, certificateNumber }
     doc.lineWidth(0.5).strokeColor(COLORS.border)
         .moveTo(sigX, sigY + 55).lineTo(sigX + sigBoxW, sigY + 55).stroke();
     doc.font('Helvetica-Bold').fontSize(10).fillColor(COLORS.text)
-        .text(org.ice_signatory_name || 'Authorised Signatory', sigX, sigY + 60, { width: sigBoxW, align: 'center' });
-    doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted)
-        .text(`for ${org.ice_legal_name || ''}`, sigX, sigY + 75, { width: sigBoxW, align: 'center' });
+        .text(signatory || 'Authorised Signatory', sigX, sigY + 60, { width: sigBoxW, align: 'center' });
+    if (legalName) {
+        doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted)
+            .text(`for ${legalName}`, sigX, sigY + 75, { width: sigBoxW, align: 'center' });
+    }
 
     doc.end();
 };
