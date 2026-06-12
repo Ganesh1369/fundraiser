@@ -120,6 +120,20 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/events`);
     }
 
+    // --- Share leads (ungated visitor capture) ---
+    createShareLead(payload: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/share-leads`, payload);
+    }
+
+    // --- Admin notifications composer ---
+    previewNotificationAudience(filters: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/notifications/preview`, { filters }, { headers: this.getHeaders(true) });
+    }
+
+    sendNotification(filters: any, channels: { push: boolean; email: boolean }, payload: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/notifications/send`, { filters, channels, payload }, { headers: this.getHeaders(true) });
+    }
+
     // --- Donations ---
     createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null, csrReferenceNumber?: string | null): Observable<any> {
         const body: any = { amount, request80g, purpose };

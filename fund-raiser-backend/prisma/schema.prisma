@@ -111,6 +111,7 @@ model User {
   event_registrations     EventRegistration[]
   push_subscription       PushSubscription?
   referral_points_history ReferralPointsHistory[]
+  converted_share_leads   ShareLead[]             @relation("ConvertedShareLead")
 
   @@index([referral_code], map: "idx_users_referral_code")
   @@index([referred_by], map: "idx_users_referred_by")
@@ -145,6 +146,7 @@ model Event {
   donations           Donation[]
   event_registrations EventRegistration[]
   enrolled_users      User[]               @relation("UserEnrolledVia")
+  share_leads         ShareLead[]
 
   @@index([is_active], map: "idx_events_is_active")
   @@index([registration_open], map: "idx_events_registration_open")
@@ -284,6 +286,35 @@ model AdminUser {
   @@map("admin_users")
 }
 
+model ShareLead {
+  id                 String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
+  email              String?  @db.VarChar(255)
+  phone              String?  @db.VarChar(20)
+  name               String?  @db.VarChar(150)
+  project_id         String?  @db.Char(36)
+  event_id           String?  @db.Char(36)
+  utm_source         String?  @db.VarChar(100)
+  utm_medium         String?  @db.VarChar(100)
+  utm_campaign       String?  @db.VarChar(150)
+  utm_content        String?  @db.VarChar(150)
+  referrer_url       String?  @db.VarChar(500)
+  landing_path       String?  @db.VarChar(300)
+  opted_in_push      Int      @default(0) @db.TinyInt
+  converted_user_id  String?  @db.Char(36)
+  created_at         DateTime @default(now()) @db.DateTime(0)
+
+  project          Project? @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_share_leads_project")
+  event            Event?   @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_share_leads_event")
+  converted_user   User?    @relation("ConvertedShareLead", fields: [converted_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_share_leads_user")
+
+  @@index([email],      map: "idx_share_leads_email")
+  @@index([phone],      map: "idx_share_leads_phone")
+  @@index([project_id], map: "idx_share_leads_project")
+  @@index([event_id],   map: "idx_share_leads_event")
+  @@index([created_at], map: "idx_share_leads_created")
+  @@map("share_leads")
+}
+
 model PushSubscription {
   id         String   @id @default(dbgenerated("(UUID())")) @db.Char(36)
   user_id    String   @unique(map: "unique_push_user") @db.Char(36)
@@ -353,6 +384,7 @@ model Project {
   accomplishments Accomplishment[]
   events          Event[]
   donations       Donation[]
+  share_leads     ShareLead[]
 
   @@index([is_active], map: "idx_projects_is_active")
   @@index([slug], map: "idx_projects_slug")

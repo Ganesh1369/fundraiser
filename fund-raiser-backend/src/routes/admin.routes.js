@@ -5,6 +5,7 @@ const fs = require('fs');
 const multer = require('multer');
 const adminController = require('../controllers/admin.controller');
 const settingsController = require('../controllers/settings.controller');
+const notificationController = require('../controllers/notification.controller');
 const { verifyAdmin } = require('../middleware/auth.middleware');
 
 // All routes require admin authentication
@@ -12,6 +13,10 @@ router.use(verifyAdmin);
 
 // Dashboard stats
 router.get('/stats', adminController.getDashboardStats);
+
+// Notifications (web push + email broadcast)
+router.post('/notifications/preview', notificationController.preview);
+router.post('/notifications/send',    notificationController.send);
 
 // Registration Management
 router.get('/registrations', adminController.getRegistrations);

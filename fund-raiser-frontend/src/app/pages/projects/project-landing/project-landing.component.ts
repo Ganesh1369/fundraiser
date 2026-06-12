@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { ProjectService } from '../../../services/project.service';
+import { ShareLeadFormComponent } from '../../../components/share-lead-form/share-lead-form.component';
+import { PushOptInComponent } from '../../../components/push-optin/push-optin.component';
 
 interface ProjectStats {
     totalRaised: number;
@@ -67,7 +69,7 @@ interface Project {
 @Component({
     selector: 'app-project-landing',
     standalone: true,
-    imports: [CommonModule, RouterModule, LucideAngularModule],
+    imports: [CommonModule, RouterModule, LucideAngularModule, ShareLeadFormComponent, PushOptInComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <!-- Loading -->
@@ -432,6 +434,16 @@ interface Project {
                 </div>
             </section>
 
+            <!-- Soft lead capture — only shown to ungated visitors (component self-hides if dismissed/loggedin elsewhere) -->
+            <section *ngIf="!isLoggedIn" class="max-w-3xl mx-auto px-5 mt-10">
+                <app-share-lead-form [projectSlug]="project.slug" [heading]="'Get updates on ' + project.name"></app-share-lead-form>
+            </section>
+
+            <!-- Push opt-in (logged-in users only — component self-hides if unsupported/already-decided) -->
+            <section *ngIf="isLoggedIn" class="max-w-3xl mx-auto px-5 mt-8">
+                <app-push-optin [pitch]="'Get a notification when ' + project.name + ' posts an update.'"></app-push-optin>
+            </section>
+
             <!-- CTA -->
             <section class="max-w-6xl mx-auto px-5 mt-10 mb-10">
                 <div class="bg-accent rounded-2xl p-6 md:p-10 text-center md:text-left flex flex-col md:flex-row md:items-center gap-5">
@@ -519,6 +531,9 @@ export class ProjectLandingComponent implements OnInit, OnDestroy {
     // Donate card state
     readonly amountChips = [500, 1000, 2500, 5000];
     selectedAmount = 1000;
+    get isLoggedIn(): boolean {
+        try { return !!localStorage.getItem('token'); } catch { return false; }
+    }
 
     constructor(
         private route: ActivatedRoute,
