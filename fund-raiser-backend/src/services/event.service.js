@@ -502,6 +502,137 @@ const registerForEvent = async (eventId, registrationData) => {
     };
 };
 
+/**
+ * Aggregate metrics for /admin/events/:id report:
+ *   - donation roll-up (raised / donors / status breakdown / efficiency vs total_cost)
+ *   - registration roll-up (total / by status / by user_type)
+ *   - participation split (new signups via this event vs existing users)
+ *   - 14-day registration timeline (buckets per calendar day, leading up to event)
+ */
+const getEventReport = async (eventId) => {
+    const eventR = await db.query(
+        `SELECT id, event_name, event_date, event_location, total_cost, created_at FROM events WHERE id = ? LIMIT 1`,
+        [eventId]
+    );
+    if (eventR.rows.length === 0) throw { status: 404, message: 'Event not found' };
+    const event = eventR.rows[0];
+
+    const [
+        donationTotals,
+        donationByStatus,
+        registrationTotal,
+        registrationByStatus,
+        registrationByUserType,
+        newSignupCount,
+        existingUserCount,
+        timeline
+    ] = await Promise.all([
+        db.query(
+            `SELECT COALESCE(SUM(d.amount), 0) AS total_raised,
+                    COUNT(DISTINCT CASE WHEN d.status='completed' THEN d.user_id END) AS unique_donors,
+                    COUNT(*) AS donation_count
+             FROM donations d WHERE d.event_id = ? AND d.purpose='donation'`,
+            [eventId]
+        ),
+        db.query(
+            `SELECT d.status, COUNT(*) AS c, COALESCE(SUM(d.amount), 0) AS amount
+             FROM donations d WHERE d.event_id = ? AND d.purpose='donation'
+             GROUP BY d.status`,
+            [eventId]
+        ),
+        db.query(
+            `SELECT COUNT(*) AS c FROM event_registrations WHERE event_id = ?`,
+            [eventId]
+        ),
+        db.query(
+            `SELECT registration_status, COUNT(*) AS c
+             FROM event_registrations WHERE event_id = ?
+             GROUP BY registration_status`,
+            [eventId]
+        ),
+        db.query(
+            `SELECT u.user_type, COUNT(*) AS c
+             FROM event_registrations er
+             JOIN users u ON u.id = er.user_id
+             WHERE er.event_id = ?
+             GROUP BY u.user_type`,
+            [eventId]
+        ),
+        db.query(
+            `SELECT COUNT(*) AS c
+             FROM event_registrations er
+             JOIN users u ON u.id = er.user_id
+             WHERE er.event_id = ? AND u.enrolled_via_event_id = ?`,
+            [eventId, eventId]
+        ),
+        db.query(
+            `SELECT COUNT(*) AS c
+             FROM event_registrations er
+             JOIN users u ON u.id = er.user_id
+             WHERE er.event_id = ?
+               AND (u.enrolled_via_event_id IS NULL OR u.enrolled_via_event_id <> ?)`,
+            [eventId, eventId]
+        ),
+        db.query(
+            `SELECT DATE(created_at) AS day, COUNT(*) AS c
+             FROM event_registrations
+             WHERE event_id = ?
+             GROUP BY DATE(created_at)
+             ORDER BY day ASC`,
+            [eventId]
+        )
+    ]);
+
+    const totalRaised  = parseFloat(donationTotals.rows[0]?.total_raised || 0);
+    const uniqueDonors = parseInt(donationTotals.rows[0]?.unique_donors || 0);
+    const registrations = parseInt(registrationTotal.rows[0]?.c || 0);
+    const newSignups    = parseInt(newSignupCount.rows[0]?.c || 0);
+    const existingUsers = parseInt(existingUserCount.rows[0]?.c || 0);
+    const totalCost     = event.total_cost ? parseFloat(event.total_cost) : null;
+
+    return {
+        event: {
+            id: event.id,
+            name: event.event_name,
+            date: event.event_date,
+            location: event.event_location,
+            totalCost
+        },
+        donations: {
+            totalRaised,
+            uniqueDonors,
+            donationCount: parseInt(donationTotals.rows[0]?.donation_count || 0),
+            avgPerDonor: uniqueDonors > 0 ? totalRaised / uniqueDonors : 0,
+            byStatus: donationByStatus.rows.map(r => ({
+                status: r.status,
+                count: parseInt(r.c),
+                amount: parseFloat(r.amount)
+            }))
+        },
+        registrations: {
+            total: registrations,
+            newSignups,
+            existingUsers,
+            byStatus: registrationByStatus.rows.map(r => ({
+                status: r.registration_status,
+                count: parseInt(r.c)
+            })),
+            byUserType: registrationByUserType.rows.map(r => ({
+                userType: r.user_type,
+                count: parseInt(r.c)
+            }))
+        },
+        conversion: {
+            registeredToDonated: registrations > 0 ? uniqueDonors / registrations : 0,
+            efficiency: totalCost && totalCost > 0 ? totalRaised / totalCost : null
+        },
+        timeline: timeline.rows.map(r => ({
+            day: r.day instanceof Date ? r.day.toISOString().slice(0, 10) : String(r.day).slice(0, 10),
+            count: parseInt(r.c)
+        }))
+    };
+};
+
 module.exports = {
     createEvent,
     getAllEvents,
@@ -512,5 +643,6 @@ module.exports = {
     exportEventRegistrations,
     getActiveEvents,
     getEventDetails,
-    registerForEvent
+    registerForEvent,
+    getEventReport
 };

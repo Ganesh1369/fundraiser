@@ -28,6 +28,16 @@ exports.getEventById = async (req, res, next) => {
     }
 };
 
+exports.getEventReport = async (req, res, next) => {
+    try {
+        const data = await eventService.getEventReport(req.params.id);
+        res.json({ success: true, data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 exports.updateEvent = async (req, res, next) => {
     try {
         const data = await eventService.updateEvent(req.params.id, req.body);

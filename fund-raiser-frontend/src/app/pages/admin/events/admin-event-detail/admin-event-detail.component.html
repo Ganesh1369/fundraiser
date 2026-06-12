@@ -68,6 +68,139 @@
         </div>
     </div>
 
+    <!-- Event Report -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h2>Event report</h2>
+            @if (reportLoading) {
+                <span style="font-size: 12px; color: #6b7280;">Loading…</span>
+            }
+        </div>
+
+        @if (report) {
+            <!-- Money + conversion headline numbers -->
+            <div class="stats-grid" style="padding: 16px 20px 0;">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <lucide-icon name="indian-rupee" class="stat-icon w-5 h-5"></lucide-icon>
+                        <span class="stat-label">Funds raised</span>
+                    </div>
+                    <div class="stat-value">{{ formatCurrency(report.donations.totalRaised) }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <lucide-icon name="heart" class="stat-icon w-5 h-5"></lucide-icon>
+                        <span class="stat-label">Unique donors</span>
+                    </div>
+                    <div class="stat-value">{{ report.donations.uniqueDonors }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <lucide-icon name="trending-up" class="stat-icon w-5 h-5"></lucide-icon>
+                        <span class="stat-label">Avg / donor</span>
+                    </div>
+                    <div class="stat-value small">{{ formatCurrency(report.donations.avgPerDonor) }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <lucide-icon name="target" class="stat-icon w-5 h-5"></lucide-icon>
+                        <span class="stat-label">Registered → donated</span>
+                    </div>
+                    <div class="stat-value small">{{ formatPercent(report.conversion.registeredToDonated) }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <lucide-icon name="sparkles" class="stat-icon w-5 h-5"></lucide-icon>
+                        <span class="stat-label">Efficiency (raised / cost)</span>
+                    </div>
+                    <div class="stat-value small">
+                        {{ report.conversion.efficiency === null ? '— (set total cost)' : (report.conversion.efficiency.toFixed(2) + '×') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Participation split + breakdowns -->
+            <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 12px;">Participation</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #4b5563;">Total registrations</span><span style="font-weight: 600; color: #111827;">{{ report.registrations.total }}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #4b5563;">New signups via event</span><span style="font-weight: 600; color: #16a34a;">{{ report.registrations.newSignups }}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #4b5563;">Existing users participating</span><span style="font-weight: 600; color: #111827;">{{ report.registrations.existingUsers }}</span></div>
+                    </div>
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 12px;">By user type</div>
+                    @if (report.registrations.byUserType.length === 0) {
+                        <p style="font-size: 13px; color: #9ca3af; margin: 0;">—</p>
+                    } @else {
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @for (row of report.registrations.byUserType; track row.userType) {
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <span style="color: #4b5563; text-transform: capitalize;">{{ row.userType }}</span>
+                                    <span style="font-weight: 600; color: #111827;">{{ row.count }}</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 12px;">Donations by status</div>
+                    @if (report.donations.byStatus.length === 0) {
+                        <p style="font-size: 13px; color: #9ca3af; margin: 0;">No donations yet.</p>
+                    } @else {
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @for (row of report.donations.byStatus; track row.status) {
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <span style="color: #4b5563; text-transform: capitalize;">{{ row.status }} ({{ row.count }})</span>
+                                    <span style="font-weight: 600; color: #111827;">{{ formatCurrency(row.amount) }}</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 12px;">Registrations by status</div>
+                    @if (report.registrations.byStatus.length === 0) {
+                        <p style="font-size: 13px; color: #9ca3af; margin: 0;">—</p>
+                    } @else {
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @for (row of report.registrations.byStatus; track row.status) {
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <span style="color: #4b5563; text-transform: capitalize;">{{ row.status }}</span>
+                                    <span style="font-weight: 600; color: #111827;">{{ row.count }}</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Registration timeline (one row per day) -->
+            @if (report.timeline.length > 0) {
+                <div style="padding: 0 20px 20px;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 12px;">Registration pace</div>
+                    <div style="display: flex; align-items: flex-end; gap: 4px; height: 80px; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                        @for (d of report.timeline; track d.day) {
+                            <div [style.height.%]="(d.count / maxTimelineCount) * 100"
+                                 [title]="d.day + ': ' + d.count"
+                                 style="flex: 1; min-width: 4px; background: #22c55e; border-radius: 2px 2px 0 0; min-height: 2px;"></div>
+                        }
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; margin-top: 6px;">
+                        <span>{{ report.timeline[0].day }}</span>
+                        <span>{{ report.timeline[report.timeline.length - 1].day }}</span>
+                    </div>
+                </div>
+            }
+        } @else if (!reportLoading) {
+            <div style="padding: 20px; color: #6b7280; font-size: 13px;">No report data yet.</div>
+        }
+    </div>
+
     <!-- Registrations Table -->
     <div class="card">
         <div class="card-header">

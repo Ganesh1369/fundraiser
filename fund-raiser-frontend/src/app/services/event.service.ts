@@ -45,6 +45,10 @@ export class EventService {
         return this.http.get(`${this.apiUrl}/admin/events/${id}`, { headers: this.getHeaders(true) });
     }
 
+    getEventReport(id: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/events/${id}/report`, { headers: this.getHeaders(true) });
+    }
+
     updateEvent(id: string, data: any): Observable<any> {
         return this.http.put(`${this.apiUrl}/admin/events/${id}`, data, { headers: this.getHeaders(true) });
     }
