@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../../services/event.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { EventTypePipe } from '../../../pipes/event-type.pipe';
+import { ShareLeadFormComponent } from '../../../components/share-lead-form/share-lead-form.component';
+import { PushOptInComponent } from '../../../components/push-optin/push-optin.component';
 
 interface Highlight {
   icon: string;
@@ -20,7 +22,7 @@ interface ScheduleItem {
 @Component({
   selector: 'app-event-landing',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule, EventTypePipe],
+  imports: [CommonModule, RouterModule, LucideAngularModule, EventTypePipe, ShareLeadFormComponent, PushOptInComponent],
   template: `
     <!-- Loading -->
     <div class="min-h-screen flex items-center justify-center bg-neutral-50" *ngIf="loading">
@@ -282,6 +284,20 @@ interface ScheduleItem {
         </div>
       </section>
 
+      <!-- Soft lead capture for ungated visitors -->
+      <section *ngIf="!isLoggedIn" class="py-12 px-5 bg-white">
+        <div class="max-w-3xl mx-auto">
+          <app-share-lead-form [eventId]="event.id" [heading]="'Get updates on ' + event.event_name"></app-share-lead-form>
+        </div>
+      </section>
+
+      <!-- Push opt-in for logged-in users -->
+      <section *ngIf="isLoggedIn" class="py-8 px-5 bg-white">
+        <div class="max-w-3xl mx-auto">
+          <app-push-optin [pitch]="'Get a notification when ' + event.event_name + ' has news.'"></app-push-optin>
+        </div>
+      </section>
+
       <!-- Final CTA -->
       <section class="py-16 px-5 bg-white">
         <div class="max-w-4xl mx-auto">
@@ -366,6 +382,10 @@ export class EventLandingComponent implements OnInit {
   loading = true;
   shareTooltip = false;
   currentYear = new Date().getFullYear();
+
+  get isLoggedIn(): boolean {
+    try { return !!localStorage.getItem('token'); } catch { return false; }
+  }
 
   // Event-type-specific highlights. Falls back to generic set for unknown types.
   private highlightLibrary: Record<string, Highlight[]> = {

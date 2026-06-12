@@ -164,10 +164,33 @@ const sendCertificateGeneratedEmail = async (to, name, pdfRelUrl, certificateNum
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Generic admin broadcast — title + body (rendered as HTML paragraphs) + optional CTA link.
+ * Wrapped in the standard ICE chrome so it matches transactional emails.
+ */
+const sendBroadcastEmail = async (to, subject, { body, ctaLabel, ctaUrl }) => {
+    const safeBody = (body || '')
+        .split('\n')
+        .filter(Boolean)
+        .map(line => `<p style="color: #525252; font-size: 14px; line-height: 1.6; margin: 0 0 12px;">${line}</p>`)
+        .join('');
+    const cta = (ctaLabel && ctaUrl)
+        ? `<div style="text-align:center; margin: 24px 0 8px;"><a href="${ctaUrl}" style="display:inline-block; background:#22c55e; color:#ffffff; padding:12px 28px; border-radius:10px; text-decoration:none; font-weight:600; font-size:14px;">${ctaLabel} &rarr;</a></div>`
+        : '';
+    const mailOptions = {
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to,
+        subject,
+        html: emailWrapper(safeBody + cta)
+    };
+    return transporter.sendMail(mailOptions);
+};
+
 module.exports = {
     sendOtpEmail,
     sendPasswordResetEmail,
     sendDonationConfirmationEmail,
     sendCertificateApprovedEmail,
-    sendCertificateGeneratedEmail
+    sendCertificateGeneratedEmail,
+    sendBroadcastEmail
 };

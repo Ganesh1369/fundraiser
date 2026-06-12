@@ -51,6 +51,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/donations/admin-donations.component').then(m => m.AdminDonationsComponent)
             },
             {
+                path: 'notifications',
+                loadComponent: () => import('./pages/admin/notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent)
+            },
+            {
                 path: 'leaderboard',
                 loadComponent: () => import('./pages/admin/leaderboard/admin-leaderboard.component').then(m => m.AdminLeaderboardComponent)
             },
