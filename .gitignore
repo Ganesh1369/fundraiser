@@ -24,6 +24,16 @@ Thumbs.db
 # Local logs
 *.log
 
+# Release artifacts (built locally for manual hPanel deploys)
+fund-raiser-backend-release.zip
+*.zip
+
+# Sample/debug PDFs dropped at repo root during reviews
+/ICE_*.pdf
+
+# Local prod DB backups
+/old db/
+
 # E2E test artifacts (local-only, kept out of VCS)
 .e2e-*
 e2e-*.ps1
