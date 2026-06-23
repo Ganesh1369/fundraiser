@@ -40,6 +40,18 @@ const safeImage = (doc, relUrl, opts) => {
     catch { return false; }
 };
 
+// Defensive filter for org_settings values that were placeholder-filled
+// (literal "TODO: full address" / "PAN: TODO_PAN" etc.). Returns null so
+// callers can skip the line entirely instead of stamping a placeholder
+// onto a legally-binding receipt.
+const clean = (v) => {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+    if (/^todo[\s:_/-]/i.test(s)) return null;
+    return s;
+};
+
 /**
  * Render the 80G certificate to a writable stream.
  *
@@ -61,12 +73,19 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
     // ===== Header =====
     if (org.ice_logo) safeImage(doc, org.ice_logo, { x: margin, y: margin, width: 70, height: 70, fit: [70, 70] });
 
+    const legalName = clean(org.ice_legal_name);
+    const regAddr   = clean(org.ice_registered_address);
+    const orgPan    = clean(org.ice_pan);
+    const reg80g    = clean(org.ice_80g_reg_number);
+
     doc.font('Helvetica-Bold').fontSize(11).fillColor(COLORS.muted)
-        .text(org.ice_legal_name || '', margin + 80, margin + 5, { width: contentWidth - 80 });
-    doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
-        .text(org.ice_registered_address || '', { width: contentWidth - 80 });
-    if (org.ice_pan) doc.text(`PAN: ${org.ice_pan}`, { continued: false });
-    if (org.ice_80g_reg_number) doc.text(`80G Reg. No.: ${org.ice_80g_reg_number}`);
+        .text(legalName || '', margin + 80, margin + 5, { width: contentWidth - 80 });
+    if (regAddr) {
+        doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
+            .text(regAddr, { width: contentWidth - 80 });
+    }
+    if (orgPan) doc.text(`PAN: ${orgPan}`, { continued: false });
+    if (reg80g) doc.text(`80G Reg. No.: ${reg80g}`);
 
     // ===== Title =====
     doc.moveDown(2);
@@ -88,7 +107,7 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
         `(${rupeesInWords(donation.amount)}) ` +
         `from the donor whose details are set out below. The donation was received on ${fmtDate(donation.date)} ` +
         `via Razorpay (payment reference ${donation.payment_id || 'N/A'}).`;
-    doc.text(intro, { align: 'justify', width: contentWidth });
+    doc.text(intro, { align: 'left', width: contentWidth });
 
     if (donation.project_name) {
         doc.moveDown(0.5);
@@ -137,11 +156,11 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
         doc.moveDown(0.8);
         doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted)
             .text(
-                `Donations to ${org.ice_legal_name || 'this organisation'} are eligible for deduction under Section 80G of ` +
+                `Donations to ${legalName || 'this organisation'} are eligible for deduction under Section 80G of ` +
                 `the Income Tax Act, 1961. 80G certificate valid ` +
                 `${org.ice_80g_valid_from ? 'from ' + fmtDate(org.ice_80g_valid_from) : ''}` +
                 `${org.ice_80g_valid_to ? ' to ' + fmtDate(org.ice_80g_valid_to) : ''}.`,
-                { width: contentWidth, align: 'justify' }
+                { width: contentWidth, align: 'left' }
             );
     }
 
@@ -166,9 +185,11 @@ const renderCertificate = ({ org, donor, donation, certificateNumber }, stream) 
         .moveTo(sigX, sigY + 55).lineTo(sigX + sigBoxW, sigY + 55).stroke();
 
     doc.font('Helvetica-Bold').fontSize(10).fillColor(COLORS.text)
-        .text(org.ice_signatory_name || 'Authorised Signatory', sigX, sigY + 60, { width: sigBoxW, align: 'center' });
-    doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted)
-        .text(`for ${org.ice_legal_name || ''}`, sigX, sigY + 75, { width: sigBoxW, align: 'center' });
+        .text(clean(org.ice_signatory_name) || 'Authorised Signatory', sigX, sigY + 60, { width: sigBoxW, align: 'center' });
+    if (legalName) {
+        doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted)
+            .text(`for ${legalName}`, sigX, sigY + 75, { width: sigBoxW, align: 'center' });
+    }
 
     doc.end();
 };
