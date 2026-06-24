@@ -6,6 +6,7 @@ const multer = require('multer');
 const adminController = require('../controllers/admin.controller');
 const settingsController = require('../controllers/settings.controller');
 const notificationController = require('../controllers/notification.controller');
+const shareLeadController = require('../controllers/share-lead.controller');
 const { verifyAdmin } = require('../middleware/auth.middleware');
 
 // All routes require admin authentication
@@ -17,6 +18,10 @@ router.get('/stats', adminController.getDashboardStats);
 // Notifications (web push + email broadcast)
 router.post('/notifications/preview', notificationController.preview);
 router.post('/notifications/send',    notificationController.send);
+
+// Share leads (ungated visitor captures from project/event pages)
+router.get('/share-leads',        shareLeadController.adminList);
+router.get('/share-leads/export', shareLeadController.adminExport);
 
 // Registration Management
 router.get('/registrations', adminController.getRegistrations);

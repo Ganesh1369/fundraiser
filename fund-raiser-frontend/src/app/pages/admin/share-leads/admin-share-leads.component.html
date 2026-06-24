@@ -1,0 +1,110 @@
+<header class="admin-header">
+    <h1>Share Leads</h1>
+    <p class="subtitle">Visitors who left contact info on a project or event share-page without registering.</p>
+</header>
+
+<div class="filters">
+    <div class="filter-group">
+        <label class="filter-label">Project</label>
+        <select class="filter-select" [(ngModel)]="projectFilter" (change)="onFilterChange()">
+            <option value="">All projects</option>
+            @for (p of projects; track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+            }
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Event</label>
+        <select class="filter-select" [(ngModel)]="eventFilter" (change)="onFilterChange()">
+            <option value="">All events</option>
+            @for (e of events; track e.id) {
+                <option [value]="e.id">{{ e.event_name }}</option>
+            }
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">UTM Source</label>
+        <input type="text" class="filter-input filter-input-sm" placeholder="whatsapp, fb, …" [(ngModel)]="utmSourceFilter" (change)="onFilterChange()">
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Push Opt-in</label>
+        <select class="filter-select" [(ngModel)]="optedInPushFilter" (change)="onFilterChange()">
+            <option value="">All</option>
+            <option value="true">Opted in only</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input type="text" class="filter-input" placeholder="Email, phone or name…" [value]="searchQuery"
+            (input)="onSearchInput($any($event.target).value)">
+    </div>
+    <button class="btn btn-primary btn-export" (click)="exportLeads()">
+        <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Download Excel
+    </button>
+</div>
+
+<div class="card">
+    @if (leads.length === 0) {
+    <div class="empty-state">
+        <lucide-icon name="user-plus" class="empty-icon w-10 h-10"></lucide-icon>
+        <h3>No share-leads yet</h3>
+        <p>When visitors fill the "want updates?" form on a project or event share-page, they will appear here.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Captured</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Name</th>
+                    <th>Project</th>
+                    <th>Event</th>
+                    <th>UTM Source</th>
+                    <th>UTM Medium</th>
+                    <th>UTM Campaign</th>
+                    <th>Push</th>
+                    <th>Converted</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (lead of leads; track lead.id) {
+                <tr>
+                    <td class="text-xs">{{ formatDate(lead.created_at) }}</td>
+                    <td>{{ lead.email || '—' }}</td>
+                    <td>{{ lead.phone || '—' }}</td>
+                    <td>{{ lead.name || '—' }}</td>
+                    <td>{{ lead.project_name || '—' }}</td>
+                    <td>{{ lead.event_name || '—' }}</td>
+                    <td>{{ lead.utm_source || '—' }}</td>
+                    <td>{{ lead.utm_medium || '—' }}</td>
+                    <td>{{ lead.utm_campaign || '—' }}</td>
+                    <td>
+                        @if (lead.opted_in_push) {
+                            <span class="badge badge-yes">Yes</span>
+                        } @else {
+                            <span class="text-neutral-400">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (lead.converted_user_id) {
+                            <span class="badge badge-yes">Yes</span>
+                        } @else {
+                            <span class="text-neutral-400">—</span>
+                        }
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="loadLeads(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }} · {{ pagination.total }} leads</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="loadLeads(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
+    }
+</div>

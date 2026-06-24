@@ -55,6 +55,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent)
             },
             {
+                path: 'share-leads',
+                loadComponent: () => import('./pages/admin/share-leads/admin-share-leads.component').then(m => m.AdminShareLeadsComponent)
+            },
+            {
                 path: 'leaderboard',
                 loadComponent: () => import('./pages/admin/leaderboard/admin-leaderboard.component').then(m => m.AdminLeaderboardComponent)
             },

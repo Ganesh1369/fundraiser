@@ -165,6 +165,16 @@ export class ApiService {
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
+    getAdminShareLeads(limit: number = 20, page: number = 1, projectId?: string, eventId?: string, utmSource?: string, optedInPush?: string, search?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/share-leads?limit=${limit}&page=${page}`;
+        if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
+        if (eventId) url += `&eventId=${encodeURIComponent(eventId)}`;
+        if (utmSource) url += `&utmSource=${encodeURIComponent(utmSource)}`;
+        if (optedInPush) url += `&optedInPush=${encodeURIComponent(optedInPush)}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        return this.http.get(url, { headers: this.getHeaders(true) });
+    }
+
     getAdminUserDetail(id: string): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/users/${id}`, { headers: this.getHeaders(true) });
     }
