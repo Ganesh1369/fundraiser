@@ -6,11 +6,17 @@ const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:hello@icenetwork.in';
 
+let vapidReady = false;
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
-    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+    try {
+        webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+        vapidReady = true;
+    } catch (err) {
+        console.warn('[push] VAPID keys present but invalid — push notifications disabled:', err.message);
+    }
 }
 
-const isConfigured = () => !!(VAPID_PUBLIC && VAPID_PRIVATE);
+const isConfigured = () => vapidReady;
 
 const getPublicKey = () => VAPID_PUBLIC;
 
