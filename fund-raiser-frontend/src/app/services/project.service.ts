@@ -28,8 +28,17 @@ export class ProjectService {
     }
 
     // --- Admin: projects ---
-    adminList(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/admin/projects`, { headers: this.adminHeaders() });
+    adminList(params?: { page?: number; limit?: number; search?: string }): Observable<any> {
+        let url = `${this.apiUrl}/admin/projects`;
+        if (params) {
+            const qs = new URLSearchParams();
+            if (params.page) qs.set('page', String(params.page));
+            if (params.limit) qs.set('limit', String(params.limit));
+            if (params.search) qs.set('search', params.search);
+            const s = qs.toString();
+            if (s) url += `?${s}`;
+        }
+        return this.http.get(url, { headers: this.adminHeaders() });
     }
 
     adminGet(id: string): Observable<any> {

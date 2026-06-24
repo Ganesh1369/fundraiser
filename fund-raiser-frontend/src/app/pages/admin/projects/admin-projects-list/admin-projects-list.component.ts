@@ -15,6 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
 export class AdminProjectsListComponent implements OnInit {
     projects: any[] = [];
     loading = true;
+    pagination = { page: 1, totalPages: 1, total: 0 };
 
     constructor(
         private projectService: ProjectService,
@@ -24,11 +25,12 @@ export class AdminProjectsListComponent implements OnInit {
 
     ngOnInit(): void { this.load(); }
 
-    load(): void {
+    load(page: number = 1): void {
         this.loading = true;
-        this.projectService.adminList().subscribe({
+        this.projectService.adminList({ page, limit: 20 }).subscribe({
             next: (res: any) => {
-                this.projects = res?.data || [];
+                this.projects = res?.data?.projects || [];
+                this.pagination = res?.data?.pagination || this.pagination;
                 this.loading = false;
                 this.cdr.detectChanges();
             },

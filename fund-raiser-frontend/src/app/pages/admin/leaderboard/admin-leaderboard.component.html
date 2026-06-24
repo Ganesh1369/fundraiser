@@ -3,12 +3,15 @@
 </header>
 
 <div class="filters">
-    <select class="filter-select" [(ngModel)]="leaderboardUserTypeFilter" (change)="onFilterChange()">
-        <option value="">All Types</option>
-        <option value="student">Students</option>
-        <option value="individual">Individuals</option>
-        <option value="organization">Organizations</option>
-    </select>
+    <div class="filter-group">
+        <label class="filter-label">User Type</label>
+        <select class="filter-select" [(ngModel)]="leaderboardUserTypeFilter" (change)="onFilterChange()">
+            <option value="">All Types</option>
+            <option value="student">Students</option>
+            <option value="individual">Individuals</option>
+            <option value="organization">Organizations</option>
+        </select>
+    </div>
 </div>
 
 <div class="card">
@@ -58,5 +61,12 @@
             </tbody>
         </table>
     </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="loadLeaderboard(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="loadLeaderboard(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
     }
 </div>

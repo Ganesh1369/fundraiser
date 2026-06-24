@@ -3,26 +3,38 @@
 </header>
 
 <div class="filters">
-    <select class="filter-select" [(ngModel)]="userTypeFilter" (change)="onFilterChange()">
-        <option value="">All types</option>
-        <option value="student">Students</option>
-        <option value="individual">Individuals</option>
-        <option value="organization">Organizations</option>
-    </select>
-    <select class="filter-select" [(ngModel)]="eventFilter" (change)="onFilterChange()">
-        <option value="">All events</option>
-        @for (e of events; track e.id) {
-            <option [value]="e.id">{{ e.event_name }}</option>
-        }
-    </select>
-    <select class="filter-select" [(ngModel)]="projectFilter" (change)="onFilterChange()">
-        <option value="">All projects</option>
-        @for (p of projects; track p.id) {
-            <option [value]="p.id">{{ p.name }}</option>
-        }
-    </select>
-    <input type="text" class="filter-input" placeholder="Search by name or email..." [value]="searchQuery"
-        (input)="onSearchInput($any($event.target).value)">
+    <div class="filter-group">
+        <label class="filter-label">User Type</label>
+        <select class="filter-select" [(ngModel)]="userTypeFilter" (change)="onFilterChange()">
+            <option value="">All types</option>
+            <option value="student">Students</option>
+            <option value="individual">Individuals</option>
+            <option value="organization">Organizations</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Event</label>
+        <select class="filter-select" [(ngModel)]="eventFilter" (change)="onFilterChange()">
+            <option value="">All events</option>
+            @for (e of events; track e.id) {
+                <option [value]="e.id">{{ e.event_name }}</option>
+            }
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Project</label>
+        <select class="filter-select" [(ngModel)]="projectFilter" (change)="onFilterChange()">
+            <option value="">All projects</option>
+            @for (p of projects; track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+            }
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input type="text" class="filter-input" placeholder="Name or email..." [value]="searchQuery"
+            (input)="onSearchInput($any($event.target).value)">
+    </div>
     <button class="btn btn-primary btn-export" (click)="exportRegistrations()">
         <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Download Excel
     </button>

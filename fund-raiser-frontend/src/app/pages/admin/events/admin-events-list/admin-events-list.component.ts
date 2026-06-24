@@ -17,6 +17,7 @@ export class AdminEventsListComponent implements OnInit {
   loading = true;
   copiedEventId: number | null = null;
   copiedLandingId: number | null = null;
+  pagination = { page: 1, totalPages: 1, total: 0 };
 
   constructor(private eventService: EventService, private cdr: ChangeDetectorRef) { }
 
@@ -24,14 +25,13 @@ export class AdminEventsListComponent implements OnInit {
     this.loadEvents();
   }
 
-  loadEvents() {
+  loadEvents(page: number = 1) {
     this.loading = true;
-    this.eventService.getAllEvents().subscribe({
+    this.eventService.getAllEvents({ page, limit: 20 }).subscribe({
       next: (res: any) => {
-        console.log('Events API response:', res);
-        // Handle different response shapes
         if (res?.data?.events) {
           this.events = res.data.events;
+          this.pagination = res.data.pagination || this.pagination;
         } else if (Array.isArray(res?.data)) {
           this.events = res.data;
         } else if (Array.isArray(res)) {

@@ -159,8 +159,8 @@ export class ApiService {
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
-    getLeaderboard(limit: number = 50, userType?: string): Observable<any> {
-        let url = `${this.apiUrl}/admin/leaderboard?limit=${limit}`;
+    getLeaderboard(limit: number = 20, userType?: string, page: number = 1): Observable<any> {
+        let url = `${this.apiUrl}/admin/leaderboard?limit=${limit}&page=${page}`;
         if (userType) url += `&userType=${encodeURIComponent(userType)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }

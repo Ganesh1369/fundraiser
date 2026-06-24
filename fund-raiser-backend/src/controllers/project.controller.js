@@ -31,8 +31,8 @@ exports.getRecentDonors = async (req, res, next) => {
 
 exports.adminList = async (req, res, next) => {
     try {
-        const projects = await projectService.listAllForAdmin();
-        res.json({ success: true, data: projects });
+        const data = await projectService.listAllForAdmin(req.query);
+        res.json({ success: true, data });
     } catch (error) { handleError(res, next, error); }
 };
 

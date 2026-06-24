@@ -98,7 +98,7 @@ export class AdminDashboardComponent implements OnInit {
             next: (res: any) => {
                 if (res.stats?.success) this.stats = res.stats.data;
                 if (res.registrations?.success) this.registrations = res.registrations.data.registrations || [];
-                if (res.leaderboard?.success) this.leaderboard = res.leaderboard.data;
+                if (res.leaderboard?.success) this.leaderboard = res.leaderboard.data?.entries || res.leaderboard.data || [];
                 if (res.orgRequired?.success) {
                     this.missingOrgSettings = res.orgRequired.data?.missing || [];
                 }

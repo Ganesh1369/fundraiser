@@ -28,6 +28,7 @@ interface LeaderboardEntry {
 export class AdminLeaderboardComponent implements OnInit {
     leaderboard: LeaderboardEntry[] = [];
     leaderboardUserTypeFilter = '';
+    pagination = { page: 1, totalPages: 1, total: 0 };
 
     constructor(
         private router: Router,
@@ -39,11 +40,12 @@ export class AdminLeaderboardComponent implements OnInit {
         this.loadLeaderboard();
     }
 
-    loadLeaderboard(): void {
-        this.api.getLeaderboard(20, this.leaderboardUserTypeFilter).subscribe({
+    loadLeaderboard(page: number = 1): void {
+        this.api.getLeaderboard(20, this.leaderboardUserTypeFilter, page).subscribe({
             next: (res: any) => {
                 if (res.success) {
-                    this.leaderboard = res.data;
+                    this.leaderboard = res.data?.entries || [];
+                    this.pagination = res.data?.pagination || this.pagination;
                     this.cdr.detectChanges();
                 }
             },
@@ -58,7 +60,7 @@ export class AdminLeaderboardComponent implements OnInit {
     }
 
     onFilterChange(): void {
-        this.loadLeaderboard();
+        this.loadLeaderboard(1);
     }
 
     formatCurrency(amount: number): string {

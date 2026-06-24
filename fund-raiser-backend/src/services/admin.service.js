@@ -362,33 +362,43 @@ const getUserAnalytics = async (userId) => {
 /**
  * Get leaderboard with optional user type filter
  */
-const _getLeaderboard = async ({ limit = 50, userType }) => {
-    limit = parseInt(limit);
-    let query = `SELECT * FROM leaderboard`;
+const _getLeaderboard = async ({ page = 1, limit = 20, userType } = {}) => {
+    page = parseInt(page); limit = parseInt(limit);
+    const offset = (page - 1) * limit;
+    let whereClause = '';
     const params = [];
 
     if (userType) {
-        query += ` WHERE user_type = ?`;
+        whereClause = `WHERE user_type = ?`;
         params.push(userType);
     }
 
-    // Re-order after filtering since the view might have different order
-    query += ` ORDER BY score DESC LIMIT ${limit}`;
+    const countResult = await db.query(
+        `SELECT COUNT(*) AS count FROM leaderboard ${whereClause}`,
+        params
+    );
+    const total = parseInt(countResult.rows[0].count);
 
-    const result = await db.query(query, params);
+    const result = await db.query(
+        `SELECT * FROM leaderboard ${whereClause} ORDER BY score DESC LIMIT ${limit} OFFSET ${offset}`,
+        params
+    );
 
-    return result.rows.map((row, index) => ({
-        rank: index + 1,
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        city: row.city,
-        userType: row.user_type,
-        totalDonations: parseFloat(row.total_donations),
-        donationCount: parseInt(row.donation_count || 0),
-        referralPoints: parseInt(row.referral_points),
-        score: parseFloat(row.score)
-    }));
+    return {
+        entries: result.rows.map((row, index) => ({
+            rank: offset + index + 1,
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            city: row.city,
+            userType: row.user_type,
+            totalDonations: parseFloat(row.total_donations),
+            donationCount: parseInt(row.donation_count || 0),
+            referralPoints: parseInt(row.referral_points),
+            score: parseFloat(row.score)
+        })),
+        pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
+    };
 };
 const getLeaderboard = cached('leaderboard', 30000, _getLeaderboard);
 

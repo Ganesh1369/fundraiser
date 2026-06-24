@@ -157,17 +157,39 @@ const getRecentDonorsForProject = async (slug, limit = 10) => {
     });
 };
 
-const listAllForAdmin = async () => {
+const listAllForAdmin = async (query = {}) => {
+    const paginated = query.page !== undefined;
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const search = query.search || '';
+    const params = [];
+    let whereClause = '';
+    if (search) { whereClause = 'WHERE p.name LIKE ?'; params.push(`%${search}%`); }
+
+    const pageClause = paginated ? `LIMIT ${limit} OFFSET ${offset}` : '';
     const result = await db.query(
         `SELECT p.*,
                 (SELECT COUNT(*) FROM accomplishments WHERE project_id = p.id) AS accomplishments_count
          FROM projects p
-         ORDER BY p.display_order ASC, p.name ASC`
+         ${whereClause}
+         ORDER BY p.display_order ASC, p.name ASC
+         ${pageClause}`,
+        params
     );
-    return result.rows.map(row => {
+    const projects = result.rows.map(row => {
         const { accomplishments_count, ...rest } = row;
         return { ...hydrateProject(rest), _count: { accomplishments: Number(accomplishments_count) || 0 } };
     });
+
+    if (!paginated) return projects;
+
+    const countResult = await db.query(
+        `SELECT COUNT(*) AS count FROM projects p ${whereClause}`,
+        params
+    );
+    const total = parseInt(countResult.rows[0].count);
+    return { projects, pagination: { total, page, limit, totalPages: Math.ceil(total / limit) } };
 };
 
 const getByIdForAdmin = async (id) => {

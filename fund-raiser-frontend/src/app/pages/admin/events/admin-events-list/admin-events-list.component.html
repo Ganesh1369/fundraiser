@@ -85,5 +85,12 @@
         </div>
         }
     </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="loadEvents(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="loadEvents(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
     }
 </div>
