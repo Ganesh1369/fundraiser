@@ -99,8 +99,8 @@ interface Project {
                         <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
                     </a>
                     <div class="flex items-center gap-2 sm:gap-3">
-                        <a href="#about"   (click)="scrollTo($event, 'about')"   class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">About</a>
-                        <a href="#impact"  (click)="scrollTo($event, 'impact')"  class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Impact</a>
+                        <a href="#about" *ngIf="project.description"   (click)="scrollTo($event, 'about')"   class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">About</a>
+                        <a href="#impact" *ngIf="project.accomplishments.length > 0"  (click)="scrollTo($event, 'impact')"  class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Impact</a>
                         <a href="#events" *ngIf="project.relatedEvents.length"  (click)="scrollTo($event, 'events')" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Events</a>
                         <button (click)="share()" class="relative px-3 sm:px-4 py-2 border border-neutral-200 text-neutral-700 text-sm font-medium rounded-xl hover:border-primary hover:text-primary inline-flex items-center gap-1.5">
                             <lucide-icon name="share-2" class="w-4 h-4"></lucide-icon>
@@ -232,7 +232,7 @@ interface Project {
                         Live
                     </div>
                     <div class="flex-1 overflow-hidden relative h-5">
-                        <div class="absolute inset-y-0 flex items-center gap-10 animate-[marquee_45s_linear_infinite] whitespace-nowrap">
+                        <div class="ticker-track absolute inset-y-0 flex items-center gap-10 pr-10 whitespace-nowrap" [style.animation-duration.s]="tickerDuration">
                             <span *ngFor="let d of tickerLoop" class="text-sm text-white/95">
                                 <span class="font-semibold">{{ d.displayName }}</span>
                                 <span *ngIf="d.city" class="text-white/70"> from {{ d.city }}</span>
@@ -487,6 +487,10 @@ interface Project {
             0%   { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
+        .ticker-track {
+            animation: marquee 45s linear infinite;
+            will-change: transform;
+        }
         .line-clamp-2 {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -583,6 +587,12 @@ export class ProjectLandingComponent implements OnInit, OnDestroy {
     get tickerLoop(): RecentDonor[] {
         if (!this.recentDonors.length) return [];
         return [...this.recentDonors, ...this.recentDonors];
+    }
+
+    /** Scroll duration scaled by donor count (~4s per donor) so the marquee moves at the
+     *  same visual speed on every project, regardless of how many donors it has. */
+    get tickerDuration(): number {
+        return Math.max(this.recentDonors.length, 1) * 4;
     }
 
     // ---- Actions ----

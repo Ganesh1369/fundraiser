@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
@@ -24,7 +24,7 @@ export class ForgotPasswordComponent {
     message: string = '';
     errorMessage: string = '';
 
-    constructor(private api: ApiService, private router: Router) { }
+    constructor(private api: ApiService, private router: Router, private cdr: ChangeDetectorRef) { }
 
     async sendOtp(): Promise<void> {
         if (!this.email) {
@@ -45,10 +45,12 @@ export class ForgotPasswordComponent {
                 } else {
                     this.errorMessage = res.message || 'Failed to send OTP';
                 }
+                this.cdr.detectChanges();
             },
             error: (err: any) => {
                 this.isLoading = false;
                 this.errorMessage = err.error?.message || 'Failed to send OTP. Please try again.';
+                this.cdr.detectChanges();
             }
         });
     }
@@ -80,10 +82,12 @@ export class ForgotPasswordComponent {
                 } else {
                     this.errorMessage = res.message || 'Failed to reset password';
                 }
+                this.cdr.detectChanges();
             },
             error: (err: any) => {
                 this.isLoading = false;
                 this.errorMessage = err.error?.message || 'Failed to reset password. Please try again.';
+                this.cdr.detectChanges();
             }
         });
     }

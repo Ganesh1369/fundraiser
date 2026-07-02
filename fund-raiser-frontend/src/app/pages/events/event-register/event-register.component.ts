@@ -36,12 +36,7 @@ export class EventRegisterComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
       date_of_birth: ['', Validators.required],
       gender: ['', Validators.required],
-      blood_group: [''],
-      emergency_contact_name: ['', Validators.required],
-      emergency_contact_phone: ['', Validators.required],
-      experience_level: ['beginner'],
-      tshirt_size: [''],
-      medical_conditions: [''],
+      alternate_contact: [''],
       address: [''],
       city: [''],
       state: [''],
@@ -70,8 +65,22 @@ export class EventRegisterComponent implements OnInit {
     }
   }
 
+  /** True when a field is invalid and the user has interacted with it — drives inline messages. */
+  invalid(field: string): boolean {
+    const c = this.registerForm.get(field);
+    return !!c && c.invalid && c.touched;
+  }
+
   onSubmit() {
-    if (this.registerForm.invalid || !this.event) return;
+    if (!this.event) return;
+
+    // Surface exactly which fields are incomplete instead of a silently-disabled button.
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      this.errorMessage = 'Please complete the highlighted fields below.';
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.submitting = true;
     this.errorMessage = '';
@@ -88,6 +97,7 @@ export class EventRegisterComponent implements OnInit {
       error: (err) => {
         this.errorMessage = err.error?.message || 'Registration failed. Please try again.';
         this.submitting = false;
+        this.cdr.detectChanges();
       }
     });
   }

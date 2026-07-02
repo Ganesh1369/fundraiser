@@ -165,6 +165,7 @@ export class RegisterComponent {
                     this.router.navigate(['/dashboard']);
                 } else {
                     this.errorMessage = result.message || 'Registration failed';
+                    this.cdr.detectChanges();
                 }
             },
             error: (err: any) => {
@@ -172,6 +173,7 @@ export class RegisterComponent {
                 const msg = err.error?.message || 'Connection error. Please try again.';
                 this.errorMessage = msg;
                 this.isEmailTaken = msg.toLowerCase().includes('already registered');
+                this.cdr.detectChanges();
             }
         });
     }

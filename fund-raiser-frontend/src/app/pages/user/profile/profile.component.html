@@ -230,6 +230,10 @@
                     <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
                         [(ngModel)]="profileForm.panNumber" placeholder="ABCDE1234F" maxlength="10">
                     <p class="text-xs text-neutral-400 mt-1.5">Format: 5 letters, 4 digits, 1 letter</p>
+                    <p class="text-xs text-primary mt-1.5 flex items-start gap-1.5">
+                        <lucide-icon name="info" class="w-3.5 h-3.5 shrink-0 mt-0.5"></lucide-icon>
+                        PAN is optional — but if you want an 80G tax-exemption certificate for your donations, please fill it in.
+                    </p>
                 </div>
                 }
 
@@ -250,8 +254,8 @@
                 </div>
                 }
 
-                <!-- Tax Details — visible to individuals and organizations, both eligible for 80G -->
-                @if (profileForm.userType === 'individual' || profileForm.userType === 'organization') {
+                <!-- Tax Details — organizations only (individuals use the Tax & 80G PAN field above) -->
+                @if (profileForm.userType === 'organization') {
                 <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Tax Details</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <div>

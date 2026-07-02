@@ -344,6 +344,8 @@ const registerForEvent = async (eventId, registrationData) => {
         experience_level, medical_conditions, allergies, on_medication,
         address_line_1, address_line_2, city, state, pin_code,
         fitness_declaration, terms_accepted,
+        // Optional alternate/secondary contact (phone or email) from the event form.
+        alternate_contact,
         // Legacy/alternate field names from older frontend forms — accept both
         address, pincode
     } = registrationData;
@@ -372,7 +374,12 @@ const registerForEvent = async (eventId, registrationData) => {
         address_line_2: address_line_2 ?? null,
         pin_code: pin_code ?? pincode ?? null,
         state: state ?? null,
-        experience_level: experience_level ?? 'beginner'
+        experience_level: experience_level ?? 'beginner',
+        // These are no longer sent by the simplified event form — default to null so the
+        // INSERT never receives `undefined` (mysql2 rejects undefined bind params).
+        emergency_contact_name: emergency_contact_name ?? null,
+        emergency_contact_phone: emergency_contact_phone ?? null,
+        alternate_contact: alternate_contact ?? null
     };
 
     // 1. Validate Event
@@ -461,14 +468,14 @@ const registerForEvent = async (eventId, registrationData) => {
             emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
             experience_level, medical_conditions, allergies, on_medication,
             address_line_1, address_line_2, city, state, pin_code,
-            fitness_declaration, terms_accepted
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            fitness_declaration, terms_accepted, alternate_contact
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             eventId, userId, date_of_birth, gender, safe.blood_group,
-            emergency_contact_name, emergency_contact_phone, safe.emergency_contact_relationship,
+            safe.emergency_contact_name, safe.emergency_contact_phone, safe.emergency_contact_relationship,
             safe.experience_level, safe.medical_conditions, safe.allergies, safe.on_medication,
             safe.address_line_1, safe.address_line_2, city, safe.state, safe.pin_code,
-            safe.fitness_declaration, safe.terms_accepted
+            safe.fitness_declaration, safe.terms_accepted, safe.alternate_contact
         ]
     );
 

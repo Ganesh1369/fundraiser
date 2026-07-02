@@ -163,7 +163,7 @@ interface ScheduleItem {
           <div class="text-center max-w-lg mx-auto mb-12">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary mb-3 block">Highlights</span>
             <h2 class="text-3xl md:text-4xl font-bold mb-4">Why Join <span class="text-primary">{{ event.event_name }}</span>?</h2>
-            <p class="text-neutral-500" *ngIf="event.description">{{ event.description | slice:0:140 }}{{ event.description.length > 140 ? '…' : '' }}</p>
+            <p class="text-neutral-500" *ngIf="event.description">{{ descriptionIntro }}</p>
           </div>
 
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -451,6 +451,15 @@ export class EventLandingComponent implements OnInit {
     }
     const where = this.event?.event_location ? ` at ${this.event.event_location}` : '';
     return `Join us${where} for an event that brings the community together for a cause.`;
+  }
+
+  /** Intro preview for the "Why Join" section: the first complete sentence,
+   *  so the text never cuts off mid-word. */
+  get descriptionIntro(): string {
+    const desc = this.event?.description?.trim();
+    if (!desc) return '';
+    const first = desc.split(/\n|\./)[0].trim();
+    return first + (first.endsWith('.') ? '' : '.');
   }
 
   constructor(

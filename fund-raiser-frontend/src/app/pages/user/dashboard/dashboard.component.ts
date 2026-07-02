@@ -176,7 +176,7 @@ export class DashboardComponent implements OnInit {
      * Deep-link entry from the project page Donate CTA.
      *   /dashboard?donate=1&projectId=<id>&amount=<n>
      * Pre-fills the modal and opens it once projects are loaded.
-     * Skips the address gate — the donate modal itself handles address requirements.
+     * Applies the same profile/address completeness gate as the dashboard Donate buttons.
      */
     private handleDonateDeepLink(): void {
         const q = this.route.snapshot.queryParamMap;
@@ -191,19 +191,21 @@ export class DashboardComponent implements OnInit {
 
         // Poll for projects to load (project.service.listActive can take ~200ms).
         // Cap at 5s so a backend hiccup never strands the user with no modal.
+        // Wait for both projects AND profile to load so the completeness gate is accurate.
+        // Cap at 5s so a backend hiccup never strands the user with no modal.
         const started = Date.now();
         const tick = () => {
-            if (this.projects.length) {
+            const ready = this.projects.length && this.profile;
+            if (ready || Date.now() - started > 5000) {
                 if (projectId && this.projects.some(p => p.id === projectId)) {
                     this.selectedProjectId = projectId;
                 }
-                this.showDonateModal = true;
-                this.cdr.detectChanges();
-                return;
-            }
-            if (Date.now() - started > 5000) {
-                // Backend slow — open anyway with whatever's selected.
-                this.showDonateModal = true;
+                // Same gate as the dashboard's own Donate buttons: prompts to finish
+                // the profile if incomplete, otherwise opens the donate modal.
+                this.onDonateClick();
+                // Consume the deep-link params (replaceUrl) so pressing Back or
+                // refreshing this URL doesn't re-trigger the gate/modal again.
+                this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
                 this.cdr.detectChanges();
                 return;
             }
@@ -693,7 +695,7 @@ export class DashboardComponent implements OnInit {
     }
 
     onDonateClick(): void {
-        if (this.addressIncomplete) {
+        if (this.profileIncomplete || this.addressIncomplete) {
             this.showAddressPrompt = true;
         } else {
             this.showDonateModal = true;

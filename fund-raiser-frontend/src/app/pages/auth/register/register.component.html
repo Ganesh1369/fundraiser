@@ -51,8 +51,11 @@
                     {{ errorMessage }}
                 </div>
                 @if (isEmailTaken) {
-                <div class="mt-2 pt-2 border-t border-red-100 text-neutral-600">
-                    You may have registered through an event. <a routerLink="/login" class="text-primary font-semibold no-underline">Sign in here</a>
+                <div class="mt-2 pt-2 border-t border-red-100 text-neutral-700">
+                    <p class="m-0 mb-2 font-medium">You already have an account. Please log in using your email and password.</p>
+                    <a routerLink="/login" class="inline-block px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl no-underline hover:bg-primary-500 transition-colors">
+                        Log in
+                    </a>
                 </div>
                 }
             </div>

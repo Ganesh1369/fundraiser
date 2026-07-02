@@ -157,6 +157,7 @@ model EventRegistration {
   blood_group                    String?            @db.VarChar(5)
   emergency_contact_name         String?            @db.VarChar(100)
   emergency_contact_phone        String?            @db.VarChar(20)
+  alternate_contact              String?            @db.VarChar(255)
   emergency_contact_relationship String?            @db.VarChar(50)
   experience_level               ExperienceLevel
   medical_conditions             String?            @db.Text
