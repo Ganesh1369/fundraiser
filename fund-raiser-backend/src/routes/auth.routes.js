@@ -8,6 +8,9 @@ router.post('/register', authController.register);
 // User Login
 router.post('/login', authController.login);
 
+// Passwordless email login (name + email)
+router.post('/email-login', authController.emailLogin);
+
 // Admin Login
 router.post('/admin/login', authController.adminLogin);
 

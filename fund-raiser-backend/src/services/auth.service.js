@@ -213,6 +213,78 @@ const loginUser = async (email, password) => {
 };
 
 /**
+ * Passwordless sign-in with name + email.
+ * Finds the user by email, or creates a lightweight account if none exists,
+ * then issues a JWT and sends a sign-in acknowledgement email.
+ * NOTE: there is no password/verification here — anyone with an email can enter.
+ */
+const emailLogin = async (name, email) => {
+    const normEmail = email.toLowerCase().trim();
+    const cleanName = (name || '').trim();
+
+    let result = await db.query(
+        `SELECT id, name, email, user_type, referral_code, referral_points
+         FROM users WHERE email = ? AND is_active = true`,
+        [normEmail]
+    );
+
+    let user;
+    if (result.rows.length > 0) {
+        user = result.rows[0];
+    } else {
+        // Create a new passwordless account. phone + password_hash are NOT NULL
+        // in the schema, so store an empty phone and a random, unusable hash.
+        const userId = uuidv4();
+        const passwordHash = await bcrypt.hash(uuidv4(), 12); // never matches any login
+
+        let newReferralCode;
+        let isUnique = false;
+        while (!isUnique) {
+            newReferralCode = generateReferralCode();
+            const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = ?', [newReferralCode]);
+            if (codeCheck.rows.length === 0) isUnique = true;
+        }
+
+        await db.query(
+            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, email_verified)
+             VALUES (?, 'individual', ?, ?, '', ?, ?, true)`,
+            [userId, cleanName || 'Friend', normEmail, passwordHash, newReferralCode]
+        );
+
+        const created = await db.query(
+            `SELECT id, name, email, user_type, referral_code, referral_points FROM users WHERE id = ?`,
+            [userId]
+        );
+        user = created.rows[0];
+    }
+
+    const token = jwt.sign(
+        { userId: user.id, userType: user.user_type },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    // Best-effort acknowledgement email — never block sign-in on email failure.
+    try {
+        await emailService.sendLoginAcknowledgementEmail(user.email, user.name);
+    } catch (err) {
+        console.warn('Login acknowledgement email failed:', err.message);
+    }
+
+    return {
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            userType: user.user_type,
+            referralCode: user.referral_code,
+            referralPoints: user.referral_points
+        },
+        token
+    };
+};
+
+/**
  * Admin login
  */
 const adminLogin = async (username, password) => {
@@ -296,6 +368,7 @@ module.exports = {
     verifyOtp,
     registerUser,
     loginUser,
+    emailLogin,
     adminLogin,
     forgotPassword,
     resetPassword,

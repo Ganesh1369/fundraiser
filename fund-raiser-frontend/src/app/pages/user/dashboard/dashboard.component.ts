@@ -217,9 +217,9 @@ export class DashboardComponent implements OnInit {
                 if (projectId && this.projects.some(p => p.id === projectId)) {
                     this.selectedProjectId = projectId;
                 }
-                // Same gate as the dashboard's own Donate buttons: prompts to finish
-                // the profile if incomplete, otherwise opens the donate modal.
-                this.onDonateClick();
+                // Deep-link / post-login intent is explicitly "donate now", so open
+                // the modal directly instead of the profile/address prompt gate.
+                this.openDonateModal();
                 // Consume the deep-link params (replaceUrl) so pressing Back or
                 // refreshing this URL doesn't re-trigger the gate/modal again.
                 this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
@@ -600,6 +600,14 @@ export class DashboardComponent implements OnInit {
         return /^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(pan);
     }
 
+    /** A 80G certificate needs a valid PAN and a complete address on the profile. */
+    is80gProfileComplete(): boolean {
+        const p = this.profile;
+        if (!p) return false;
+        const addressOk = !!(p.addressLine1 && p.city && p.state && p.pincode);
+        return this.hasValidPanOnProfile() && addressOk;
+    }
+
     closeVerifyingOverlay(): void {
         this.stopVerifyingOverlay();
     }
@@ -768,17 +776,22 @@ export class DashboardComponent implements OnInit {
         if (this.profileIncomplete || this.addressIncomplete) {
             this.showAddressPrompt = true;
         } else {
-            if (this.treeMode) {
-                // Tree project: count empty until the donor picks or types one.
-                this.treeCount = null;
-                this.recomputeAmount();
-            } else {
-                // Rupee project: use the deep-link amount if present, else default.
-                this.donationAmount = this.deepLinkAmount ?? 500;
-                this.deepLinkAmount = null;
-            }
-            this.showDonateModal = true;
+            this.openDonateModal();
         }
+    }
+
+    /** Open the donate modal with fresh defaults (bypasses the profile/address gate). */
+    openDonateModal(): void {
+        if (this.treeMode) {
+            // Tree project: count empty until the donor picks or types one.
+            this.treeCount = null;
+            this.recomputeAmount();
+        } else {
+            // Rupee project: use the deep-link amount if present, else default.
+            this.donationAmount = this.deepLinkAmount ?? 500;
+            this.deepLinkAmount = null;
+        }
+        this.showDonateModal = true;
     }
 
     goToProfile(): void {

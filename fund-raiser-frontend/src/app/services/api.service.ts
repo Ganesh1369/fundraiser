@@ -19,6 +19,10 @@ export class ApiService {
         return this.http.post(`${this.apiUrl}/auth/login`, { email, password });
     }
 
+    emailLogin(name: string, email: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/auth/email-login`, { name, email });
+    }
+
     register(data: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/auth/register`, data);
     }
