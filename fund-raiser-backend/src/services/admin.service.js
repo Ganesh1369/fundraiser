@@ -193,7 +193,9 @@ const getDonations = async ({ status, fromDate, toDate, projectId, eventId, page
 
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
-                d.razorpay_payment_id, d.created_at, d.project_id, d.event_id,
+                d.razorpay_payment_id, d.payment_reference, d.payment_received_at,
+                d.reversed_at, d.reversal_reason,
+                d.created_at, d.project_id, d.event_id,
                 u.name as user_name, u.email as user_email, u.user_type,
                 p.name as project_name, p.slug as project_slug,
                 e.event_name as event_name
@@ -238,6 +240,10 @@ const exportDonations = async ({ status, fromDate, toDate, projectId, eventId })
                 d.payment_method as "Payment Method",
                 d.razorpay_order_id as "Razorpay Order ID",
                 d.razorpay_payment_id as "Razorpay Payment ID",
+                d.payment_reference as "Offline Reference",
+                d.payment_received_at as "Payment Received On",
+                d.reversed_at as "Reversed On",
+                d.reversal_reason as "Reversal Reason",
                 d.request_80g as "80G Certificate Requested",
                 ref.name as "Referrer Name",
                 e.event_name as "Event",
@@ -551,10 +557,28 @@ const getUserBySlug = async (slug) => {
     return { id: result.rows[0].id };
 };
 
+/**
+ * Donor lookup for the offline-donation admin modal.
+ * Priority: email → phone. Returns null when nothing matches so the UI
+ * can flip to "create new donor" mode.
+ */
+const lookupDonorByContact = async ({ email, phone } = {}) => {
+    const q = 'SELECT id, user_type, name, email, phone, city, organization_name, pan_number, referral_code FROM users WHERE ';
+    if (email) {
+        const r = await db.query(q + 'email = ? AND is_active = true', [String(email).toLowerCase()]);
+        if (r.rows.length) return r.rows[0];
+    }
+    if (phone) {
+        const r = await db.query(q + 'phone = ? AND is_active = true', [String(phone)]);
+        if (r.rows.length) return r.rows[0];
+    }
+    return null;
+};
+
 module.exports = {
     getDashboardStats, getRegistrations, exportRegistrations,
     getDonations, exportDonations, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
     getCertificateRequests, exportCertificates, updateCertificateStatus,
-    getUserBySlug
+    getUserBySlug, lookupDonorByContact
 };

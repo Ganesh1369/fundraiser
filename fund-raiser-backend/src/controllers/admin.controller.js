@@ -1,5 +1,6 @@
 const adminService = require('../services/admin.service');
 const certificateService = require('../services/certificate.service');
+const donationService = require('../services/donation.service');
 
 exports.getDashboardStats = async (req, res, next) => {
     try {
@@ -46,6 +47,38 @@ exports.exportDonations = async (req, res, next) => {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.send(buffer);
     } catch (error) {
+        next(error);
+    }
+};
+
+exports.recordOfflineDonation = async (req, res, next) => {
+    try {
+        const data = await donationService.recordOfflineDonation(req.admin.id, req.body);
+        res.json({ success: true, message: 'Offline donation recorded', data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+exports.reverseDonation = async (req, res, next) => {
+    try {
+        const data = await donationService.reverseDonation(req.admin.id, req.params.id, req.body?.reason);
+        res.json({ success: true, message: 'Donation reversed', data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+// Donor lookup for the offline-donation modal — searches by email OR phone.
+// Returns a compact donor summary (no password_hash), or null if not found.
+exports.lookupDonor = async (req, res, next) => {
+    try {
+        const data = await adminService.lookupDonorByContact(req.query);
+        res.json({ success: true, data });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
         next(error);
     }
 };

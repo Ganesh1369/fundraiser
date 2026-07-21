@@ -159,6 +159,28 @@ export class ApiService {
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
+    recordOfflineDonation(payload: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/donations/offline`, payload, { headers: this.getHeaders(true) });
+    }
+
+    reverseDonation(donationId: string, reason: string): Observable<any> {
+        return this.http.post(
+            `${this.apiUrl}/admin/donations/${donationId}/reverse`,
+            { reason },
+            { headers: this.getHeaders(true) }
+        );
+    }
+
+    lookupDonor(email: string, phone: string): Observable<any> {
+        const params = new URLSearchParams();
+        if (email) params.append('email', email);
+        if (phone) params.append('phone', phone);
+        return this.http.get(
+            `${this.apiUrl}/admin/donations/donor-lookup?${params.toString()}`,
+            { headers: this.getHeaders(true) }
+        );
+    }
+
     getLeaderboard(limit: number = 20, userType?: string, page: number = 1): Observable<any> {
         let url = `${this.apiUrl}/admin/leaderboard?limit=${limit}&page=${page}`;
         if (userType) url += `&userType=${encodeURIComponent(userType)}`;

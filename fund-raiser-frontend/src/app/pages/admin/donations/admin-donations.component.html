@@ -1,5 +1,9 @@
 <header class="admin-header">
     <h1>Donations</h1>
+    <button class="btn btn-primary" (click)="openOfflineModal()">
+        <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
+        Record Offline Donation
+    </button>
 </header>
 
 <div class="filters">
@@ -10,6 +14,7 @@
             <option value="completed">Completed</option>
             <option value="pending">Pending</option>
             <option value="failed">Failed</option>
+            <option value="reversed">Reversed</option>
         </select>
     </div>
     <div class="filter-group">
@@ -53,8 +58,10 @@
                     <th>Event</th>
                     <th>Amount</th>
                     <th>Status</th>
-                    <th>Razorpay ID</th>
+                    <th>Method</th>
+                    <th>Reference</th>
                     <th>Donated on</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,8 +73,18 @@
                     <td>{{ donation.event_name || '—' }}</td>
                     <td class="amount">{{ formatCurrency(donation.amount) }}</td>
                     <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
-                    <td>{{ donation.razorpay_payment_id || '—' }}</td>
+                    <td>{{ donation.payment_method || '—' }}</td>
+                    <td>{{ referenceOf(donation) }}</td>
                     <td>{{ formatDate(donation.created_at) }}</td>
+                    <td>
+                        @if (donation.status === 'completed') {
+                            <button class="btn-link btn-danger" (click)="openReverseModal(donation)">Reverse</button>
+                        } @else if (donation.status === 'reversed') {
+                            <span class="text-neutral-500" [title]="donation.reversal_reason || ''">Reversed</span>
+                        } @else {
+                            <span>—</span>
+                        }
+                    </td>
                 </tr>
                 }
             </tbody>
@@ -82,3 +99,194 @@
     }
     }
 </div>
+
+<!-- ═══════════ Offline donation modal ═══════════ -->
+@if (showOfflineModal) {
+<div class="modal-backdrop" (click)="closeOfflineModal()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Record Offline Donation</h2>
+            <button class="btn-icon" (click)="closeOfflineModal()">
+                <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Donor lookup -->
+            <section class="form-section">
+                <h3>Donor</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" [(ngModel)]="offlineForm.donorEmail" placeholder="donor@example.com" />
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" [(ngModel)]="offlineForm.donorPhone" placeholder="+91…" />
+                    </div>
+                    <button class="btn btn-secondary btn-align-bottom" (click)="lookupOfflineDonor()">
+                        Look up
+                    </button>
+                </div>
+                @if (offlineLookupStatus === 'found') {
+                    <div class="notice notice-success">
+                        Existing donor found — details pre-filled. Amend below if needed.
+                    </div>
+                } @else if (offlineLookupStatus === 'new') {
+                    <div class="notice notice-info">
+                        No existing donor — a new account will be created on submit.
+                    </div>
+                }
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name *</label>
+                        <input type="text" [(ngModel)]="offlineForm.donorName" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Donor type</label>
+                        <select [(ngModel)]="offlineForm.donorUserType">
+                            <option value="individual">Individual</option>
+                            <option value="organization">Organization</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
+                </div>
+                @if (offlineForm.donorUserType === 'organization') {
+                    <div class="form-group">
+                        <label>Organization name</label>
+                        <input type="text" [(ngModel)]="offlineForm.donorOrganizationName" />
+                    </div>
+                }
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>PAN (for 80G)</label>
+                        <input type="text" [(ngModel)]="offlineForm.donorPan" placeholder="ABCDE1234F" maxlength="10" />
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" [(ngModel)]="offlineForm.donorCity" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Donation -->
+            <section class="form-section">
+                <h3>Donation</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project *</label>
+                        <select [(ngModel)]="offlineForm.projectId" required>
+                            <option value="">Select project</option>
+                            @for (p of projects; track p.id) {
+                                <option [value]="p.id">{{ p.name }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Event (optional)</label>
+                        <select [(ngModel)]="offlineForm.eventId">
+                            <option value="">— none —</option>
+                            @for (e of events; track e.id) {
+                                <option [value]="e.id">{{ e.event_name }}</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount (₹) *</label>
+                        <input type="number" min="1" [(ngModel)]="offlineForm.amount" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Payment method *</label>
+                        <select [(ngModel)]="offlineForm.paymentMethod">
+                            <option value="cheque">Cheque</option>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank transfer</option>
+                            <option value="upi_manual">UPI (manual)</option>
+                            <option value="demand_draft">Demand Draft</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Reference * (cheque no / UTR / receipt no)</label>
+                        <input type="text" [(ngModel)]="offlineForm.paymentReference" placeholder="e.g. CHQ-123456 / SBI" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Received on</label>
+                        <input type="date" [(ngModel)]="offlineForm.paymentReceivedAt" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Referrer code (optional)</label>
+                        <input type="text" [(ngModel)]="offlineForm.referralCode" placeholder="FRXXXXXX" />
+                    </div>
+                    <div class="form-group form-checkbox">
+                        <label>
+                            <input type="checkbox" [(ngModel)]="offlineForm.request80g" />
+                            Issue 80G certificate (requires valid PAN)
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            @if (offlineError) {
+                <div class="notice notice-error">{{ offlineError }}</div>
+            }
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeOfflineModal()" [disabled]="offlineSubmitting">Cancel</button>
+            <button class="btn btn-primary" (click)="submitOfflineDonation()" [disabled]="offlineSubmitting">
+                {{ offlineSubmitting ? 'Recording…' : 'Record donation' }}
+            </button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- ═══════════ Reverse donation modal ═══════════ -->
+@if (showReverseModal && reverseTarget) {
+<div class="modal-backdrop" (click)="closeReverseModal()">
+    <div class="modal-panel modal-panel-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Reverse donation</h2>
+            <button class="btn-icon" (click)="closeReverseModal()">
+                <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="reverse-summary">
+                <strong>{{ reverseTarget.user_name }}</strong> · {{ formatCurrency(reverseTarget.amount) }}
+                <br />
+                <span class="text-neutral-500">
+                    {{ reverseTarget.payment_method || 'razorpay' }} · {{ referenceOf(reverseTarget) }}
+                </span>
+            </p>
+            <p class="reverse-warning">
+                This will subtract any awarded referrer points and revoke the 80G certificate if one was issued.
+                This action cannot be undone.
+            </p>
+            <div class="form-group">
+                <label>Reason *</label>
+                <textarea rows="3" [(ngModel)]="reverseReason" placeholder="e.g. cheque bounced, incorrect entry"></textarea>
+            </div>
+            @if (reverseError) {
+                <div class="notice notice-error">{{ reverseError }}</div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeReverseModal()" [disabled]="reverseSubmitting">Cancel</button>
+            <button class="btn btn-danger" (click)="submitReversal()" [disabled]="reverseSubmitting">
+                {{ reverseSubmitting ? 'Reversing…' : 'Reverse donation' }}
+            </button>
+        </div>
+    </div>
+</div>
+}

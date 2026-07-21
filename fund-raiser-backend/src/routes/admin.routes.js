@@ -30,6 +30,9 @@ router.get('/registrations/export', adminController.exportRegistrations);
 // Donation Tracking
 router.get('/donations', adminController.getDonations);
 router.get('/donations/export', adminController.exportDonations);
+router.post('/donations/offline', adminController.recordOfflineDonation);
+router.post('/donations/:id/reverse', adminController.reverseDonation);
+router.get('/donations/donor-lookup', adminController.lookupDonor);
 
 // User Analytics
 router.get('/users/by-slug/:slug', adminController.getUserBySlug);

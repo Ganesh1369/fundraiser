@@ -535,7 +535,7 @@ const getEventReport = async (eventId) => {
         timeline
     ] = await Promise.all([
         db.query(
-            `SELECT COALESCE(SUM(d.amount), 0) AS total_raised,
+            `SELECT COALESCE(SUM(CASE WHEN d.status='completed' THEN d.amount ELSE 0 END), 0) AS total_raised,
                     COUNT(DISTINCT CASE WHEN d.status='completed' THEN d.user_id END) AS unique_donors,
                     COUNT(*) AS donation_count
              FROM donations d WHERE d.event_id = ? AND d.purpose='donation'`,
