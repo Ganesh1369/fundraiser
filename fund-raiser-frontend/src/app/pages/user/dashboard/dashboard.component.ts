@@ -119,7 +119,22 @@ export class DashboardComponent implements OnInit {
     donationsPreviewCount = 4;
     showAllReferralsModal = false;
     referralsPreviewCount = 4;
-    donationAmount = 100;
+    donationAmount = 0;
+    // Tree-based donation tiers shown as a static price list. The tier is derived
+    // from the number of trees entered; the amount charged (in ₹) is
+    // treeCount × pricePerTree for that tier. Bulk tiers are cheaper per tree.
+    // `max: null` = "and above" (no upper bound).
+    readonly treeTiers = [
+        { id: 't1', range: '1-5', min: 1, max: 5 as number | null, pricePerTree: 1999 },
+        { id: 't2', range: '6-10', min: 6, max: 10 as number | null, pricePerTree: 1750 },
+        { id: 't3', range: '11-20', min: 11, max: 20 as number | null, pricePerTree: 1500 },
+        { id: 't4', range: '21-50', min: 21, max: 50 as number | null, pricePerTree: 1250 },
+        { id: 't5', range: '50 above', min: 51, max: null as number | null, pricePerTree: 1000 }
+    ];
+    treeCount: number | null = null;
+    // Quick-pick tree counts. Clicking one fills the count; the matching price
+    // tier (and amount) is derived automatically.
+    readonly treeQuickPicks = [5, 10, 20, 50];
     request80g = false;
     selectedProjectId = '';
     selectedFilter = 'all';
@@ -152,6 +167,8 @@ export class DashboardComponent implements OnInit {
     panPromptFirstName = '';
     panPromptLastName = '';
     private pendingDonation: { amount: number; projectId: string | null } | null = null;
+    // Amount carried in via the /dashboard?donate=1&amount=<n> deep-link (rupee projects only).
+    private deepLinkAmount: number | null = null;
 
     constructor(
         private router: Router,
@@ -186,7 +203,7 @@ export class DashboardComponent implements OnInit {
         const amountStr = q.get('amount');
         if (amountStr) {
             const parsed = parseInt(amountStr, 10);
-            if (!isNaN(parsed) && parsed > 0) this.donationAmount = parsed;
+            if (!isNaN(parsed) && parsed > 0) this.deepLinkAmount = parsed;
         }
 
         // Poll for projects to load (project.service.listActive can take ~200ms).
@@ -352,8 +369,61 @@ export class DashboardComponent implements OnInit {
         this.loadDonations();
     }
 
+    // Rupee presets for non-tree projects (e.g. Zoo) — the original behaviour.
+    readonly amountPresets = [100, 500, 1000, 5000];
+
+    /**
+     * True when the selected project is the tree-planting one (ROOTS), which uses
+     * the tree-range tabs + per-tree pricing. Every other project (Zoo, etc.)
+     * uses the plain rupee presets + custom amount.
+     */
+    get treeMode(): boolean {
+        const p = this.selectedProject;
+        if (!p) return false;
+        return /root/i.test(p.slug || '') || /root/i.test(p.name || '');
+    }
+
+    /** Select a project tab and reset the amount UI to that project's mode. */
+    selectProject(id: string): void {
+        this.selectedProjectId = id;
+        if (this.treeMode) {
+            this.treeCount = null;
+            this.recomputeAmount();
+        } else {
+            this.donationAmount = 500;
+        }
+    }
+
+    /** The price tier whose range contains the current tree count (defaults to the first). */
+    get currentTier() {
+        const n = this.treeCount;
+        if (n != null && Number.isFinite(n)) {
+            const t = this.treeTiers.find(t => n >= t.min && (t.max == null || n <= t.max));
+            if (t) return t;
+        }
+        return this.treeTiers[0];
+    }
+
+    /** True when treeCount is a whole number of at least 1 (any count maps to a tier). */
+    get treeCountValid(): boolean {
+        const n = this.treeCount;
+        return n != null && Number.isFinite(n) && Number.isInteger(n) && n >= 1;
+    }
+
+    /** Quick-pick: fill the exact tree count; the tier and amount derive automatically. */
+    pickTreeCount(count: number): void {
+        this.treeCount = count;
+        this.recomputeAmount();
+    }
+
+    /** Recompute the ₹ amount from the tree count and its tier's per-tree price. */
+    recomputeAmount(): void {
+        const n = this.treeCount ?? 0;
+        this.donationAmount = n > 0 ? n * this.currentTier.pricePerTree : 0;
+    }
+
     initiateDonation(): void {
-        if (this.donationAmount < 1) return;
+        if (this.treeMode ? !this.treeCountValid : this.donationAmount < 1) return;
         if (this.request80g && !this.profile?.panNumber) {
             this.pendingDonation = { amount: this.donationAmount, projectId: this.selectedProjectId || null };
             this.panPromptValue = '';
@@ -698,6 +768,15 @@ export class DashboardComponent implements OnInit {
         if (this.profileIncomplete || this.addressIncomplete) {
             this.showAddressPrompt = true;
         } else {
+            if (this.treeMode) {
+                // Tree project: count empty until the donor picks or types one.
+                this.treeCount = null;
+                this.recomputeAmount();
+            } else {
+                // Rupee project: use the deep-link amount if present, else default.
+                this.donationAmount = this.deepLinkAmount ?? 500;
+                this.deepLinkAmount = null;
+            }
             this.showDonateModal = true;
         }
     }

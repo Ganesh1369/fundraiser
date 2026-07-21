@@ -708,24 +708,24 @@
     @if (showDonateModal) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-5" (click)="showDonateModal = false">
         <div class="w-full max-w-md bg-white rounded-2xl shadow-modal animate-[fadeIn_0.2s_ease-out]" (click)="$event.stopPropagation()">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+            <div class="flex items-center justify-between px-6 py-3 border-b border-neutral-100">
                 <h2 class="text-lg font-bold text-accent m-0">Make a Donation</h2>
                 <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
                     (click)="showDonateModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
             </div>
-            <div class="px-6 py-5">
-                <p class="text-sm text-neutral-500 mb-5">Help make our planet a healthier, greener and happier place.</p>
+            <div class="px-6 py-3">
+                <p class="text-xs text-neutral-500 mb-2">Help make our planet a healthier, greener and happier place.</p>
 
                 @if (projects.length > 1) {
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-neutral-600 mb-2">Supporting</label>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-neutral-600 mb-1">Supporting</label>
                     <div class="grid grid-cols-2 gap-2">
                         @for (p of projects; track p.id) {
-                        <button type="button" class="py-2.5 px-3 text-sm font-semibold rounded-xl border-2 transition-all text-left flex items-center gap-2"
+                        <button type="button" class="py-2 px-3 text-sm font-semibold rounded-xl border-2 transition-all text-left flex items-center gap-2"
                             [class]="selectedProjectId === p.id
                                 ? 'bg-primary text-white border-primary'
                                 : 'bg-neutral-50 text-neutral-700 border-transparent hover:border-primary/30'"
-                            (click)="selectedProjectId = p.id">
+                            (click)="selectProject(p.id)">
                             @if (p.logo_url) {
                             <img [src]="p.logo_url" [alt]="p.name" class="w-5 h-5 rounded object-cover shrink-0">
                             }
@@ -735,15 +735,53 @@
                     </div>
                 </div>
                 } @else if (selectedProject) {
-                <div class="flex items-center gap-2 px-3 py-2.5 bg-primary/5 border border-primary/20 rounded-xl mb-5">
+                <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl mb-3">
                     <lucide-icon name="heart" class="w-4 h-4 text-primary shrink-0"></lucide-icon>
                     <span class="text-sm text-neutral-700">Supporting <strong class="text-accent">{{ selectedProject.name }}</strong></span>
                 </div>
                 }
 
-                <div class="grid grid-cols-4 gap-2 mb-5">
-                    @for (preset of [100, 500, 1000, 5000]; track preset) {
-                    <button class="py-2.5 text-sm font-semibold rounded-xl border-2 transition-all"
+                @if (treeMode) {
+                <label class="block text-sm font-medium text-neutral-600 mb-1">Choose how many trees</label>
+                <div class="rounded-xl border border-neutral-200 divide-y divide-neutral-100 mb-2 overflow-hidden">
+                    @for (tier of treeTiers; track tier.id) {
+                    <div class="flex items-center justify-between px-3 py-1 text-sm"
+                        [class]="currentTier.id === tier.id && treeCountValid ? 'bg-primary/5' : ''">
+                        <span class="font-semibold text-accent">{{ tier.range }}</span>
+                        <span class="text-neutral-600">{{ formatCurrency(tier.pricePerTree) }} / tree</span>
+                    </div>
+                    }
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 mb-2">
+                    @for (pick of treeQuickPicks; track pick) {
+                    <button type="button" class="py-1.5 px-1 text-sm font-semibold rounded-xl border-2 transition-all"
+                        [class]="treeCount === pick
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-neutral-50 text-neutral-700 border-transparent hover:border-primary/30'"
+                        (click)="pickTreeCount(pick)">
+                        {{ pick }} trees
+                    </button>
+                    }
+                </div>
+
+                <div class="mb-2">
+                    <input type="number" class="w-full px-4 py-1.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        [(ngModel)]="treeCount" (ngModelChange)="recomputeAmount()"
+                        min="1" step="1" placeholder="Or enter number of trees">
+                    <div class="mt-1 flex items-center justify-between text-xs">
+                        <span class="text-neutral-500">{{ formatCurrency(currentTier.pricePerTree) }} per tree</span>
+                        @if (treeCountValid) {
+                        <span class="font-semibold text-accent">{{ treeCount }} {{ treeCount === 1 ? 'tree' : 'trees' }} = {{ formatCurrency(donationAmount) }}</span>
+                        } @else {
+                        <span class="text-amber-600">Enter number of trees</span>
+                        }
+                    </div>
+                </div>
+                } @else {
+                <div class="grid grid-cols-4 gap-2 mb-3">
+                    @for (preset of amountPresets; track preset) {
+                    <button type="button" class="py-2.5 text-sm font-semibold rounded-xl border-2 transition-all"
                         [class]="donationAmount === preset
                             ? 'bg-primary text-white border-primary'
                             : 'bg-neutral-50 text-neutral-700 border-transparent hover:border-primary/30'"
@@ -753,11 +791,12 @@
                     }
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="block text-sm font-medium text-neutral-600 mb-1.5">Or enter custom amount</label>
-                    <input type="number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                    <input type="number" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                         [(ngModel)]="donationAmount" min="1" placeholder="Enter amount in &#8377;">
                 </div>
+                }
 
                 @if (user?.userType === 'organization' || user?.userType === 'individual') {
                 <label class="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer">
@@ -778,11 +817,11 @@
                 }
                 }
             </div>
-            <div class="flex gap-3 px-6 py-4 border-t border-neutral-100">
-                <button class="flex-1 py-3 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
+            <div class="flex gap-3 px-6 py-3 border-t border-neutral-100">
+                <button class="flex-1 py-2.5 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
                     (click)="showDonateModal = false">Cancel</button>
-                <button class="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
-                    (click)="initiateDonation()" [disabled]="isLoading || donationAmount < 1 || (request80g && !hasValidPanOnProfile())">
+                <button class="flex-1 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+                    (click)="initiateDonation()" [disabled]="isLoading || (treeMode ? !treeCountValid : donationAmount < 1) || (request80g && !hasValidPanOnProfile())">
                     @if (isLoading) {
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Processing...
