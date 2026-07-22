@@ -335,6 +335,7 @@ const getUserAnalytics = async (userId) => {
         donations: {
             history: donations.rows.map(d => ({ ...d, amount: parseFloat(d.amount) })),
             totalAmount: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + parseFloat(d.amount), 0),
+            totalTrees: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + (Number(d.num_trees) || 0), 0),
             count: donations.rows.length,
             byProject: projectBreakdown.rows.map(p => ({
                 projectId: p.id,

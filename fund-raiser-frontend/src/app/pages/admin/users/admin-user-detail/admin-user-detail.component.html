@@ -88,6 +88,13 @@
     </div>
     <div class="stat-card">
         <div class="stat-header">
+            <lucide-icon name="Tree" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">Trees Donated</span>
+        </div>
+        <div class="stat-value">{{ (donations?.totalTrees || 0) | number }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
             <lucide-icon name="receipt" class="stat-icon w-5 h-5"></lucide-icon>
             <span class="stat-label">Donation Count</span>
         </div>
