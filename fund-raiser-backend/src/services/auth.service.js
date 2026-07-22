@@ -108,25 +108,27 @@ const registerUser = async (userData) => {
     if (!phone) throw { status: 400, message: 'Phone number is required' };
     // OTP verification gate removed — general registration is open (no SMS / no ₹300 fee).
 
-    // Check email already exists
-    const existingUser = await db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
-    if (existingUser.rows.length > 0) {
+    // Look up any existing account on this email. If one exists but is a stub
+    // (created via passwordless /auth/email-login — marked by empty phone), we
+    // upgrade it in place so all prior donations / points / certificates stay
+    // attached to the same user_id. If it's a real registered account, block.
+    const existingUser = await db.query(
+        `SELECT id, phone, referral_code, referred_by
+         FROM users WHERE email = ?`,
+        [email.toLowerCase()]
+    );
+    const stubToUpgrade = existingUser.rows[0]
+        && (existingUser.rows[0].phone == null || existingUser.rows[0].phone === '')
+        ? existingUser.rows[0]
+        : null;
+    if (existingUser.rows.length > 0 && !stubToUpgrade) {
         throw { status: 400, message: 'Email already registered' };
     }
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Generate unique referral code
-    let newReferralCode;
-    let isUnique = false;
-    while (!isUnique) {
-        newReferralCode = generateReferralCode();
-        const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = ?', [newReferralCode]);
-        if (codeCheck.rows.length === 0) isUnique = true;
-    }
-
-    // Check referrer
+    // Resolve referrer (used on both insert and stub-upgrade paths)
     let referrerId = null;
     if (referralCode) {
         const referrer = await db.query(
@@ -136,20 +138,54 @@ const registerUser = async (userData) => {
         if (referrer.rows.length > 0) referrerId = referrer.rows[0].id;
     }
 
-    // Insert user
-    const userId = uuidv4();
-    await db.query(
-        `INSERT INTO users (
-            id, user_type, name, age, email, phone, password_hash,
-            class_grade, school_name,
-            organization_name, pan_number, referral_code, referred_by, email_verified
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true)`,
-        [
-            userId, userType, name, age || null, email.toLowerCase(), phone, passwordHash,
-            classGrade || null, schoolName || null,
-            organizationName || null, panNumber || null, newReferralCode, referrerId
-        ]
-    );
+    let userId;
+
+    if (stubToUpgrade) {
+        userId = stubToUpgrade.id;
+        // Only set referred_by if the stub doesn't already have one — never
+        // overwrite an existing referral link.
+        const finalReferrerId = stubToUpgrade.referred_by || referrerId;
+        await db.query(
+            `UPDATE users SET
+                user_type = ?, name = ?, age = ?, phone = ?, password_hash = ?,
+                class_grade = ?, school_name = ?,
+                organization_name = ?, pan_number = ?,
+                referred_by = COALESCE(referred_by, ?),
+                email_verified = true
+             WHERE id = ?`,
+            [
+                userType, name, age || null, phone, passwordHash,
+                classGrade || null, schoolName || null,
+                organizationName || null, panNumber || null,
+                finalReferrerId,
+                userId
+            ]
+        );
+    } else {
+        // Generate unique referral code (only needed on fresh insert — stubs
+        // already have one from email-login).
+        let newReferralCode;
+        let isUnique = false;
+        while (!isUnique) {
+            newReferralCode = generateReferralCode();
+            const codeCheck = await db.query('SELECT id FROM users WHERE referral_code = ?', [newReferralCode]);
+            if (codeCheck.rows.length === 0) isUnique = true;
+        }
+
+        userId = uuidv4();
+        await db.query(
+            `INSERT INTO users (
+                id, user_type, name, age, email, phone, password_hash,
+                class_grade, school_name,
+                organization_name, pan_number, referral_code, referred_by, email_verified
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true)`,
+            [
+                userId, userType, name, age || null, email.toLowerCase(), phone, passwordHash,
+                classGrade || null, schoolName || null,
+                organizationName || null, panNumber || null, newReferralCode, referrerId
+            ]
+        );
+    }
 
     const userResult = await db.query('SELECT id, name, email, user_type, referral_code FROM users WHERE id = ?', [userId]);
     const user = userResult.rows[0];
