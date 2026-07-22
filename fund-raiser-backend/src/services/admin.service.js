@@ -193,7 +193,7 @@ const getDonations = async ({ status, fromDate, toDate, projectId, eventId, page
 
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
-                d.razorpay_payment_id, d.created_at, d.project_id, d.event_id,
+                d.razorpay_payment_id, d.created_at, d.project_id, d.event_id, d.num_trees,
                 u.name as user_name, u.email as user_email, u.user_type,
                 p.name as project_name, p.slug as project_slug,
                 e.event_name as event_name
@@ -276,7 +276,7 @@ const getUserAnalytics = async (userId) => {
 
     const donations = await db.query(
         `SELECT d.id, d.amount, d.status, d.razorpay_payment_id, d.created_at,
-                d.project_id, p.name AS project_name, p.slug AS project_slug
+                d.project_id, d.num_trees, p.name AS project_name, p.slug AS project_slug
          FROM donations d
          LEFT JOIN projects p ON p.id = d.project_id
          WHERE d.user_id = ? AND d.purpose = 'donation'

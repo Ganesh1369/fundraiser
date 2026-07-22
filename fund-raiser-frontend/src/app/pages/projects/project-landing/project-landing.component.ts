@@ -11,6 +11,7 @@ interface ProjectStats {
     donationCount: number;
     donorCount: number;
     eventCount: number;
+    treesFunded: number;
 }
 
 interface Accomplishment {

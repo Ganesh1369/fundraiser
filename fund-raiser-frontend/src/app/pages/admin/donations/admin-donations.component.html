@@ -52,6 +52,7 @@
                     <th>Project</th>
                     <th>Event</th>
                     <th>Amount</th>
+                    <th>Trees funded</th>
                     <th>Status</th>
                     <th>Razorpay ID</th>
                     <th>Donated on</th>
@@ -65,6 +66,7 @@
                     <td>{{ donation.project_name || '—' }}</td>
                     <td>{{ donation.event_name || '—' }}</td>
                     <td class="amount">{{ formatCurrency(donation.amount) }}</td>
+                    <td>{{ donation.num_trees ? (donation.num_trees | number) : '—' }}</td>
                     <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
                     <td>{{ donation.razorpay_payment_id || '—' }}</td>
                     <td>{{ formatDate(donation.created_at) }}</td>

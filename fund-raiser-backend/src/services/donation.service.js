@@ -27,10 +27,15 @@ const resolveProjectId = async (projectId) => {
 /**
  * Create Razorpay order
  */
-const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation', projectId = null) => {
+const createOrder = async (userId, userName, amount, request80g = false, purpose = 'donation', projectId = null, numTrees = null) => {
     if (!amount || amount < 1) {
         throw { status: 400, message: 'Please provide a valid amount (minimum ₹1)' };
     }
+    // Number of trees this donation funds (tree-planting projects only). Coerce to a
+    // positive integer or null so bad input never reaches the num_trees column.
+    const treesFunded = Number.isFinite(Number(numTrees)) && Number(numTrees) > 0
+        ? Math.floor(Number(numTrees))
+        : null;
 
     const options = {
         amount: Math.round(amount * 100),
@@ -46,9 +51,9 @@ const createOrder = async (userId, userName, amount, request80g = false, purpose
     const referrerId = referrerResult.rows[0]?.referred_by || null;
     const resolvedProjectId = await resolveProjectId(projectId);
     await db.query(
-        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose, project_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, purpose, resolvedProjectId]
+        `INSERT INTO donations (id, user_id, amount, currency, razorpay_order_id, status, referrer_id, request_80g, purpose, project_id, num_trees)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [donationId, userId, amount, 'INR', order.id, 'pending', referrerId, request80g, purpose, resolvedProjectId, treesFunded]
     );
 
     return {
