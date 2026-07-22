@@ -122,6 +122,12 @@
 /* ===== Main Content ===== */
 .main-content {
     flex: 1;
+    /* min-width:0 lets this flex item shrink to the viewport instead of stretching
+       to fit wide content (e.g. the donations table). Without it, a wide table
+       pushes the whole area past the screen and the right-side padding disappears,
+       making the left/right spacing look unequal. */
+    min-width: 0;
+    box-sizing: border-box;
     margin-left: 260px;
     padding: 24px;
 }
