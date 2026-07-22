@@ -57,6 +57,7 @@
                     <th>Project</th>
                     <th>Event</th>
                     <th>Amount</th>
+                    <th>Trees funded</th>
                     <th>Status</th>
                     <th>Method</th>
                     <th>Reference</th>
@@ -72,6 +73,7 @@
                     <td>{{ donation.project_name || '—' }}</td>
                     <td>{{ donation.event_name || '—' }}</td>
                     <td class="amount">{{ formatCurrency(donation.amount) }}</td>
+                    <td>{{ donation.num_trees ? (donation.num_trees | number) : '—' }}</td>
                     <td><span class="status-badge" [ngClass]="donation.status">{{ donation.status }}</span></td>
                     <td>{{ donation.payment_method || '—' }}</td>
                     <td>{{ referenceOf(donation) }}</td>

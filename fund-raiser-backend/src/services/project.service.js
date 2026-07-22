@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const settingsService = require('./settings.service');
 
-const emptyStats = () => ({ totalRaised: 0, donationCount: 0, donorCount: 0, eventCount: 0 });
+const emptyStats = () => ({ totalRaised: 0, donationCount: 0, donorCount: 0, eventCount: 0, treesFunded: 0 });
 
 // mysql2 stores JSON columns as either a JS value (when the driver auto-parses)
 // or a JSON-encoded string. Normalise to a JS value on the way out.
@@ -29,7 +29,7 @@ const computeStatsForProjects = async (projectIds) => {
 
     const [donationAgg, donorAgg, eventAgg] = await Promise.all([
         db.query(
-            `SELECT project_id, SUM(amount) AS sum_amount, COUNT(*) AS count_all
+            `SELECT project_id, SUM(amount) AS sum_amount, COUNT(*) AS count_all, SUM(num_trees) AS sum_trees
              FROM donations
              WHERE project_id IN (${placeholders}) AND status = 'completed'
              GROUP BY project_id`,
@@ -55,6 +55,7 @@ const computeStatsForProjects = async (projectIds) => {
         if (!row.project_id || !stats[row.project_id]) continue;
         stats[row.project_id].totalRaised = row.sum_amount ? Number(row.sum_amount) : 0;
         stats[row.project_id].donationCount = Number(row.count_all) || 0;
+        stats[row.project_id].treesFunded = row.sum_trees ? Number(row.sum_trees) : 0;
     }
     for (const row of donorAgg.rows) {
         if (!row.project_id || !stats[row.project_id]) continue;

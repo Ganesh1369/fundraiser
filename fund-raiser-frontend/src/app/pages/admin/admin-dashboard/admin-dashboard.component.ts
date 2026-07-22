@@ -55,6 +55,7 @@ interface ProjectCard {
         donationCount: number;
         donorCount: number;
         eventCount: number;
+        treesFunded: number;
     };
 }
 
@@ -122,6 +123,11 @@ export class AdminDashboardComponent implements OnInit {
         return new Date(dateString).toLocaleDateString('en-IN', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
+    }
+
+    /** True for the tree-planting project (ROOTS) — only it shows the Trees funded stat. */
+    isTreeProject(p: ProjectCard): boolean {
+        return /root/i.test(p.slug || '') || /root/i.test(p.name || '');
     }
 
     formatCurrency(amount: number): string {

@@ -50,9 +50,7 @@
                 <div class="min-w-0">
                     <h1 class="text-2xl font-bold text-accent mb-0.5">{{ user?.name || 'Guest' }}</h1>
                     <div class="flex items-center gap-2 text-sm text-neutral-500 min-w-0">
-                        <span class="capitalize shrink-0">{{ user?.userType }}</span>
-                        <span class="text-neutral-300 shrink-0 hidden sm:inline">|</span>
-                        <span class="truncate hidden sm:inline">{{ user?.email }}</span>
+                        <span class="truncate">{{ user?.email }}</span>
                         <button class="text-primary hover:text-primary-500 transition-colors shrink-0" (click)="goToProfile()" title="Edit Profile">
                             <lucide-icon name="pencil" class="w-3.5 h-3.5"></lucide-icon>
                         </button>
@@ -713,7 +711,7 @@
                 <button class="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full text-neutral-500 hover:bg-neutral-200 transition-colors"
                     (click)="showDonateModal = false"><lucide-icon name="x" class="w-4 h-4"></lucide-icon></button>
             </div>
-            <div class="px-6 py-3">
+            <div class="px-6 py-3 max-h-[58vh] overflow-y-auto">
                 <p class="text-xs text-neutral-500 mb-2">Help make our planet a healthier, greener and happier place.</p>
 
                 @if (projects.length > 1) {
@@ -803,13 +801,13 @@
                     <input type="checkbox" [(ngModel)]="request80g" class="w-4 h-4 accent-primary">
                     <span>Request 80G certificate for this donation</span>
                 </label>
-                @if (request80g && !hasValidPanOnProfile()) {
+                @if (request80g && !is80gProfileComplete()) {
                 <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
                     <lucide-icon name="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
                     <div>
-                        <p class="m-0 font-medium">PAN required for 80G</p>
-                        <p class="m-0 mt-1">A valid PAN must be on your profile before we can issue a tax certificate.
-                            <a [routerLink]="['/profile']" class="text-amber-900 underline font-semibold">Add PAN to your profile</a>
+                        <p class="m-0 font-medium">Complete your profile to get the 80G certificate</p>
+                        <p class="m-0 mt-1">We need your PAN and address on file before we can issue a tax certificate.
+                            <a [routerLink]="['/profile']" class="text-amber-900 underline font-semibold">Complete your profile</a>
                             or uncheck the 80G option to continue.
                         </p>
                     </div>
@@ -821,7 +819,7 @@
                 <button class="flex-1 py-2.5 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm"
                     (click)="showDonateModal = false">Cancel</button>
                 <button class="flex-1 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
-                    (click)="initiateDonation()" [disabled]="isLoading || (treeMode ? !treeCountValid : donationAmount < 1) || (request80g && !hasValidPanOnProfile())">
+                    (click)="initiateDonation()" [disabled]="isLoading || (treeMode ? !treeCountValid : donationAmount < 1) || (request80g && !is80gProfileComplete())">
                     @if (isLoading) {
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Processing...

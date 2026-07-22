@@ -195,7 +195,7 @@ const getDonations = async ({ status, fromDate, toDate, projectId, eventId, page
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
                 d.razorpay_payment_id, d.payment_reference, d.payment_received_at,
                 d.reversed_at, d.reversal_reason,
-                d.created_at, d.project_id, d.event_id,
+                d.created_at, d.project_id, d.event_id, d.num_trees,
                 u.name as user_name, u.email as user_email, u.user_type,
                 p.name as project_name, p.slug as project_slug,
                 e.event_name as event_name
@@ -282,7 +282,7 @@ const getUserAnalytics = async (userId) => {
 
     const donations = await db.query(
         `SELECT d.id, d.amount, d.status, d.razorpay_payment_id, d.created_at,
-                d.project_id, p.name AS project_name, p.slug AS project_slug
+                d.project_id, d.num_trees, p.name AS project_name, p.slug AS project_slug
          FROM donations d
          LEFT JOIN projects p ON p.id = d.project_id
          WHERE d.user_id = ? AND d.purpose = 'donation'
@@ -341,6 +341,7 @@ const getUserAnalytics = async (userId) => {
         donations: {
             history: donations.rows.map(d => ({ ...d, amount: parseFloat(d.amount) })),
             totalAmount: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + parseFloat(d.amount), 0),
+            totalTrees: donations.rows.filter(d => d.status === 'completed').reduce((sum, d) => sum + (Number(d.num_trees) || 0), 0),
             count: donations.rows.length,
             byProject: projectBreakdown.rows.map(p => ({
                 projectId: p.id,

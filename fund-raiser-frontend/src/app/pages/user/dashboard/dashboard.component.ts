@@ -166,7 +166,7 @@ export class DashboardComponent implements OnInit {
     panPromptValue = '';
     panPromptFirstName = '';
     panPromptLastName = '';
-    private pendingDonation: { amount: number; projectId: string | null } | null = null;
+    private pendingDonation: { amount: number; projectId: string | null; numTrees: number | null } | null = null;
     // Amount carried in via the /dashboard?donate=1&amount=<n> deep-link (rupee projects only).
     private deepLinkAmount: number | null = null;
 
@@ -217,9 +217,9 @@ export class DashboardComponent implements OnInit {
                 if (projectId && this.projects.some(p => p.id === projectId)) {
                     this.selectedProjectId = projectId;
                 }
-                // Same gate as the dashboard's own Donate buttons: prompts to finish
-                // the profile if incomplete, otherwise opens the donate modal.
-                this.onDonateClick();
+                // Deep-link / post-login intent is explicitly "donate now", so open
+                // the modal directly instead of the profile/address prompt gate.
+                this.openDonateModal();
                 // Consume the deep-link params (replaceUrl) so pressing Back or
                 // refreshing this URL doesn't re-trigger the gate/modal again.
                 this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
@@ -424,8 +424,10 @@ export class DashboardComponent implements OnInit {
 
     initiateDonation(): void {
         if (this.treeMode ? !this.treeCountValid : this.donationAmount < 1) return;
+        // Trees funded by this donation — only tracked for tree-planting projects (ROOTS).
+        const numTrees = this.treeMode ? this.treeCount : null;
         if (this.request80g && !this.profile?.panNumber) {
-            this.pendingDonation = { amount: this.donationAmount, projectId: this.selectedProjectId || null };
+            this.pendingDonation = { amount: this.donationAmount, projectId: this.selectedProjectId || null, numTrees };
             this.panPromptValue = '';
             const { first, last } = this.splitName(this.profile?.name || this.user?.name || '');
             this.panPromptFirstName = first;
@@ -435,7 +437,7 @@ export class DashboardComponent implements OnInit {
             return;
         }
         this.showDonateModal = false;
-        this.startDonationFlow(this.donationAmount, this.request80g, this.selectedProjectId || null);
+        this.startDonationFlow(this.donationAmount, this.request80g, this.selectedProjectId || null, numTrees);
     }
 
     private splitName(full: string): { first: string; last: string } {
@@ -472,7 +474,7 @@ export class DashboardComponent implements OnInit {
                         this.panPromptFirstName = '';
                         this.panPromptLastName = '';
                         this.cdr.detectChanges();
-                        this.startDonationFlow(pending.amount, true, pending.projectId);
+                        this.startDonationFlow(pending.amount, true, pending.projectId, pending.numTrees);
                     } else {
                         this.toast.error(res.message || 'Failed to save PAN');
                         this.cdr.detectChanges();
@@ -496,7 +498,7 @@ export class DashboardComponent implements OnInit {
         this.showPanPrompt = false;
         this.pendingDonation = null;
         this.panPromptValue = '';
-        this.startDonationFlow(pending.amount, false, pending.projectId);
+        this.startDonationFlow(pending.amount, false, pending.projectId, pending.numTrees);
     }
 
     cancelPanPrompt(): void {
@@ -525,10 +527,10 @@ export class DashboardComponent implements OnInit {
         }
     }
 
-    private startDonationFlow(amount: number, request80g: boolean, projectId: string | null): void {
+    private startDonationFlow(amount: number, request80g: boolean, projectId: string | null, numTrees: number | null = null): void {
         this.isLoading = true;
 
-        this.api.createOrder(amount, request80g, 'donation', projectId).subscribe({
+        this.api.createOrder(amount, request80g, 'donation', projectId, numTrees).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 if (res.success) {
@@ -598,6 +600,14 @@ export class DashboardComponent implements OnInit {
     hasValidPanOnProfile(): boolean {
         const pan = (this.profile?.panNumber || '').trim();
         return /^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(pan);
+    }
+
+    /** A 80G certificate needs a valid PAN and a complete address on the profile. */
+    is80gProfileComplete(): boolean {
+        const p = this.profile;
+        if (!p) return false;
+        const addressOk = !!(p.addressLine1 && p.city && p.state && p.pincode);
+        return this.hasValidPanOnProfile() && addressOk;
     }
 
     closeVerifyingOverlay(): void {
@@ -768,17 +778,22 @@ export class DashboardComponent implements OnInit {
         if (this.profileIncomplete || this.addressIncomplete) {
             this.showAddressPrompt = true;
         } else {
-            if (this.treeMode) {
-                // Tree project: count empty until the donor picks or types one.
-                this.treeCount = null;
-                this.recomputeAmount();
-            } else {
-                // Rupee project: use the deep-link amount if present, else default.
-                this.donationAmount = this.deepLinkAmount ?? 500;
-                this.deepLinkAmount = null;
-            }
-            this.showDonateModal = true;
+            this.openDonateModal();
         }
+    }
+
+    /** Open the donate modal with fresh defaults (bypasses the profile/address gate). */
+    openDonateModal(): void {
+        if (this.treeMode) {
+            // Tree project: count empty until the donor picks or types one.
+            this.treeCount = null;
+            this.recomputeAmount();
+        } else {
+            // Rupee project: use the deep-link amount if present, else default.
+            this.donationAmount = this.deepLinkAmount ?? 500;
+            this.deepLinkAmount = null;
+        }
+        this.showDonateModal = true;
     }
 
     goToProfile(): void {

@@ -19,6 +19,10 @@ export class ApiService {
         return this.http.post(`${this.apiUrl}/auth/login`, { email, password });
     }
 
+    emailLogin(name: string, email: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/auth/email-login`, { name, email });
+    }
+
     register(data: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/auth/register`, data);
     }
@@ -123,9 +127,10 @@ export class ApiService {
     }
 
     // --- Donations ---
-    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null): Observable<any> {
+    createOrder(amount: number, request80g: boolean = false, purpose: string = 'donation', projectId?: string | null, numTrees?: number | null): Observable<any> {
         const body: any = { amount, request80g, purpose };
         if (projectId) body.projectId = projectId;
+        if (numTrees) body.numTrees = numTrees;
         return this.http.post(`${this.apiUrl}/donations/create-order`, body, { headers: this.getHeaders() });
     }
 

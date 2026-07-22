@@ -25,6 +25,7 @@ interface Donation {
     project_slug?: string;
     event_name?: string;
     event_id?: string;
+    num_trees?: number | null;
 }
 
 interface OfflineForm {

@@ -186,8 +186,30 @@ const sendBroadcastEmail = async (to, subject, { body, ctaLabel, ctaUrl }) => {
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Send a sign-in acknowledgement email (passwordless name + email login).
+ */
+const sendLoginAcknowledgementEmail = async (to, name) => {
+    const mailOptions = {
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to,
+        subject: "You're signed in — ICE Network",
+        html: emailWrapper(`
+            <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Sign-in Confirmation</p>
+            <p style="color: #171717; font-size: 15px; margin: 0 0 4px;">Dear <strong>${name || 'Friend'}</strong>,</p>
+            <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">This is a confirmation that you just signed in to your ICE Network account. Welcome back — thank you for being part of our giving journey!</p>
+            <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 20px; text-align: center; margin: 0 0 20px;">
+                <p style="color: #16a34a; margin: 0; font-size: 16px; font-weight: 700;">Signed in successfully</p>
+            </div>
+            <p style="color: #737373; font-size: 13px; text-align: center; margin: 0;">If this wasn't you, please contact us at <strong style="color: #525252;">98404 71333</strong>.</p>
+        `)
+    };
+    return transporter.sendMail(mailOptions);
+};
+
 module.exports = {
     sendOtpEmail,
+    sendLoginAcknowledgementEmail,
     sendPasswordResetEmail,
     sendDonationConfirmationEmail,
     sendCertificateApprovedEmail,

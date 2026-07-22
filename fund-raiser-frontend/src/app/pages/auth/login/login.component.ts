@@ -13,9 +13,8 @@ import { ApiService } from '../../../services/api.service';
     styleUrl: './login.component.css'
 })
 export class LoginComponent implements OnInit {
+    name = '';
     email = '';
-    password = '';
-    showPassword = false;
     isLoading = false;
     errorMessage = '';
 
@@ -35,32 +34,34 @@ export class LoginComponent implements OnInit {
     ) { }
 
     /** Project-page Donate CTA passes ?returnUrl=… so we resume the deep-link after auth. */
-    private postLoginNavigate(): void {
+    private postLoginNavigate(openDonate = false): void {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         if (returnUrl && returnUrl.startsWith('/')) {
             this.router.navigateByUrl(returnUrl).catch(() => this.router.navigate(['/dashboard']));
             return;
         }
-        this.router.navigate(['/dashboard']);
+        // After a fresh sign-in, open the donate popup immediately on the dashboard.
+        const extras = openDonate ? { queryParams: { donate: '1' } } : {};
+        this.router.navigate(['/dashboard'], extras);
     }
 
     onSubmit(): void {
-        if (!this.email || !this.password) {
-            this.errorMessage = 'Please fill in all fields';
+        if (!this.name || !this.email) {
+            this.errorMessage = 'Please enter your name and email';
             return;
         }
 
         this.isLoading = true;
         this.errorMessage = '';
 
-        this.api.login(this.email, this.password).subscribe({
+        this.api.emailLogin(this.name, this.email).subscribe({
             next: (data: any) => {
                 this.zone.run(() => {
                     this.isLoading = false;
                     if (data.success) {
                         localStorage.setItem('token', data.data.token);
                         localStorage.setItem('user', JSON.stringify(data.data.user));
-                        this.postLoginNavigate();
+                        this.postLoginNavigate(true);
                     } else {
                         this.errorMessage = data.message || 'Login failed';
                         this.cdr.markForCheck();

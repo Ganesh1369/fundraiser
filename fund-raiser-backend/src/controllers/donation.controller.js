@@ -3,10 +3,10 @@ const donationService = require('../services/donation.service');
 // Create Razorpay order
 exports.createOrder = async (req, res, next) => {
     try {
-        const { amount, request80g, purpose, projectId } = req.body;
+        const { amount, request80g, purpose, projectId, numTrees } = req.body;
         const result = await donationService.createOrder(
             req.user.id, req.user.name, amount,
-            request80g || false, purpose || 'donation', projectId || null
+            request80g || false, purpose || 'donation', projectId || null, numTrees || null
         );
         res.json({ success: true, data: result });
     } catch (error) {

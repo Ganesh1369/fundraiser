@@ -67,6 +67,25 @@ exports.login = async (req, res, next) => {
     }
 };
 
+// Passwordless email login (name + email)
+exports.emailLogin = async (req, res, next) => {
+    try {
+        const { name, email } = req.body;
+        if (!name || !email) {
+            return res.status(400).json({ success: false, message: 'Please provide your name and email' });
+        }
+        // Basic email format guard
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+        }
+        const result = await authService.emailLogin(name, email);
+        res.json({ success: true, message: 'Login successful', data: result });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 // Admin Login
 exports.adminLogin = async (req, res, next) => {
     try {
