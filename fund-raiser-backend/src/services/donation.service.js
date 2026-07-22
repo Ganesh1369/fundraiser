@@ -300,10 +300,15 @@ const createStubDonor = async (client, { name, email, phone, userType, organizat
 const recordOfflineDonation = async (adminId, payload) => {
     const {
         projectId, eventId, amount, paymentMethod, paymentReference,
-        paymentReceivedAt, request80g, donor, referralCode
+        paymentReceivedAt, request80g, donor, referralCode, numTrees
     } = payload || {};
 
     if (!amount || Number(amount) < 1) throw { status: 400, message: 'Valid amount (min ₹1) is required' };
+
+    // Trees funded (tree-planting projects only). Same coercion as the online create-order flow.
+    const treesFunded = Number.isFinite(Number(numTrees)) && Number(numTrees) > 0
+        ? Math.floor(Number(numTrees))
+        : null;
     if (!paymentMethod || !OFFLINE_METHODS.has(paymentMethod)) {
         throw { status: 400, message: `paymentMethod must be one of: ${[...OFFLINE_METHODS].join(', ')}` };
     }
@@ -366,13 +371,13 @@ const recordOfflineDonation = async (adminId, payload) => {
             `INSERT INTO donations (
                 id, user_id, project_id, event_id, amount, currency,
                 status, payment_method, payment_reference, payment_received_at,
-                referrer_id, purpose, request_80g, recorded_by_admin_id
-            ) VALUES (?, ?, ?, ?, ?, 'INR', 'completed', ?, ?, ?, ?, 'donation', ?, ?)`,
+                referrer_id, purpose, request_80g, recorded_by_admin_id, num_trees
+            ) VALUES (?, ?, ?, ?, ?, 'INR', 'completed', ?, ?, ?, ?, 'donation', ?, ?, ?)`,
             [
                 donationId, donorRow.id, resolvedProjectId, eventId || null,
                 Number(amount), paymentMethod, String(paymentReference).trim(),
                 paymentReceivedAt || null,
-                referrerId, !!request80g, adminId
+                referrerId, !!request80g, adminId, treesFunded
             ]
         );
 

@@ -252,9 +252,17 @@ const loginUser = async (email, password) => {
  * Passwordless sign-in with name + email.
  * Finds the user by email, or creates a lightweight account if none exists,
  * then issues a JWT and sends a sign-in acknowledgement email.
+ *
+ * `nameChoice` controls how a name conflict is handled when a returning donor
+ * types a name that differs from the one already on file:
+ *   - undefined  → default. If names differ we RETURN a nameConflict payload
+ *                  instead of a token, so the client can prompt the user.
+ *   - 'new'      → update the stored name to the submitted one, then issue JWT.
+ *   - 'keep'     → leave the stored name alone, issue JWT under the existing name.
+ *
  * NOTE: there is no password/verification here — anyone with an email can enter.
  */
-const emailLogin = async (name, email) => {
+const emailLogin = async (name, email, nameChoice) => {
     const normEmail = email.toLowerCase().trim();
     const cleanName = (name || '').trim();
 
@@ -267,6 +275,24 @@ const emailLogin = async (name, email) => {
     let user;
     if (result.rows.length > 0) {
         user = result.rows[0];
+        const storedName = (user.name || '').trim();
+        const namesDiffer = cleanName && storedName && cleanName.toLowerCase() !== storedName.toLowerCase();
+
+        if (namesDiffer && !nameChoice) {
+            // Ask the client which name to keep — no JWT issued yet.
+            return {
+                nameConflict: true,
+                existingName: storedName,
+                submittedName: cleanName,
+                email: user.email
+            };
+        }
+
+        if (namesDiffer && nameChoice === 'new') {
+            await db.query('UPDATE users SET name = ? WHERE id = ?', [cleanName, user.id]);
+            user.name = cleanName;
+        }
+        // nameChoice === 'keep' or no conflict → leave user.name alone.
     } else {
         // Create a new passwordless account. phone + password_hash are NOT NULL
         // in the schema, so store an empty phone and a random, unusable hash.

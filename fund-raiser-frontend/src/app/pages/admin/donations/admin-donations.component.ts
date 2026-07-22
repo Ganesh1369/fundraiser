@@ -32,6 +32,7 @@ interface OfflineForm {
     projectId: string;
     eventId: string;
     amount: number | null;
+    numTrees: number | null;
     paymentMethod: 'cheque' | 'cash' | 'bank_transfer' | 'upi_manual' | 'demand_draft';
     paymentReference: string;
     paymentReceivedAt: string;
@@ -47,7 +48,7 @@ interface OfflineForm {
 }
 
 const emptyOfflineForm = (): OfflineForm => ({
-    projectId: '', eventId: '', amount: null,
+    projectId: '', eventId: '', amount: null, numTrees: null,
     paymentMethod: 'cheque', paymentReference: '',
     paymentReceivedAt: new Date().toISOString().slice(0, 10),
     request80g: false, referralCode: '',
@@ -166,6 +167,13 @@ export class AdminDonationsComponent implements OnInit {
     }
 
     // ── Offline donation modal ───────────────────────────────────────────
+    /** True when the offline modal's selected project is ROOTS (tree-planting). */
+    isOfflineProjectROOTS(): boolean {
+        if (!this.offlineForm.projectId) return false;
+        const p = this.projects.find((x: any) => x.id === this.offlineForm.projectId);
+        return (p?.slug || '').toLowerCase() === 'roots';
+    }
+
     openOfflineModal(): void {
         this.offlineForm = emptyOfflineForm();
         this.offlineDonorFound = null;
@@ -226,6 +234,8 @@ export class AdminDonationsComponent implements OnInit {
             projectId: f.projectId,
             eventId: f.eventId || null,
             amount: Number(f.amount),
+            // Tree count applies to tree-planting projects only. Backend also coerces/ignores non-positive values.
+            numTrees: this.isOfflineProjectROOTS() && f.numTrees && f.numTrees > 0 ? Math.floor(Number(f.numTrees)) : null,
             paymentMethod: f.paymentMethod,
             paymentReference: f.paymentReference.trim(),
             paymentReceivedAt: f.paymentReceivedAt || null,

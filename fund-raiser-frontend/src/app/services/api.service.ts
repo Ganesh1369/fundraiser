@@ -19,8 +19,10 @@ export class ApiService {
         return this.http.post(`${this.apiUrl}/auth/login`, { email, password });
     }
 
-    emailLogin(name: string, email: string): Observable<any> {
-        return this.http.post(`${this.apiUrl}/auth/email-login`, { name, email });
+    emailLogin(name: string, email: string, nameChoice?: 'new' | 'keep'): Observable<any> {
+        const body: any = { name, email };
+        if (nameChoice) body.nameChoice = nameChoice;
+        return this.http.post(`${this.apiUrl}/auth/email-login`, body);
     }
 
     register(data: any): Observable<any> {

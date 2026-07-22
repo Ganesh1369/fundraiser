@@ -21,6 +21,11 @@ export class LoginComponent implements OnInit {
     isLoading = false;
     errorMessage = '';
 
+    // Name-conflict prompt state — shown when the email is already on file under a different name.
+    showNameConflict = false;
+    conflictExistingName = '';
+    conflictSubmittedName = '';
+
     /** Bounce already-authed users straight to the dashboard — '/' is now the login route. */
     ngOnInit(): void {
         if (typeof window === 'undefined') return;
@@ -78,33 +83,55 @@ export class LoginComponent implements OnInit {
         const openDonateAfter = !this.usePassword;
 
         request$.subscribe({
-            next: (data: any) => {
-                this.zone.run(() => {
-                    this.isLoading = false;
-                    if (data.success) {
-                        localStorage.setItem('token', data.data.token);
-                        localStorage.setItem('user', JSON.stringify(data.data.user));
-                        this.postLoginNavigate(openDonateAfter);
-                    } else {
-                        this.errorMessage = data.message || 'Login failed';
-                        this.cdr.markForCheck();
-                    }
-                });
-            },
-            error: (err: any) => {
-                this.zone.run(() => {
-                    this.isLoading = false;
-                    const body = err?.error;
-                    let msg: string | undefined;
-                    if (typeof body === 'string') {
-                        try { msg = JSON.parse(body)?.message; } catch { msg = body; }
-                    } else if (body && typeof body === 'object') {
-                        msg = body.message;
-                    }
-                    this.errorMessage = msg || err?.message || `Login failed (${err?.status ?? 'network error'})`;
-                    this.cdr.markForCheck();
-                });
+            next: (data: any) => this.handleAuthResponse(data, openDonateAfter),
+            error: (err: any) => this.handleAuthError(err)
+        });
+    }
+
+    /** User picked which name to keep on the conflict prompt — call email-login again with the choice. */
+    resolveNameConflict(choice: 'new' | 'keep'): void {
+        this.showNameConflict = false;
+        this.isLoading = true;
+        this.errorMessage = '';
+        this.api.emailLogin(this.name, this.email, choice).subscribe({
+            next: (data: any) => this.handleAuthResponse(data, true),
+            error: (err: any) => this.handleAuthError(err)
+        });
+    }
+
+    private handleAuthResponse(data: any, openDonateAfter: boolean): void {
+        this.zone.run(() => {
+            this.isLoading = false;
+            if (data?.nameConflict) {
+                this.conflictExistingName = data.data?.existingName || '';
+                this.conflictSubmittedName = data.data?.submittedName || this.name;
+                this.showNameConflict = true;
+                this.cdr.markForCheck();
+                return;
             }
+            if (data?.success && data.data?.token) {
+                localStorage.setItem('token', data.data.token);
+                localStorage.setItem('user', JSON.stringify(data.data.user));
+                this.postLoginNavigate(openDonateAfter);
+            } else {
+                this.errorMessage = data?.message || 'Login failed';
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    private handleAuthError(err: any): void {
+        this.zone.run(() => {
+            this.isLoading = false;
+            const body = err?.error;
+            let msg: string | undefined;
+            if (typeof body === 'string') {
+                try { msg = JSON.parse(body)?.message; } catch { msg = body; }
+            } else if (body && typeof body === 'object') {
+                msg = body.message;
+            }
+            this.errorMessage = msg || err?.message || `Login failed (${err?.status ?? 'network error'})`;
+            this.cdr.markForCheck();
         });
     }
 }

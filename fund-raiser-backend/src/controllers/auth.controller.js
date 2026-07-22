@@ -70,7 +70,7 @@ exports.login = async (req, res, next) => {
 // Passwordless email login (name + email)
 exports.emailLogin = async (req, res, next) => {
     try {
-        const { name, email } = req.body;
+        const { name, email, nameChoice } = req.body;
         if (!name || !email) {
             return res.status(400).json({ success: false, message: 'Please provide your name and email' });
         }
@@ -78,7 +78,12 @@ exports.emailLogin = async (req, res, next) => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
         }
-        const result = await authService.emailLogin(name, email);
+        const validChoice = nameChoice === 'new' || nameChoice === 'keep' ? nameChoice : undefined;
+        const result = await authService.emailLogin(name, email, validChoice);
+        // A nameConflict result means the client must ask the user which name to keep — no JWT yet.
+        if (result && result.nameConflict) {
+            return res.json({ success: true, nameConflict: true, data: result });
+        }
         res.json({ success: true, message: 'Login successful', data: result });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });

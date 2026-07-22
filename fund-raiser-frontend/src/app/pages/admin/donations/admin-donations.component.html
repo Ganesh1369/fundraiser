@@ -213,6 +213,15 @@
                     </div>
                 </div>
 
+                @if (isOfflineProjectROOTS()) {
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Trees funded</label>
+                        <input type="number" min="1" step="1" [(ngModel)]="offlineForm.numTrees" placeholder="e.g. 5" />
+                    </div>
+                </div>
+                }
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Reference * (cheque no / UTR / receipt no)</label>
