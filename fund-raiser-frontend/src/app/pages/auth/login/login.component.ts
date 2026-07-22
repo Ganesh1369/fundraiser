@@ -15,6 +15,9 @@ import { ApiService } from '../../../services/api.service';
 export class LoginComponent implements OnInit {
     name = '';
     email = '';
+    password = '';
+    usePassword = false;
+    showPassword = false;
     isLoading = false;
     errorMessage = '';
 
@@ -45,23 +48,43 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/dashboard'], extras);
     }
 
+    /** Toggle between passwordless (name + email) and returning-user (email + password) mode. */
+    toggleMode(): void {
+        this.usePassword = !this.usePassword;
+        this.errorMessage = '';
+    }
+
     onSubmit(): void {
-        if (!this.name || !this.email) {
-            this.errorMessage = 'Please enter your name and email';
-            return;
+        if (this.usePassword) {
+            if (!this.email || !this.password) {
+                this.errorMessage = 'Please enter your email and password';
+                return;
+            }
+        } else {
+            if (!this.name || !this.email) {
+                this.errorMessage = 'Please enter your name and email';
+                return;
+            }
         }
 
         this.isLoading = true;
         this.errorMessage = '';
 
-        this.api.emailLogin(this.name, this.email).subscribe({
+        const request$ = this.usePassword
+            ? this.api.login(this.email, this.password)
+            : this.api.emailLogin(this.name, this.email);
+
+        // Freshly signed-in donors auto-open the donate modal; returning password users don't.
+        const openDonateAfter = !this.usePassword;
+
+        request$.subscribe({
             next: (data: any) => {
                 this.zone.run(() => {
                     this.isLoading = false;
                     if (data.success) {
                         localStorage.setItem('token', data.data.token);
                         localStorage.setItem('user', JSON.stringify(data.data.user));
-                        this.postLoginNavigate(true);
+                        this.postLoginNavigate(openDonateAfter);
                     } else {
                         this.errorMessage = data.message || 'Login failed';
                         this.cdr.markForCheck();

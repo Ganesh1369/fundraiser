@@ -21,12 +21,14 @@
 
             <!-- Form -->
             <form (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+                @if (!usePassword) {
                 <div>
                     <label class="block text-sm font-medium text-neutral-600 mb-1.5">Name</label>
                     <input type="text"
                         class="w-full px-4 py-3 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                         placeholder="Your name" [(ngModel)]="name" name="name" required>
                 </div>
+                }
 
                 <div>
                     <label class="block text-sm font-medium text-neutral-600 mb-1.5">Email Address</label>
@@ -35,6 +37,28 @@
                         placeholder="you&#64;example.com" [(ngModel)]="email" name="email" required>
                 </div>
 
+                @if (usePassword) {
+                <div>
+                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">Password</label>
+                    <div class="relative">
+                        <input [type]="showPassword ? 'text' : 'password'"
+                            class="w-full px-4 py-3 pr-12 bg-white border border-neutral-200 shadow-sm rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            placeholder="Enter your password" [(ngModel)]="password" name="password" required>
+                        <button type="button" (click)="showPassword = !showPassword"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                            @if (showPassword) {
+                            <lucide-icon name="eye-off" class="w-5 h-5"></lucide-icon>
+                            } @else {
+                            <lucide-icon name="eye" class="w-5 h-5"></lucide-icon>
+                            }
+                        </button>
+                    </div>
+                    <div class="text-right mt-1.5">
+                        <a routerLink="/forgot-password" class="text-xs text-primary font-medium hover:text-primary-600 no-underline">Forgot password?</a>
+                    </div>
+                </div>
+                }
+
                 <button type="submit"
                     class="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                     [disabled]="isLoading">
@@ -42,13 +66,24 @@
                     <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Signing in...
                     } @else {
-                    Continue
+                    {{ usePassword ? 'Sign In' : 'Continue' }}
                     }
                 </button>
             </form>
 
+            <!-- Mode toggle -->
+            <div class="text-center mt-4">
+                <button type="button" (click)="toggleMode()" class="text-sm text-neutral-500 hover:text-primary transition-colors">
+                    @if (usePassword) {
+                    New here? <span class="text-primary font-semibold">Continue with name &amp; email</span>
+                    } @else {
+                    Have a password? <span class="text-primary font-semibold">Sign in</span>
+                    }
+                </button>
+            </div>
+
             <!-- Footer -->
-            <div class="text-center mt-6 pt-5 border-t border-white/20">
+            <div class="text-center mt-4 pt-5 border-t border-white/20">
                 <p class="text-sm text-neutral-500">Don't have an account? <a routerLink="/register" class="text-primary font-semibold no-underline hover:text-primary-600">Sign up</a></p>
             </div>
         </div>
