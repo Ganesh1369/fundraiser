@@ -803,6 +803,7 @@ export class DashboardComponent implements OnInit {
     logout(): void {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('authOrigin');
         this.router.navigate(['/login']);
     }
 

@@ -26,11 +26,15 @@ export class LoginComponent implements OnInit {
     conflictExistingName = '';
     conflictSubmittedName = '';
 
-    /** Bounce already-authed users straight to the dashboard — '/' is now the login route. */
+    /** Bounce already-authed users straight to the right home — '/' is now the login route. */
     ngOnInit(): void {
         if (typeof window === 'undefined') return;
         const token = localStorage.getItem('token');
-        if (token) this.postLoginNavigate();
+        if (!token) return;
+        // Passwordless donors resume on /quick-donate; registered users on /dashboard.
+        // origin=passwordless is stamped in localStorage at emailLogin success.
+        const origin = localStorage.getItem('authOrigin');
+        this.postLoginNavigate(origin === 'passwordless');
     }
 
     constructor(
@@ -41,16 +45,24 @@ export class LoginComponent implements OnInit {
         private cdr: ChangeDetectorRef
     ) { }
 
-    /** Project-page Donate CTA passes ?returnUrl=… so we resume the deep-link after auth. */
+    /**
+     * Project-page Donate CTA passes ?returnUrl=… so we resume the deep-link after auth.
+     * Passwordless donors (usePassword=false, resolved at call site) land on /quick-donate —
+     * a scoped landing page with the donate popup + post-payment CTAs. Password users go
+     * to the full /dashboard as before.
+     */
     private postLoginNavigate(openDonate = false): void {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         if (returnUrl && returnUrl.startsWith('/')) {
-            this.router.navigateByUrl(returnUrl).catch(() => this.router.navigate(['/dashboard']));
+            const fallback = openDonate ? '/quick-donate' : '/dashboard';
+            this.router.navigateByUrl(returnUrl).catch(() => this.router.navigateByUrl(fallback));
             return;
         }
-        // After a fresh sign-in, open the donate popup immediately on the dashboard.
-        const extras = openDonate ? { queryParams: { donate: '1' } } : {};
-        this.router.navigate(['/dashboard'], extras);
+        if (openDonate) {
+            this.router.navigate(['/quick-donate']);
+        } else {
+            this.router.navigate(['/dashboard']);
+        }
     }
 
     /** Toggle between passwordless (name + email) and returning-user (email + password) mode. */
@@ -112,6 +124,9 @@ export class LoginComponent implements OnInit {
             if (data?.success && data.data?.token) {
                 localStorage.setItem('token', data.data.token);
                 localStorage.setItem('user', JSON.stringify(data.data.user));
+                // Passwordless donors are routed to the scoped /quick-donate page and back
+                // there on future visits; password users get the full /dashboard.
+                localStorage.setItem('authOrigin', openDonateAfter ? 'passwordless' : 'password');
                 this.postLoginNavigate(openDonateAfter);
             } else {
                 this.errorMessage = data?.message || 'Login failed';

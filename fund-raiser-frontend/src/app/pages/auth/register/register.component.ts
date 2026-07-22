@@ -60,6 +60,10 @@ export class RegisterComponent {
                 this.data.referralCode = params['ref'];
                 this.validateReferralCode();
             }
+            // Prefill from /quick-donate's Register CTA so the donor doesn't retype
+            // the name + email they just gave us.
+            if (params['name']) this.data.name = params['name'];
+            if (params['email']) this.data.email = params['email'];
         });
     }
 
@@ -162,6 +166,9 @@ export class RegisterComponent {
                 if (result.success) {
                     localStorage.setItem('token', result.data.token);
                     localStorage.setItem('user', JSON.stringify(result.data.user));
+                    // Fresh registration graduates the user from any earlier passwordless
+                    // origin — they now have a real password and land on /dashboard.
+                    localStorage.setItem('authOrigin', 'password');
                     this.router.navigate(['/dashboard']);
                 } else {
                     this.errorMessage = result.message || 'Registration failed';

@@ -22,6 +22,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/user/dashboard/dashboard.component').then(m => m.DashboardComponent)
     },
     {
+        path: 'quick-donate',
+        loadComponent: () => import('./pages/quick-donate/quick-donate.component').then(m => m.QuickDonateComponent)
+    },
+    {
         path: 'profile',
         loadComponent: () => import('./pages/user/profile/profile.component').then(m => m.ProfileComponent)
     },
