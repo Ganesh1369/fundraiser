@@ -158,6 +158,17 @@ export class DashboardComponent implements OnInit {
     selectedDonationId = '';
     linkCopied = false;
 
+    // Post-payment celebration: a friendly tree mascot pops in to thank the donor.
+    showThankYouTree = false;
+    thankYouTreeMessage = '';
+    private readonly thankYouTreeMessages = [
+        'Because of you, I get to grow a little taller. Thank you for your kindness!',
+        'You just helped a forest breathe easier. Thank you for planting hope!',
+        'One donation, countless leaves. Thank you for helping me grow!',
+        'Small seeds, mighty trees. Thank you for nurturing a greener tomorrow!',
+        'You watered a dream today. Thank you for your generous gift!'
+    ];
+
     profile: any = null;
     profileIncomplete = false;
     addressIncomplete = false;
@@ -582,7 +593,8 @@ export class DashboardComponent implements OnInit {
                     this.stopVerifyingOverlay();
                     if (res.success) {
                         this.loadDashboardData();
-                        this.toast.success('Thank you for your donation!');
+                        // Celebrate with the tree mascot instead of a plain toast.
+                        this.showThankYouTreeCelebration();
                         // 80G auto-gen runs post-commit on the server (a couple of seconds);
                         // poll briefly so the cert flips from pending → approved on the
                         // dashboard without a manual reload.
@@ -595,6 +607,78 @@ export class DashboardComponent implements OnInit {
                 this.toast.error('Payment verification failed. Please contact support.');
             })
         });
+    }
+
+    /** Pop in the tree mascot with a warm, randomly-picked thank-you line. */
+    private showThankYouTreeCelebration(): void {
+        const i = Math.floor(Math.random() * this.thankYouTreeMessages.length);
+        this.thankYouTreeMessage = this.thankYouTreeMessages[i];
+        this.showThankYouTree = true;
+        this.cdr.detectChanges();
+    }
+
+    closeThankYouTree(): void {
+        this.showThankYouTree = false;
+        this.cdr.detectChanges();
+    }
+
+    /** Profile + address complete enough to unlock the post-donation actions. */
+    get isProfileComplete(): boolean {
+        return !this.profileIncomplete && !this.addressIncomplete;
+    }
+
+    /** Put a message into the tree mascot's "speech" (the celebration text). */
+    private treeSay(message: string): void {
+        this.thankYouTreeMessage = message;
+        this.cdr.detectChanges();
+    }
+
+    /** Share the referral link — only once the profile is complete. */
+    onShareReferral(): void {
+        if (!this.isProfileComplete) {
+            this.treeSay('I would love to help you spread the green! 🌱 Please complete your profile first, then your referral link will be ready to share.');
+            return;
+        }
+        const link = this.referralStats?.referralLink;
+        if (!link) { this.treeSay('Your referral link is not quite ready — please try again in a moment. 🌱'); return; }
+        const nav: any = navigator;
+        const text = 'Join ICE Network — for a healthier, greener city! Use my referral link:';
+        if (nav.share) {
+            nav.share({ title: 'ICE Network', text, url: link }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(link);
+            this.treeSay('Your referral link is copied — thank you for spreading the green love! 🌱');
+        }
+    }
+
+    /** See tree growth — only once the profile is complete (static for now). */
+    onSeeTreeGrowth(): void {
+        if (!this.isProfileComplete) {
+            this.treeSay('I am still finding my roots! 🌱 Please complete your profile to watch my growth story unfold.');
+            return;
+        }
+        this.treeSay('My growth tracker is coming soon — I cannot wait to show you how tall I grow! 🌱');
+    }
+
+    /** Download the 80G certificate — only once the profile is complete. */
+    onDownloadCertificateFromCelebration(): void {
+        if (!this.isProfileComplete) {
+            this.treeSay('Almost there! 🌱 Please complete your profile and your 80G certificate will be ready to download.');
+            return;
+        }
+        const ready = this.certificateRequests.find(c => c.pdfUrl);
+        if (ready) {
+            this.downloadCertificate(ready);
+            this.treeSay('Your 80G certificate is on its way — thank you for your kindness! 🌱');
+        } else {
+            this.treeSay('Your 80G certificate is being prepared — please check the Certificates section shortly. 🌱');
+        }
+    }
+
+    /** Leave the celebration and head to the profile page to complete it. */
+    goCompleteProfileFromCelebration(): void {
+        this.showThankYouTree = false;
+        this.router.navigate(['/profile']);
     }
 
     hasValidPanOnProfile(): boolean {

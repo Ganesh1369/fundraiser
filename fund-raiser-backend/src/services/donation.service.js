@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('./email.service');
 const certificateService = require('./certificate.service');
+const treeCertificateService = require('./tree-certificate.service');
 const { computePoints } = require('./utils/referral-points');
 
 const razorpay = new Razorpay({
@@ -23,6 +24,53 @@ const resolveProjectId = async (projectId) => {
     }
     const roots = await db.query("SELECT id FROM projects WHERE slug = 'roots'");
     return roots.rows[0]?.id || null;
+};
+
+/**
+ * Build the donation-confirmation email options for a completed donation.
+ * For tree donations (num_trees > 0) this generates the Certificate of Tree
+ * Donation PDF and returns it as an attachment; otherwise returns empty opts.
+ * Best-effort: a certificate failure must never block the confirmation email,
+ * so on error we fall back to sending the email without the attachment.
+ * @param {object} donation - { amount, num_trees, project_id }
+ * @param {string} donorName
+ * @param {Date} date
+ * @returns {Promise<{ trees: number, attachments: Array }>}
+ */
+const buildDonationEmailOptions = async (donation, donorName, date) => {
+    const trees = Number(donation.num_trees) || 0;
+    if (trees <= 0) return { trees: 0, attachments: [] };
+
+    try {
+        let projectName = 'ROOTS';
+        let projectTagline = null;
+        if (donation.project_id) {
+            const p = await db.query('SELECT name, tagline FROM projects WHERE id = ?', [donation.project_id]);
+            if (p.rows.length > 0) {
+                projectName = p.rows[0].name || projectName;
+                projectTagline = p.rows[0].tagline || null;
+            }
+        }
+        const pdfBuffer = await treeCertificateService.generateTreeCertificateBuffer({
+            donorName,
+            trees,
+            amount: parseFloat(donation.amount),
+            date,
+            projectName,
+            projectTagline
+        });
+        return {
+            trees,
+            attachments: [{
+                filename: 'Tree-Donation-Certificate.pdf',
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }]
+        };
+    } catch (err) {
+        console.error('[tree certificate] generation failed, sending email without it:', err.message);
+        return { trees, attachments: [] };
+    }
 };
 
 /**
@@ -103,7 +151,7 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         }
 
         const donationResult = await client.query(
-            'SELECT id, amount, referrer_id, request_80g, purpose, points_formula_version FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
+            'SELECT id, amount, referrer_id, request_80g, purpose, points_formula_version, num_trees, project_id FROM donations WHERE razorpay_order_id = ? AND user_id = ?',
             [razorpayOrderId, userId]
         );
         const donation = donationResult.rows[0];
@@ -178,14 +226,13 @@ const verifyPayment = async (userId, userName, razorpayOrderId, razorpayPaymentI
         const userResult = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
         if (userResult.rows.length > 0) {
             const recipient = userResult.rows[0].email;
-            console.log(`[donation email] attempting send to ${recipient} amount=${donation.amount}`);
-            emailService.sendDonationConfirmationEmail(
-                recipient,
-                userName,
-                parseFloat(donation.amount),
-                razorpayPaymentId,
-                new Date()
-            )
+            const trees = Number(donation.num_trees) || 0;
+            console.log(`[donation email] attempting send to ${recipient} amount=${donation.amount} trees=${trees}`);
+            // For tree donations, build the Certificate of Tree Donation PDF and attach it.
+            buildDonationEmailOptions(donation, userName, new Date())
+                .then(opts => emailService.sendDonationConfirmationEmail(
+                    recipient, userName, parseFloat(donation.amount), razorpayPaymentId, new Date(), opts
+                ))
                 .then(info => console.log(`[donation email] sent to ${recipient}, messageId=${info?.messageId || '?'}`))
                 .catch(err => console.error(`[donation email] FAILED to ${recipient}:`, err.message, err.code || ''));
         } else {
@@ -532,4 +579,4 @@ const reverseDonation = async (adminId, donationId, reason) => {
     }
 };
 
-module.exports = { createOrder, verifyPayment, cancelPending, recordOfflineDonation, reverseDonation };
+module.exports = { createOrder, verifyPayment, cancelPending, recordOfflineDonation, reverseDonation, buildDonationEmailOptions };

@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const emailService = require('../services/email.service');
 const certificateService = require('../services/certificate.service');
+const donationService = require('../services/donation.service');
 const { computePoints } = require('../services/utils/referral-points');
 
 // Razorpay Webhook Handler
@@ -70,7 +71,7 @@ async function handlePaymentCaptured(payment) {
 
         if (updateResult.rowCount > 0) {
             const donationResult = await client.query(
-                'SELECT id, amount, referrer_id, user_id, purpose, request_80g, points_formula_version FROM donations WHERE razorpay_order_id = ?',
+                'SELECT id, amount, referrer_id, user_id, purpose, request_80g, points_formula_version, num_trees, project_id FROM donations WHERE razorpay_order_id = ?',
                 [payment.order_id]
             );
             const donation = donationResult.rows[0];
@@ -156,10 +157,13 @@ async function handlePaymentCaptured(payment) {
 
     // ===== Post-commit, best-effort side-effects (audit B4 fix). =====
     if (donationForEmail && userForEmail) {
-        emailService.sendDonationConfirmationEmail(
-            userForEmail.email, userForEmail.name,
-            parseFloat(donationForEmail.amount), payment.id, new Date()
-        ).catch(err => console.error('webhook donation email failed:', err.message));
+        // For tree donations, attach the Certificate of Tree Donation PDF.
+        donationService.buildDonationEmailOptions(donationForEmail, userForEmail.name, new Date())
+            .then(opts => emailService.sendDonationConfirmationEmail(
+                userForEmail.email, userForEmail.name,
+                parseFloat(donationForEmail.amount), payment.id, new Date(), opts
+            ))
+            .catch(err => console.error('webhook donation email failed:', err.message));
     }
     if (createdCertId) {
         certificateService.generate(createdCertId, { auto: true, silent: true })

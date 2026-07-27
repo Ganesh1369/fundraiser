@@ -198,6 +198,11 @@ export class QuickDonateComponent implements OnInit {
         this.router.navigate(['/profile'], { queryParams: { intent: '80g' } });
     }
 
+    /** Any post-donation next-step card sends the donor to complete their profile. */
+    goToProfile(): void {
+        this.router.navigate(['/profile']);
+    }
+
     requestTreeCertificate(): void {
         // Placeholder: tree certificate PDF template doesn't exist yet.
         // For v1 we acknowledge the request; a follow-up will wire up the actual

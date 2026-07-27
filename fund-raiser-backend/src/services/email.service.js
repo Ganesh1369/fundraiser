@@ -77,9 +77,23 @@ const sendPasswordResetEmail = async (to, otp) => {
 /**
  * Send donation confirmation email
  */
-const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) => {
+// opts (optional): { trees, attachments }
+//   trees       - number of trees this donation funded; when > 0 a tree line is
+//                 shown and the email notes the attached certificate.
+//   attachments - nodemailer attachments array (e.g. the tree-donation certificate PDF).
+const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date, opts = {}) => {
+    const { trees = 0, attachments = [] } = opts;
     const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
     const formattedDate = new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const treesBlock = trees > 0 ? `
+            <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 18px; margin: 0 0 20px; text-align: center;">
+                <p style="color: #16a34a; margin: 0 0 4px; font-size: 22px; font-weight: 700;">🌳 ${trees} tree${trees === 1 ? '' : 's'}</p>
+                <p style="color: #525252; margin: 0; font-size: 13px;">Thank you for donating towards planting <strong>${trees} tree${trees === 1 ? '' : 's'}</strong> — together, we grow a greener tomorrow!</p>
+            </div>` : '';
+
+    const certNote = trees > 0 ? `
+            <p style="color: #16a34a; font-size: 13px; text-align: center; margin: 0 0 16px; font-weight: 600;">📄 Your Certificate of Tree Donation is attached to this email.</p>` : '';
 
     const mailOptions = {
         from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
@@ -89,6 +103,7 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
             <p style="color: #525252; margin: 0 0 16px; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Donation Receipt</p>
             <p style="color: #171717; font-size: 15px; margin: 0 0 4px;">Dear <strong>${name}</strong>,</p>
             <p style="color: #525252; font-size: 14px; margin: 0 0 20px; line-height: 1.6;">Thank you for your generous contribution! Your support makes a real difference.</p>
+            ${treesBlock}
             <div style="background: #f5f5f5; border-radius: 12px; padding: 20px; margin: 0 0 20px;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
@@ -105,8 +120,10 @@ const sendDonationConfirmationEmail = async (to, name, amount, paymentId, date) 
                     </tr>
                 </table>
             </div>
+            ${certNote}
             <p style="color: #a3a3a3; font-size: 12px; text-align: center; margin: 0;">Need help? Call us at <strong style="color: #525252;">98404 71333</strong></p>
-        `)
+        `),
+        attachments
     };
     return transporter.sendMail(mailOptions);
 };

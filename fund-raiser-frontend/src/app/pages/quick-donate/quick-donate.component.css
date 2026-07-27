@@ -1,3 +1,56 @@
 :host {
     display: block;
 }
+
+/* ── Thank-you tree mascot animations ──────────────────────────────── */
+.thank-tree {
+    animation: treePop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.tree-bob {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: treeBob 2.6s ease-in-out infinite;
+}
+
+.tree-arm-right {
+    transform-box: fill-box;
+    transform-origin: 0% 100%;
+    animation: armWave 1.1s ease-in-out infinite;
+}
+
+.tree-eyes {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: eyeBlink 3.6s ease-in-out infinite;
+}
+
+@keyframes treePop {
+    0%   { transform: scale(0.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+@keyframes treeBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+}
+
+@keyframes armWave {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(-24deg); }
+}
+
+@keyframes eyeBlink {
+    0%, 90%, 100% { transform: scaleY(1); }
+    95%           { transform: scaleY(0.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thank-tree,
+    .tree-bob,
+    .tree-arm-right,
+    .tree-eyes {
+        animation: none;
+    }
+}
