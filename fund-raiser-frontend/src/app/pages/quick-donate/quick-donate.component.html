@@ -127,7 +127,7 @@
             <p class="text-neutral-600 text-sm md:text-base">You just funded <strong>{{ completedTrees }} tree{{ completedTrees === 1 ? '' : 's' }}</strong> for ₹{{ completedAmount | number }}. Here's what you can do next:</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
 
             <!-- 1. See your tree growth -->
             <div class="bg-white rounded-2xl shadow-sm border border-neutral-100 p-5 flex flex-col hover:shadow-md transition-shadow">
@@ -136,7 +136,7 @@
                 </div>
                 <h3 class="text-base font-bold text-accent mb-1.5">See Your Tree Growth</h3>
                 <p class="text-xs text-neutral-500 leading-relaxed mb-4 flex-1">Watch your trees flourish over time — track how tall they grow and the impact you're making. Coming soon!</p>
-                <button type="button" (click)="goToProfile()"
+                <button type="button" (click)="goTreeGrowth()"
                     class="w-full py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors">
                     See Growth
                 </button>
@@ -149,7 +149,7 @@
                 </div>
                 <h3 class="text-base font-bold text-accent mb-1.5">Get 80G Certificate</h3>
                 <p class="text-xs text-neutral-500 leading-relaxed mb-4 flex-1">Claim tax exemption on your donation. Requires your PAN and address.</p>
-                <button type="button" (click)="goToProfile()"
+                <button type="button" (click)="goRequest80G()"
                     class="w-full py-2 bg-amber-600 text-white text-sm font-semibold rounded-lg hover:bg-amber-700 transition-colors">
                     Request 80G
                 </button>
@@ -162,11 +162,25 @@
                 </div>
                 <h3 class="text-base font-bold text-accent mb-1.5">Refer a Friend</h3>
                 <p class="text-xs text-neutral-500 leading-relaxed mb-4 flex-1">Spread the word — every friend who joins helps plant more trees.</p>
-                <button type="button" (click)="goToProfile()"
+                <button type="button" (click)="goRefer()"
                     class="w-full py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors">
                     Share &amp; Refer
                 </button>
             </div>
+
+            <!-- 4. Name a tree — hidden until the tree-naming feature is built.
+            <div class="bg-white rounded-2xl shadow-sm border border-neutral-100 p-5 flex flex-col hover:shadow-md transition-shadow">
+                <div class="w-11 h-11 bg-rose-50 rounded-xl flex items-center justify-center mb-3">
+                    <lucide-icon name="tag" class="w-5 h-5 text-rose-600"></lucide-icon>
+                </div>
+                <h3 class="text-base font-bold text-accent mb-1.5">Name a Tree</h3>
+                <p class="text-xs text-neutral-500 leading-relaxed mb-4 flex-1">Give your tree a name — make your contribution personal and watch your named tree grow.</p>
+                <button type="button" (click)="goNameTree()"
+                    class="w-full py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700 transition-colors">
+                    Name My Tree
+                </button>
+            </div>
+            -->
 
         </div>
 

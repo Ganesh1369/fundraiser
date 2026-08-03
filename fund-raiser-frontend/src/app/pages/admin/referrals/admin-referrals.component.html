@@ -1,0 +1,88 @@
+<header class="admin-header">
+    <h1>Referrals</h1>
+    <p class="subtitle">Who invited whom, how many people used each code, and what those invites raised.</p>
+</header>
+
+<div class="filters">
+    <div class="filter-group">
+        <label class="filter-label">Activity</label>
+        <select class="filter-select" [(ngModel)]="activityFilter" (change)="onFilterChange()">
+            <option value="">Any referral activity</option>
+            <option value="referrers">Referrers only</option>
+            <option value="referred">Referred members only</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input type="text" class="filter-input" placeholder="Name, email or code…" [value]="searchQuery"
+            (input)="onSearchInput($any($event.target).value)">
+    </div>
+</div>
+
+<div class="card">
+    @if (referrals.length === 0) {
+    <div class="empty-state">
+        <lucide-icon name="share-2" class="empty-icon w-10 h-10"></lucide-icon>
+        <h3>No referral activity yet</h3>
+        <p>Once someone signs up using a referral link, both the inviter and the new member show up here.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Referral Code</th>
+                    <th>Referred By</th>
+                    <th class="num">People Referred</th>
+                    <th class="num">Raised via Code</th>
+                    <th class="num">Referral Points</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (row of referrals; track row.id) {
+                <tr>
+                    <td>
+                        <div class="cell-name">{{ row.name }}</div>
+                        <div class="cell-sub">{{ row.email }}</div>
+                    </td>
+                    <td><span class="code-chip">{{ row.referralCode || '—' }}</span></td>
+                    <td>
+                        @if (row.referrerName) {
+                        <div class="cell-name">{{ row.referrerName }}</div>
+                        <div class="cell-sub">{{ row.referrerCode }}</div>
+                        } @else {
+                        <span class="muted">Joined directly</span>
+                        }
+                    </td>
+                    <td class="num">
+                        @if (row.referralCount > 0) {
+                        <span class="badge badge-yes">{{ row.referralCount }}</span>
+                        } @else {
+                        <span class="muted">0</span>
+                        }
+                    </td>
+                    <td class="num">
+                        @if (row.totalRaised > 0) {
+                        <strong>{{ formatCurrency(row.totalRaised) }}</strong>
+                        } @else {
+                        <span class="muted">—</span>
+                        }
+                    </td>
+                    <td class="num">{{ row.referralPoints }}</td>
+                    <td class="text-xs">{{ formatDate(row.createdAt) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (pagination.totalPages > 1) {
+    <div class="pagination">
+        <button [disabled]="pagination.page === 1" (click)="loadReferrals(pagination.page - 1)" class="btn-page">Previous</button>
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.totalPages }} · {{ pagination.total }} members</span>
+        <button [disabled]="pagination.page === pagination.totalPages" (click)="loadReferrals(pagination.page + 1)" class="btn-page">Next</button>
+    </div>
+    }
+    }
+</div>

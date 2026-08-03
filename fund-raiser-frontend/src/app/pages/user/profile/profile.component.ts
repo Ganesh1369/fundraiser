@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../../services/api.service';
@@ -21,6 +21,8 @@ export class ProfileComponent implements OnInit {
     isUploading = false;
     showAvatarMenu = false;
     showImageViewer = false;
+    /** Greeting shown to donors arriving from the post-donation cards (?welcome=1). */
+    showWelcome = false;
 
     profileForm: any = {
         name: '', firstName: '', lastName: '', phone: '',
@@ -31,14 +33,27 @@ export class ProfileComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private cdr: ChangeDetectorRef,
         private toast: ToastService
     ) {}
 
     ngOnInit(): void {
+        this.showWelcome = this.route.snapshot.queryParamMap.get('welcome') === '1';
         this.loadUser();
         this.loadProfile();
+    }
+
+    /** Drops the flag from the URL too, so a refresh doesn't re-greet the donor. */
+    dismissWelcome(): void {
+        this.showWelcome = false;
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { welcome: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+        });
     }
 
     loadUser(): void {
@@ -126,10 +141,7 @@ export class ProfileComponent implements OnInit {
                         localStorage.setItem('user', JSON.stringify(updated));
                         this.user = updated;
                     }
-                    // Send the user back to the dashboard so the donate flow
-                    // (the common reason for landing here from the 80G gate)
-                    // can be resumed in one round-trip.
-                    this.router.navigate(['/dashboard']);
+                    this.navigateAfterSave();
                 } else {
                     this.toast.error(res.message || 'Failed to update profile');
                 }
@@ -141,6 +153,23 @@ export class ProfileComponent implements OnInit {
                 this.cdr.detectChanges();
             }
         });
+    }
+
+    /**
+     * Where to go once the profile is saved.
+     *
+     * Donors who came from a post-donation card (?intent=…) go back to those
+     * cards rather than the dashboard — they were part-way through choosing a
+     * next step, so they pick the card again and this time it goes straight
+     * through. Everyone else lands on the dashboard as before.
+     */
+    private navigateAfterSave(): void {
+        const intent = this.route.snapshot.queryParamMap.get('intent');
+        if (intent) {
+            this.router.navigate(['/quick-donate'], { queryParams: { cards: 1 } });
+            return;
+        }
+        this.router.navigate(['/dashboard']);
     }
 
     toggleAvatarMenu(): void {
@@ -207,6 +236,12 @@ export class ProfileComponent implements OnInit {
         });
 
         input.value = '';
+    }
+
+    /** First word of the name, for a friendlier greeting. Falls back to "friend". */
+    firstNameOf(name: string | undefined | null): string {
+        const first = (name || '').trim().split(/\s+/).filter(Boolean)[0];
+        return first || 'friend';
     }
 
     getInitials(name: string | undefined): string {

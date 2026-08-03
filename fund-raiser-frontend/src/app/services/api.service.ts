@@ -204,6 +204,13 @@ export class ApiService {
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 
+    getAdminReferrals(limit: number = 20, page: number = 1, search?: string, activity?: string): Observable<any> {
+        let url = `${this.apiUrl}/admin/referrals?limit=${limit}&page=${page}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (activity) url += `&activity=${encodeURIComponent(activity)}`;
+        return this.http.get(url, { headers: this.getHeaders(true) });
+    }
+
     getAdminUserDetail(id: string): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/users/${id}`, { headers: this.getHeaders(true) });
     }

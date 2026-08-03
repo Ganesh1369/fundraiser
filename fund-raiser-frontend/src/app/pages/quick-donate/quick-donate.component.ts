@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../services/api.service';
@@ -36,6 +36,7 @@ const TREE_QUICK_PICKS = [5, 10, 20, 50];
 })
 export class QuickDonateComponent implements OnInit {
     user: any = null;
+    profile: any = null;
     projectId: string | null = null;
     projectLoaded = false;
 
@@ -58,6 +59,7 @@ export class QuickDonateComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private api: ApiService,
         private projectService: ProjectService,
         private toast: ToastService,
@@ -72,9 +74,25 @@ export class QuickDonateComponent implements OnInit {
             return;
         }
         try { this.user = JSON.parse(localStorage.getItem('user') || 'null'); } catch { this.user = null; }
+
+        // Coming back from the profile form (?cards=1): restore the post-donation
+        // card view so the donor picks up exactly where they left off.
+        if (this.route.snapshot.queryParamMap.get('cards') === '1') {
+            this.restoreCompletedDonation();
+        }
+
         if (this.user?.referralCode) {
             this.referralUrl = `${window.location.origin}/register?ref=${this.user.referralCode}`;
         }
+        // Needed to decide, per card, whether the donor still has to fill in
+        // their profile or can go straight to the feature.
+        this.api.getProfile().subscribe({
+            next: (res: any) => this.zone.run(() => {
+                if (res?.success) this.profile = res.data;
+                this.cdr.markForCheck();
+            }),
+            error: () => { /* leaves profile null → cards route to /profile */ }
+        });
         this.projectService.getBySlug('roots').subscribe({
             next: (res: any) => this.zone.run(() => {
                 this.projectId = res?.data?.id || null;
@@ -168,6 +186,7 @@ export class QuickDonateComponent implements OnInit {
                     this.completedTrees = trees;
                     this.completedAmount = amount;
                     this.donationComplete = true;
+                    this.rememberCompletedDonation(trees, amount);
                     this.toast.success('Thank you for your donation!');
                 }
                 this.cdr.markForCheck();
@@ -193,14 +212,108 @@ export class QuickDonateComponent implements OnInit {
         });
     }
 
-    goRequest80G(): void {
-        // Profile page hosts the 80G / PAN / address collection flow.
-        this.router.navigate(['/profile'], { queryParams: { intent: '80g' } });
+    // ── Post-donation card view persistence ─────────────────────────────
+    // The donor leaves this page to fill in their profile and comes straight
+    // back to the cards, so the "what next" summary has to outlive the trip.
+    // sessionStorage (not localStorage) keeps it scoped to this browser tab.
+
+    private static readonly LAST_DONATION_KEY = 'quickDonateLast';
+
+    private rememberCompletedDonation(trees: number, amount: number): void {
+        try {
+            sessionStorage.setItem(
+                QuickDonateComponent.LAST_DONATION_KEY,
+                JSON.stringify({ trees, amount })
+            );
+        } catch { /* private-mode storage failure is non-fatal */ }
     }
 
-    /** Any post-donation next-step card sends the donor to complete their profile. */
+    private restoreCompletedDonation(): void {
+        try {
+            const raw = sessionStorage.getItem(QuickDonateComponent.LAST_DONATION_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            this.completedTrees = saved?.trees ?? 0;
+            this.completedAmount = saved?.amount ?? 0;
+            this.donationComplete = true;
+        } catch { /* fall through to the normal donate form */ }
+    }
+
+    // ── Profile completeness (same rules the dashboard gates on) ────────
+
+    /** Address is the shared prerequisite for every post-donation action. */
+    private get addressComplete(): boolean {
+        const p = this.profile;
+        return !!(p?.addressLine1 && p?.city && p?.state && p?.pincode);
+    }
+
+    get isProfileComplete(): boolean {
+        const p = this.profile;
+        if (!p) return false;
+        if (p.userType === 'student' && (!p.classGrade || !p.schoolName)) return false;
+        if (p.userType === 'organization' && (!p.organizationName || !p.panNumber)) return false;
+        return this.addressComplete;
+    }
+
+    /** An 80G receipt additionally needs a well-formed PAN. */
+    get is80gProfileComplete(): boolean {
+        const pan = (this.profile?.panNumber || '').trim();
+        return /^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(pan) && this.addressComplete;
+    }
+
+    /**
+     * Send the donor to the profile form. `welcome=1` greets them with the
+     * "why we need this" dialog first, so the form doesn't land cold.
+     */
+    private goToProfileForm(intent?: string): void {
+        const queryParams: any = { welcome: 1 };
+        if (intent) queryParams.intent = intent;
+        this.router.navigate(['/profile'], { queryParams });
+    }
+
+    /** Kept for the older template binding / register CTA path. */
     goToProfile(): void {
-        this.router.navigate(['/profile']);
+        this.goToProfileForm();
+    }
+
+    // ── 4-card destinations ─────────────────────────────────────────────
+    // Profile already filled in → straight to the feature.
+    // Still missing details  → the profile form, with the welcome dialog.
+
+    goRequest80G(): void {
+        if (!this.is80gProfileComplete) {
+            this.goToProfileForm('80g');
+            return;
+        }
+        this.router.navigate(['/dashboard'], { queryParams: { focus: '80g' } });
+    }
+
+    goRefer(): void {
+        if (!this.isProfileComplete) {
+            this.goToProfileForm('referral');
+            return;
+        }
+        this.router.navigate(['/dashboard'], { queryParams: { focus: 'referral' } });
+    }
+
+    goTreeGrowth(): void {
+        if (!this.isProfileComplete) {
+            this.goToProfileForm('growth');
+            return;
+        }
+        // The tracker itself isn't built yet, so point the donor at the
+        // coming-soon card on the dashboard, highlighted like the others.
+        this.router.navigate(['/dashboard'], { queryParams: { focus: 'growth' } });
+    }
+
+    goNameTree(): void {
+        if (!this.isProfileComplete) {
+            this.goToProfileForm('name-tree');
+            return;
+        }
+        // Tree naming isn't built yet — same reasoning as the growth tracker.
+        this.toast.success("Tree naming is coming soon — your trees are tagged and waiting for a name.");
+        this.cdr.markForCheck();
     }
 
     requestTreeCertificate(): void {
@@ -237,6 +350,7 @@ export class QuickDonateComponent implements OnInit {
         this.completedTrees = 0;
         this.completedAmount = 0;
         this.treeCertRequested = false;
+        try { sessionStorage.removeItem(QuickDonateComponent.LAST_DONATION_KEY); } catch { /* noop */ }
         this.cdr.markForCheck();
     }
 

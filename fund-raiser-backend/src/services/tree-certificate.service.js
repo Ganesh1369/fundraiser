@@ -6,10 +6,13 @@ const path = require('path');
 // "Certificate of Tree Donation" — a celebratory PDF emailed to donors who
 // fund tree planting (ROOTS). Landscape A4, matched to the ICE brand design:
 //   - the real ICE logo (embedded from ice_logo.svg as vectors)
-//   - Cinzel (engraved serif) for the CERTIFICATE title
-//   - Great Vibes (script) for the donor name
-//   - Noto Sans for body/values — includes the ₹ glyph
+//   - Noto Sans throughout for a clean modern type scale — includes the ₹ glyph
+//   - Cinzel / Great Vibes remain registered for the optional formal variant
 // Fonts + logo live in ../assets and are bundled with the app.
+//
+// Layout is a modern branded one: solid green header band with the logo on a
+// white plaque, a clear type hierarchy, and the facts in card-style blocks
+// rather than the earlier ornate bordered/scripted treatment.
 
 const ASSETS = path.join(__dirname, '..', 'assets');
 const FONTS = path.join(ASSETS, 'fonts');
@@ -24,8 +27,12 @@ const LOGO_SVG = fs.readFileSync(path.join(ASSETS, 'ice_logo.svg'), 'utf8');
 const GREEN = '#2f7d4f';    // title + accents (matches logo green family)
 const GREEN_DK = '#1f5c39';
 const NAVY = '#16305b';     // labels (matches logo navy)
-const CREAM = '#f6f7f1';    // page background
+const CREAM = '#f6f7f1';    // retained: soft fill for the emphasised stat card
 const TEXT = '#374151';
+const WHITE = '#ffffff';
+const BORDER = '#e2e8f0';   // hairline card borders
+const SOFT = '#eef6f0';     // tinted fill behind the headline stat
+const MUTED = '#6b7280';
 
 const fmtCurrency = (amount) =>
     '₹' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -62,112 +69,117 @@ const drawCertificate = (doc, data) => {
     const W = doc.page.width;   // ~841.89
     const H = doc.page.height;  // ~595.28
     const cx = W / 2;
+    const SIDE = 56;                    // page side gutter
+    const contentW = W - SIDE * 2;
 
-    // ===== Background + decorative border =====
-    doc.rect(0, 0, W, H).fill(CREAM);
-    doc.lineWidth(2).strokeColor(GREEN).rect(18, 18, W - 36, H - 36).stroke();
-    doc.lineWidth(0.75).strokeColor(GREEN).rect(26, 26, W - 52, H - 52).stroke();
+    // ===== Page =====
+    doc.rect(0, 0, W, H).fill(WHITE);
 
-    // ===== Bottom layered waves =====
-    doc.save();
-    doc.opacity(0.45).moveTo(0, H - 62)
-        .bezierCurveTo(W * 0.28, H - 100, W * 0.6, H - 26, W, H - 74)
-        .lineTo(W, H).lineTo(0, H).fillColor(GREEN).fill();
-    doc.opacity(1).moveTo(0, H - 48)
-        .bezierCurveTo(W * 0.30, H - 16, W * 0.62, H - 88, W, H - 50)
-        .lineTo(W, H).lineTo(0, H).fillColor(GREEN_DK).fill();
-    doc.restore();
+    // ===== Decorative corner ribbons (navy + green) — top-left & bottom-right =====
+    // sx/sy flip the shape into the opposite corner.
+    const cornerRibbon = (ox, oy, sx, sy) => {
+        doc.save();
+        doc.moveTo(ox, oy)
+            .lineTo(ox + sx * 300, oy)
+            .bezierCurveTo(ox + sx * 180, oy + sy * 62, ox + sx * 130, oy + sy * 78, ox, oy + sy * 190)
+            .fill(NAVY);
+        doc.moveTo(ox, oy)
+            .lineTo(ox + sx * 215, oy)
+            .bezierCurveTo(ox + sx * 128, oy + sy * 44, ox + sx * 84, oy + sy * 54, ox, oy + sy * 132)
+            .fill(GREEN);
+        doc.restore();
+    };
+    cornerRibbon(0, 0, 1, 1);
+    cornerRibbon(W, H, -1, -1);
 
-    // ===== Header: real ICE logo (centred) =====
-    const logoW = 250;
-    const logoH = logoW * 44 / 197;
+    // ===== Border frame =====
+    doc.lineWidth(1.5).strokeColor(GREEN).rect(28, 28, W - 56, H - 56).stroke();
+    doc.lineWidth(0.6).strokeColor(GREEN_DK).rect(33, 33, W - 66, H - 66).stroke();
+
+    // ===== Logo plaque (top-left, sits over the ribbon) =====
+    const logoW = 150, logoH = logoW * 44 / 197;
+    const plW = logoW + 32, plH = logoH + 22, plX = 46, plY = 42;
+    doc.roundedRect(plX, plY, plW, plH, 10).fill(WHITE);
+    doc.lineWidth(0.8).strokeColor(GREEN).roundedRect(plX, plY, plW, plH, 10).stroke();
     try {
-        SVGtoPDF(doc, LOGO_SVG, cx - logoW / 2, 40, { width: logoW, height: logoH, assumePt: true });
+        // No assumePt: let width/height scale the SVG's viewBox to fit the plaque.
+        SVGtoPDF(doc, LOGO_SVG, plX + (plW - logoW) / 2, plY + (plH - logoH) / 2, {
+            width: logoW, height: logoH
+        });
     } catch (e) {
-        // Fallback to text wordmark if SVG embedding fails.
-        doc.font('SansBold').fontSize(28).fillColor(NAVY).text('ICE', 0, 46, { align: 'center' });
+        doc.font('SansBold').fontSize(20).fillColor(NAVY).text('ICE', plX, plY + 17, { width: plW, align: 'center' });
     }
+
+    // ===== Award seal (top-right) =====
+    const sCx = W - 104, sCy = 92, sR = 40;
+    doc.save();
+    doc.moveTo(sCx - 15, sCy + 24).lineTo(sCx - 24, sCy + 64).lineTo(sCx - 5, sCy + 52).lineTo(sCx - 3, sCy + 34).fill(GREEN_DK);
+    doc.moveTo(sCx + 15, sCy + 24).lineTo(sCx + 24, sCy + 64).lineTo(sCx + 5, sCy + 52).lineTo(sCx + 3, sCy + 34).fill(GREEN_DK);
+    doc.circle(sCx, sCy, sR).fill(GREEN);
+    doc.lineWidth(2).strokeColor(WHITE).circle(sCx, sCy, sR - 5).stroke();
+    drawLeaf(doc, sCx, sCy - 9, 9, WHITE);
+    doc.font('SansBold').fontSize(8).fillColor(WHITE)
+        .text('TREE', sCx - 30, sCy + 4, { width: 60, align: 'center', characterSpacing: 1 });
+    doc.font('SansBold').fontSize(8).fillColor(WHITE)
+        .text('DONATION', sCx - 34, sCy + 14, { width: 68, align: 'center' });
+    doc.restore();
 
     // ===== Title =====
-    doc.font('Cinzel').fontSize(44).fillColor(GREEN)
-        .text('CERTIFICATE', 0, 106, { align: 'center', characterSpacing: 3 });
-    doc.font('SansBold').fontSize(15).fillColor(NAVY)
-        .text('OF TREE DONATION', 0, 162, { align: 'center', characterSpacing: 5 });
-    drawLeaf(doc, cx, 190, 6, GREEN);
+    doc.font('Cinzel').fontSize(42).fillColor(NAVY)
+        .text('CERTIFICATE', SIDE, 148, { width: contentW, align: 'center', characterSpacing: 2 });
+
+    // Ribbon banner "OF TREE DONATION"
+    const banW = 300, banH2 = 30, banX = cx - banW / 2, banY = 204;
+    doc.save();
+    doc.moveTo(banX - 15, banY + 3).lineTo(banX, banY + banH2 / 2).lineTo(banX - 15, banY + banH2 - 3).fill(GREEN_DK);
+    doc.moveTo(banX + banW + 15, banY + 3).lineTo(banX + banW, banY + banH2 / 2).lineTo(banX + banW + 15, banY + banH2 - 3).fill(GREEN_DK);
+    doc.rect(banX, banY, banW, banH2).fill(GREEN);
+    doc.font('SansBold').fontSize(13).fillColor(WHITE)
+        .text('OF TREE DONATION', banX, banY + 8, { width: banW, align: 'center', characterSpacing: 3 });
+    doc.restore();
 
     // ===== Presented to =====
-    doc.font('SansBold').fontSize(12).fillColor(NAVY)
-        .text('PROUDLY PRESENTED TO', 0, 206, { align: 'center', characterSpacing: 2 });
+    doc.font('SansBold').fontSize(10).fillColor(NAVY)
+        .text('THIS CERTIFICATE IS PROUDLY PRESENTED TO', SIDE, 256, {
+            width: contentW, align: 'center', characterSpacing: 2
+        });
 
-    doc.font('Script').fontSize(46).fillColor(GREEN)
-        .text(donorName || 'Valued Donor', 0, 226, { align: 'center' });
+    doc.font('Script').fontSize(50).fillColor(GREEN)
+        .text(donorName || 'Valued Donor', SIDE, 272, {
+            width: contentW, align: 'center', lineBreak: false, ellipsis: true
+        });
 
-    const nameW = Math.min(380, W - 200);
-    doc.lineWidth(0.75).strokeColor(GREEN)
-        .moveTo(cx - nameW / 2, 296).lineTo(cx + nameW / 2, 296).stroke();
+    const ruleW = 300, ruleY = 346;
+    doc.lineWidth(1).strokeColor(NAVY).moveTo(cx - ruleW / 2, ruleY).lineTo(cx + ruleW / 2, ruleY).stroke();
 
-    // ===== Thank-you line =====
-    doc.font('Sans').fontSize(12).fillColor(TEXT)
-        .text('Thank you for your contribution towards\na greener and more sustainable future.',
-            0, 308, { align: 'center', lineGap: 3 });
-
-    // ===== Highlighted project block (right after the thank-you line) =====
-    const boxW = 380, boxH = 60;
-    const boxX = cx - boxW / 2, boxY = 348;
-    doc.save();
-    doc.roundedRect(boxX, boxY, boxW, boxH, 10).fillColor('#eaf4ea').fill();
-    doc.lineWidth(1).strokeColor(GREEN).roundedRect(boxX, boxY, boxW, boxH, 10).stroke();
-    doc.restore();
-    doc.font('SansBold').fontSize(9).fillColor(NAVY)
-        .text('PROJECT NAME', 0, boxY + 9, { align: 'center', characterSpacing: 2 });
-    doc.font('Cinzel').fontSize(19).fillColor(GREEN)
-        .text((projectName || 'ROOTS').toUpperCase(), 0, boxY + 21, { align: 'center' });
-    if (projectTagline) {
-        doc.font('Sans').fontSize(9).fillColor(TEXT)
-            .text(projectTagline, 0, boxY + 46, { align: 'center' });
-    }
-
-    // ===== Stat row: Trees / Amount / Date =====
-    const rowY = 430;
-    const cols = [
-        { label: 'TREES DONATED', value: String(trees), icon: 'leaf' },
-        { label: 'AMOUNT', value: fmtCurrency(amount), icon: 'rupee' },
-        { label: 'DATE', value: fmtDate(date), icon: 'date' }
-    ];
-    const colW = 230;
-    const startX = cx - (colW * cols.length) / 2;
-
-    cols.forEach((c, i) => {
-        const x = startX + i * colW;
-        const iconCx = x + 26, iconCy = rowY + 16;
-
-        doc.lineWidth(1.2).strokeColor(GREEN).circle(iconCx, iconCy, 16).stroke();
-        if (c.icon === 'leaf') {
-            drawLeaf(doc, iconCx, iconCy, 8, GREEN);
-        } else if (c.icon === 'rupee') {
-            doc.font('SansBold').fontSize(14).fillColor(GREEN)
-                .text('₹', iconCx - 9, iconCy - 8, { width: 18, align: 'center' });
-        } else {
-            doc.lineWidth(1.2).strokeColor(GREEN).rect(iconCx - 8, iconCy - 7, 16, 14).stroke();
-            doc.moveTo(iconCx - 8, iconCy - 2).lineTo(iconCx + 8, iconCy - 2).stroke();
-        }
-
-        const textX = x + 52;
-        doc.font('SansBold').fontSize(10).fillColor(NAVY)
-            .text(c.label, textX, rowY + 4, { characterSpacing: 1 });
-        doc.font('SansBold').fontSize(15).fillColor(TEXT)
-            .text(c.value, textX, rowY + 18);
-
-        if (i < cols.length - 1) {
-            doc.lineWidth(0.75).strokeColor(GREEN)
-                .moveTo(x + colW - 10, rowY - 2).lineTo(x + colW - 10, rowY + 42).stroke();
-        }
-    });
-
-    // ===== Tagline =====
-    drawLeaf(doc, cx, 486, 5, GREEN);
+    // ===== Bold summary line + paragraph =====
+    const treesLabel = `${trees} TREE${Number(trees) === 1 ? '' : 'S'}`;
     doc.font('SansBold').fontSize(11).fillColor(NAVY)
-        .text('TOGETHER, WE GROW A GREENER TOMORROW.', 0, 498, { align: 'center', characterSpacing: 1 });
+        .text(`FOR FUNDING ${treesLabel}  •  ${fmtCurrency(amount)}`, SIDE, ruleY + 12, {
+            width: contentW, align: 'center', characterSpacing: 1
+        });
+
+    const para = `Thank you for your generous contribution to the ${projectName || 'ROOTS'} project` +
+        `${projectTagline ? ' — ' + projectTagline : ''}. Your support helps restore our forests, ` +
+        `one tree at a time, towards a greener and more sustainable future.`;
+    doc.font('Sans').fontSize(10).fillColor(MUTED)
+        .text(para, cx - 290, ruleY + 34, { width: 580, align: 'center', lineGap: 2.5 });
+
+    // ===== Signatures =====
+    const sigY = H - 86, sigW = 180;
+    const lX = cx - 210, rX = cx + 30;
+    // left — authorised signatory
+    doc.lineWidth(1).strokeColor(NAVY).moveTo(lX, sigY).lineTo(lX + sigW, sigY).stroke();
+    doc.font('SansBold').fontSize(9).fillColor(NAVY)
+        .text('AUTHORISED SIGNATORY', lX, sigY + 6, { width: sigW, align: 'center', characterSpacing: 1 });
+    doc.font('Sans').fontSize(8).fillColor(MUTED)
+        .text('ICE Network', lX, sigY + 18, { width: sigW, align: 'center' });
+    // right — date
+    doc.font('Sans').fontSize(11).fillColor(TEXT)
+        .text(fmtDate(date), rX, sigY - 15, { width: sigW, align: 'center' });
+    doc.lineWidth(1).strokeColor(NAVY).moveTo(rX, sigY).lineTo(rX + sigW, sigY).stroke();
+    doc.font('SansBold').fontSize(9).fillColor(NAVY)
+        .text('DATE', rX, sigY + 6, { width: sigW, align: 'center', characterSpacing: 1 });
 };
 
 /** Render the certificate to a writable stream (file / HTTP response). */

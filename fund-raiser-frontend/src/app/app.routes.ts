@@ -51,6 +51,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/registrations/admin-registrations.component').then(m => m.AdminRegistrationsComponent)
             },
             {
+                path: 'referrals',
+                loadComponent: () => import('./pages/admin/referrals/admin-referrals.component').then(m => m.AdminReferralsComponent)
+            },
+            {
                 path: 'donations',
                 loadComponent: () => import('./pages/admin/donations/admin-donations.component').then(m => m.AdminDonationsComponent)
             },

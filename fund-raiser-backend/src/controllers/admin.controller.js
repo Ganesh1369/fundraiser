@@ -20,6 +20,15 @@ exports.getRegistrations = async (req, res, next) => {
     }
 };
 
+exports.getReferrals = async (req, res, next) => {
+    try {
+        const data = await adminService.getReferrals(req.query);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.exportRegistrations = async (req, res, next) => {
     try {
         const buffer = await adminService.exportRegistrations(req.query);

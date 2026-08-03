@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -41,7 +41,14 @@ interface ReferralStats {
     referralCount: number;
     referralCode: string;
     referralLink: string;
-    recentReferrals: { name: string; created_at: string }[];
+    recentReferrals: {
+        name: string;
+        created_at: string;
+        totalDonated: number;
+        donationCount: number;
+    }[];
+    /** Sum of what everyone who used this code has donated. */
+    referralRaised?: number;
 }
 
 interface CertificateRequest {
@@ -104,7 +111,7 @@ interface ProjectDetail extends ProjectCard {
     styleUrl: './dashboard.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
     user: User | null = null;
     donations: Donation[] = [];
     summary: DonationSummary = { totalDonations: 0, totalAmount: 0, thisMonthAmount: 0 };
@@ -160,6 +167,11 @@ export class DashboardComponent implements OnInit {
 
     // Post-payment celebration: a friendly tree mascot pops in to thank the donor.
     showThankYouTree = false;
+
+    /** Section the donor was deep-linked to, ringed in green while set. */
+    focusHighlight: 'referral' | '80g' | 'growth' | null = null;
+    private focusHighlightTimer: any = null;
+    private static readonly FOCUS_HIGHLIGHT_MS = 60_000;
     thankYouTreeMessage = '';
     private readonly thankYouTreeMessages = [
         'Because of you, I get to grow a little taller. Thank you for your kindness!',
@@ -198,6 +210,69 @@ export class DashboardComponent implements OnInit {
         this.loadProjects();
         this.loadEvents();
         this.handleDonateDeepLink();
+        this.handleFocusDeepLink();
+    }
+
+    ngOnDestroy(): void {
+        if (this.focusHighlightTimer) clearTimeout(this.focusHighlightTimer);
+    }
+
+    /**
+     * Deep-link entry from the post-donation cards on /quick-donate.
+     *   /dashboard?focus=80g       → the 80G Certificate Requests section
+     *   /dashboard?focus=referral  → the Invite & Earn card
+     *   /dashboard?focus=growth    → the coming-soon teaser card
+     * Scrolls the section into view and rings it in green for a minute so the
+     * donor can see what they were sent to. Quick-donate only sends these once
+     * the profile is complete, so there is no gate here.
+     */
+    private handleFocusDeepLink(): void {
+        const focus = this.route.snapshot.queryParamMap.get('focus') as
+            'referral' | '80g' | 'growth' | null;
+        if (focus !== '80g' && focus !== 'referral' && focus !== 'growth') return;
+
+        // Wait for the data the target section renders from, otherwise we scroll
+        // to an element that does not exist yet. Capped so a slow API never
+        // strands the donor mid-page.
+        const started = Date.now();
+        const tick = () => {
+            const ready = this.profile && (focus === 'referral' ? !!this.referralStats : true);
+            if (!ready && Date.now() - started < 5000) {
+                setTimeout(tick, 150);
+                return;
+            }
+
+            const targetId = focus === '80g' ? 'certificates-card'
+                : focus === 'growth' ? 'coming-soon-card'
+                : 'referral-card';
+            const el = document.getElementById(targetId);
+
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                this.setFocusHighlight(focus);
+            } else if (focus === '80g') {
+                // No certificate requests yet, so that section isn't rendered —
+                // open the request modal instead of scrolling nowhere.
+                this.openCertificateModal();
+            }
+
+            // Consume the param so Back/refresh doesn't re-fire the action.
+            this.router.navigate([], { relativeTo: this.route, queryParams: { focus: null }, queryParamsHandling: 'merge', replaceUrl: true });
+            this.cdr.detectChanges();
+        };
+        setTimeout(tick, 150);
+    }
+
+    /** Green rotating ring on the section the donor was sent to. Clears itself. */
+    private setFocusHighlight(target: 'referral' | '80g' | 'growth'): void {
+        if (this.focusHighlightTimer) clearTimeout(this.focusHighlightTimer);
+        this.focusHighlight = target;
+        this.cdr.detectChanges();
+        this.focusHighlightTimer = setTimeout(() => {
+            this.focusHighlight = null;
+            this.focusHighlightTimer = null;
+            this.cdr.detectChanges();
+        }, DashboardComponent.FOCUS_HIGHLIGHT_MS);
     }
 
     /**

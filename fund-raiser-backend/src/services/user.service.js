@@ -121,19 +121,40 @@ const getReferrals = async (userId, referralCode) => {
         [userId]
     );
 
+    // Each person who signed up with this code, plus what they have actually
+    // given. Registration fees are excluded: they earn no referral points, so
+    // counting them here would not match the points total shown alongside.
     const referredResult = await db.query(
-        `SELECT name, created_at FROM users WHERE referred_by = ? ORDER BY created_at DESC LIMIT 10`,
+        `SELECT u.name, u.created_at,
+                COALESCE(SUM(CASE WHEN d.status = 'completed' AND d.purpose = 'donation'
+                                  THEN d.amount END), 0) AS total_donated,
+                COUNT(CASE WHEN d.status = 'completed' AND d.purpose = 'donation'
+                           THEN 1 END) AS donation_count
+         FROM users u
+         LEFT JOIN donations d ON d.user_id = u.id
+         WHERE u.referred_by = ?
+         GROUP BY u.id, u.name, u.created_at
+         ORDER BY u.created_at DESC
+         LIMIT 50`,
         [userId]
     );
 
     const stats = statsResult.rows[0] || { referral_points: 0, referral_count: 0 };
+    const recentReferrals = referredResult.rows.map(r => ({
+        name: r.name,
+        created_at: r.created_at,
+        totalDonated: parseFloat(r.total_donated) || 0,
+        donationCount: parseInt(r.donation_count) || 0
+    }));
 
     return {
         referralPoints: parseInt(stats.referral_points),
         referralCount: parseInt(stats.referral_count),
         referralCode,
         referralLink: `${process.env.FRONTEND_URL}/register?ref=${referralCode}`,
-        recentReferrals: referredResult.rows
+        recentReferrals,
+        // Total raised through this code — the headline the referrer cares about.
+        referralRaised: recentReferrals.reduce((sum, r) => sum + r.totalDonated, 0)
     };
 };
 

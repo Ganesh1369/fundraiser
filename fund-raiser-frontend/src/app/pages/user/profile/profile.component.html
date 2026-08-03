@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-neutral-50 bg-[url('/34665942_5_123dasa1.svg')] bg-cover bg-center bg-fixed">
     <!-- Topbar (same as dashboard) -->
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
-        <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-2.5">
             <a routerLink="/" class="flex items-center gap-2 text-lg font-bold text-accent no-underline shrink-0">
                 <img src="/ice_logo.svg" alt="ICE" class="h-6">
                 <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
@@ -22,73 +22,107 @@
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-5 py-8">
-        <!-- Breadcrumb -->
-        <nav class="flex items-center gap-1.5 text-sm mb-6">
-            <a routerLink="/dashboard" class="text-neutral-400 hover:text-primary transition-colors no-underline">Dashboard</a>
-            <lucide-icon name="chevron-right" class="w-3.5 h-3.5 text-neutral-300"></lucide-icon>
-            <span class="text-accent font-medium">Profile</span>
-        </nav>
+    <!-- Welcome note — donors arriving from the post-donation cards (?welcome=1) -->
+    @if (showWelcome) {
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-accent/40 backdrop-blur-sm px-5">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-modal p-6 md:p-7 text-center animate-[fadeIn_0.2s_ease-out]">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <lucide-icon name="sprout" class="w-7 h-7 text-primary"></lucide-icon>
+            </div>
+            <h2 class="text-xl font-bold text-accent mb-2">Welcome, {{ firstNameOf(profile?.name || user?.name) }}</h2>
+            <p class="text-sm text-neutral-500 leading-relaxed mb-6 m-0">
+                Your trees are already in good hands. Sharing a few details lets us put your name on your
+                certificates and keep your tree records where you can find them — and it opens up your
+                dashboard. It only takes a minute.
+            </p>
+            <button type="button" (click)="dismissWelcome()"
+                class="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-500 transition-colors">
+                OK
+            </button>
+        </div>
+    </div>
+    }
+
+    <main class="max-w-5xl mx-auto px-4 md:px-5 py-4">
         @if (isLoading) {
         <div class="flex items-center justify-center py-20">
             <span class="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></span>
         </div>
         } @else {
 
-        <!-- Profile Header -->
-        <div class="flex flex-col items-center mb-8">
+        <!-- Identity band: avatar + name on the left, verified contact chips on the right -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
             <input type="file" #avatarInput class="hidden" accept="image/jpeg,image/png,image/webp" (change)="onAvatarFileSelected($event)">
 
-            <!-- Avatar with dropdown menu -->
-            <div class="relative mb-4">
-                <button class="relative group w-24 h-24 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
-                    (click)="toggleAvatarMenu()">
-                    @if (profile?.profilePic) {
-                    <img [src]="profile.profilePic" alt="Profile" class="w-full h-full object-cover">
-                    } @else {
-                    <div class="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-2xl font-bold">
-                        {{ getInitials(profile?.name) }}
-                    </div>
-                    }
-                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        @if (isUploading) {
-                        <span class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            <div class="flex items-center gap-3.5 min-w-0">
+                <!-- Avatar with dropdown menu -->
+                <div class="relative shrink-0">
+                    <button class="relative group w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
+                        (click)="toggleAvatarMenu()">
+                        @if (profile?.profilePic) {
+                        <img [src]="profile.profilePic" alt="Profile" class="w-full h-full object-cover">
                         } @else {
-                        <lucide-icon name="camera" class="w-6 h-6 text-white"></lucide-icon>
+                        <div class="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-xl font-bold">
+                            {{ getInitials(profile?.name) }}
+                        </div>
+                        }
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            @if (isUploading) {
+                            <span class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            } @else {
+                            <lucide-icon name="camera" class="w-5 h-5 text-white"></lucide-icon>
+                            }
+                        </div>
+                    </button>
+
+                    @if (showAvatarMenu) {
+                    <div class="absolute top-full left-0 mt-2 w-44 bg-white rounded-xl shadow-elevated border border-neutral-100 py-1.5 z-20 animate-[fadeIn_0.15s_ease-out]">
+                        @if (profile?.profilePic) {
+                        <button class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                            (click)="viewImage()">
+                            <lucide-icon name="eye" class="w-4 h-4 text-neutral-400"></lucide-icon>
+                            View Photo
+                        </button>
+                        }
+                        <button class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                            (click)="changeImage(avatarInput)">
+                            <lucide-icon name="camera" class="w-4 h-4 text-neutral-400"></lucide-icon>
+                            {{ profile?.profilePic ? 'Change Photo' : 'Upload Photo' }}
+                        </button>
+                        @if (profile?.profilePic) {
+                        <button class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            (click)="removeImage()">
+                            <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                            Remove Photo
+                        </button>
                         }
                     </div>
-                </button>
-
-                <!-- Avatar dropdown menu -->
-                @if (showAvatarMenu) {
-                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-44 bg-white rounded-xl shadow-elevated border border-neutral-100 py-1.5 z-20 animate-[fadeIn_0.15s_ease-out]">
-                    @if (profile?.profilePic) {
-                    <button class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                        (click)="viewImage()">
-                        <lucide-icon name="eye" class="w-4 h-4 text-neutral-400"></lucide-icon>
-                        View Photo
-                    </button>
-                    }
-                    <button class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                        (click)="changeImage(avatarInput)">
-                        <lucide-icon name="camera" class="w-4 h-4 text-neutral-400"></lucide-icon>
-                        {{ profile?.profilePic ? 'Change Photo' : 'Upload Photo' }}
-                    </button>
-                    @if (profile?.profilePic) {
-                    <button class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                        (click)="removeImage()">
-                        <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                        Remove Photo
-                    </button>
+                    <!-- Backdrop to close menu -->
+                    <div class="fixed inset-0 z-10" (click)="showAvatarMenu = false"></div>
                     }
                 </div>
-                <!-- Backdrop to close menu -->
-                <div class="fixed inset-0 z-10" (click)="showAvatarMenu = false"></div>
-                }
+
+                <div class="min-w-0">
+                    <h1 class="text-xl font-bold text-accent mb-0.5 truncate">{{ profile?.name || 'User' }}</h1>
+                    <p class="text-xs text-neutral-500 m-0 capitalize">{{ profile?.userType }} Account</p>
+                </div>
             </div>
 
-            <h1 class="text-2xl font-bold text-accent mb-1">{{ profile?.name || 'User' }}</h1>
-            <p class="text-sm text-neutral-500 m-0 capitalize">{{ profile?.userType }} Account</p>
+            <!-- Email / phone: read-only, so they live as chips instead of full form rows -->
+            <div class="sm:ml-auto flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/80 border border-neutral-100 rounded-full text-xs text-accent max-w-full">
+                    <lucide-icon name="mail" class="w-3.5 h-3.5 text-neutral-400 shrink-0"></lucide-icon>
+                    <span class="truncate">{{ profile?.email }}</span>
+                    <lucide-icon name="badge-check" class="w-3.5 h-3.5 text-primary shrink-0"></lucide-icon>
+                </span>
+                @if (profile?.phone) {
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/80 border border-neutral-100 rounded-full text-xs text-accent">
+                    <lucide-icon name="smartphone" class="w-3.5 h-3.5 text-neutral-400 shrink-0"></lucide-icon>
+                    <span class="truncate">{{ profile?.phone }}</span>
+                    <lucide-icon name="badge-check" class="w-3.5 h-3.5 text-primary shrink-0"></lucide-icon>
+                </span>
+                }
+            </div>
         </div>
 
         <!-- Fullscreen Image Viewer -->
@@ -102,174 +136,147 @@
         </div>
         }
 
-        <!-- Profile Form -->
+        <!-- Profile Form — two columns on desktop so it fits one screen -->
         <div class="bg-white rounded-2xl shadow-soft overflow-hidden">
-            <!-- Email (non-editable) -->
-            <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50">
-                <label class="block text-xs font-medium text-neutral-400 mb-1">Email</label>
-                <div class="flex items-center gap-2">
-                    <lucide-icon name="mail" class="w-4 h-4 text-neutral-400"></lucide-icon>
-                    <span class="text-sm font-medium text-accent">{{ profile?.email }}</span>
-                    <span class="px-2 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-full ml-auto">Verified</span>
-                </div>
-            </div>
+            <div class="p-5 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5">
 
-            <!-- Phone (non-editable) -->
-            <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50">
-                <label class="block text-xs font-medium text-neutral-400 mb-1">Phone</label>
-                <div class="flex items-center gap-2">
-                    <lucide-icon name="smartphone" class="w-4 h-4 text-neutral-400"></lucide-icon>
-                    <span class="text-sm font-medium text-accent">{{ profile?.phone }}</span>
-                    <span class="px-2 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-full ml-auto">Verified</span>
-                </div>
-            </div>
-
-            <div class="p-6">
-                <!-- Basic Info -->
-                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4">Basic Information</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Full Name</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.name" placeholder="Full name">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">User Type</label>
-                        <select class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.userType">
-                            <option value="individual">Individual</option>
-                            <option value="student">Student</option>
-                            <option value="organization">Organization</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Address -->
-                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Address</h3>
-                <div class="flex flex-col gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Address Line 1</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.addressLine1" placeholder="Door no, Street name">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Address Line 2</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.addressLine2" placeholder="Landmark (optional)">
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- ── Column 1: identity + address ── -->
+                <div>
+                    <h3 class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2.5">Basic Information</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                         <div>
-                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">Area</label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Full Name</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.name" placeholder="Full name">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">User Type</label>
+                            <select class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm text-neutral-700 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.userType">
+                                <option value="individual">Individual</option>
+                                <option value="student">Student</option>
+                                <option value="organization">Organization</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h3 class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2.5 pt-3 border-t border-neutral-100">Address</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Address Line 1</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.addressLine1" placeholder="Door no, Street name">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Address Line 2</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.addressLine2" placeholder="Landmark (optional)">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Area</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                 [(ngModel)]="profileForm.area" placeholder="Area / Locality">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">City</label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">City</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                 [(ngModel)]="profileForm.city" placeholder="City">
                         </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">State</label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">State</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                 [(ngModel)]="profileForm.state" placeholder="State">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-600 mb-1.5">Pincode</label>
-                            <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Pincode</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                 [(ngModel)]="profileForm.pincode" placeholder="Pincode" maxlength="6">
                         </div>
                     </div>
                 </div>
 
-                <!-- Student Fields -->
-                @if (profileForm.userType === 'student') {
-                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Student Details</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Age</label>
-                        <input type="number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.age" placeholder="Age">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Class / Grade</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.classGrade" placeholder="e.g. 10th, B.Tech">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">School / College</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.schoolName" placeholder="School name">
-                    </div>
-                </div>
-                }
+                <!-- ── Column 2: type-specific details + tax ── -->
+                <div class="lg:border-l lg:border-neutral-100 lg:pl-6">
 
-                <!-- Tax & 80G (individuals + students) -->
-                @if (profileForm.userType === 'individual' || profileForm.userType === 'student') {
-                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1 pt-4 border-t border-neutral-100">Tax &amp; 80G</h3>
-                <p class="text-xs text-neutral-400 mb-3">Required for 80G income-tax exemption receipts.</p>
-                <div class="flex items-start gap-2.5 p-3 mb-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800">
-                    <lucide-icon name="info" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
-                    <p class="m-0">Your name on the 80G certificate must match the name on your PAN <strong>exactly</strong>. Editing the first/last name below updates your profile name automatically.</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">First Name (as on PAN)</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.firstName" (ngModelChange)="onPanNameInput()" placeholder="First name">
+                    <!-- Student Fields -->
+                    @if (profileForm.userType === 'student') {
+                    <h3 class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2.5">Student Details</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Age</label>
+                            <input type="number" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.age" placeholder="Age">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Class / Grade</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.classGrade" placeholder="e.g. 10th">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">School / College</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.schoolName" placeholder="School name">
+                        </div>
+                    </div>
+                    }
+
+                    <!-- Tax & 80G (individuals + students) -->
+                    @if (profileForm.userType === 'individual' || profileForm.userType === 'student') {
+                    <h3 class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1"
+                        [class.pt-3]="profileForm.userType === 'student'"
+                        [class.border-t]="profileForm.userType === 'student'"
+                        [class.border-neutral-100]="profileForm.userType === 'student'">Tax &amp; 80G</h3>
+                    <p class="text-[11px] text-neutral-400 mb-2.5">Optional — needed only for 80G income-tax exemption receipts.</p>
+                    <div class="flex items-start gap-2 p-2.5 mb-3 bg-amber-50 border border-amber-100 rounded-lg text-[11px] leading-snug text-amber-800">
+                        <lucide-icon name="info" class="w-3.5 h-3.5 shrink-0 mt-px"></lucide-icon>
+                        <p class="m-0">Names must match your PAN <strong>exactly</strong>. Editing these updates your profile name.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">First Name (as on PAN)</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.firstName" (ngModelChange)="onPanNameInput()" placeholder="First name">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Last Name (as on PAN)</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.lastName" (ngModelChange)="onPanNameInput()" placeholder="Last name">
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Last Name (as on PAN)</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.lastName" (ngModelChange)="onPanNameInput()" placeholder="Last name">
-                    </div>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number</label>
-                    <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
-                        [(ngModel)]="profileForm.panNumber" placeholder="ABCDE1234F" maxlength="10">
-                    <p class="text-xs text-neutral-400 mt-1.5">Format: 5 letters, 4 digits, 1 letter</p>
-                    <p class="text-xs text-primary mt-1.5 flex items-start gap-1.5">
-                        <lucide-icon name="info" class="w-3.5 h-3.5 shrink-0 mt-0.5"></lucide-icon>
-                        PAN is optional — but if you want an 80G tax-exemption certificate for your donations, please fill it in.
-                    </p>
-                </div>
-                }
-
-                <!-- Organization Fields -->
-                @if (profileForm.userType === 'organization') {
-                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Organization Details</h3>
-
-                <div class="flex items-start gap-2.5 p-3 mb-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800">
-                    <lucide-icon name="info" class="w-4 h-4 shrink-0 mt-0.5"></lucide-icon>
-                    <p class="m-0">Organization name must match the name on PAN <strong>exactly</strong> for 80G receipts.</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">Organization Name (as on PAN)</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                            [(ngModel)]="profileForm.organizationName" placeholder="Organization name">
-                    </div>
-                </div>
-                }
-
-                <!-- Tax Details — organizations only (individuals use the Tax & 80G PAN field above) -->
-                @if (profileForm.userType === 'organization') {
-                <h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 pt-4 border-t border-neutral-100">Tax Details</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-600 mb-1.5">PAN Number</label>
-                        <input type="text" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase"
+                        <label class="block text-xs font-medium text-neutral-500 mb-1">PAN Number</label>
+                        <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
                             [(ngModel)]="profileForm.panNumber" placeholder="ABCDE1234F" maxlength="10">
-                        <p class="text-xs text-neutral-400 mt-1.5">Required to issue 80G tax-exemption certificates for your donations.</p>
+                        <p class="text-[11px] text-neutral-400 mt-1">Format: 5 letters, 4 digits, 1 letter</p>
                     </div>
+                    }
+
+                    <!-- Organization Fields -->
+                    @if (profileForm.userType === 'organization') {
+                    <h3 class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2.5">Organization Details</h3>
+                    <div class="flex items-start gap-2 p-2.5 mb-3 bg-amber-50 border border-amber-100 rounded-lg text-[11px] leading-snug text-amber-800">
+                        <lucide-icon name="info" class="w-3.5 h-3.5 shrink-0 mt-px"></lucide-icon>
+                        <p class="m-0">Organization name must match the name on PAN <strong>exactly</strong> for 80G receipts.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">Organization Name (as on PAN)</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                [(ngModel)]="profileForm.organizationName" placeholder="Organization name">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 mb-1">PAN Number</label>
+                            <input type="text" class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all uppercase tracking-wider"
+                                [(ngModel)]="profileForm.panNumber" placeholder="ABCDE1234F" maxlength="10">
+                            <p class="text-[11px] text-neutral-400 mt-1">Required for 80G certificates.</p>
+                        </div>
+                    </div>
+                    }
                 </div>
-                }
             </div>
 
             <!-- Save Button -->
-            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-100 bg-neutral-50/50">
+            <div class="flex items-center justify-end gap-3 px-5 py-3 border-t border-neutral-100 bg-neutral-50/50">
                 <a routerLink="/dashboard" class="px-5 py-2.5 border border-neutral-200 text-neutral-600 font-medium rounded-xl hover:border-neutral-300 transition-colors text-sm no-underline">
                     Cancel
                 </a>

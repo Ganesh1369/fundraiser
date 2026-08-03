@@ -27,6 +27,9 @@ router.get('/share-leads/export', shareLeadController.adminExport);
 router.get('/registrations', adminController.getRegistrations);
 router.get('/registrations/export', adminController.exportRegistrations);
 
+// Referral Overview
+router.get('/referrals', adminController.getReferrals);
+
 // Donation Tracking
 router.get('/donations', adminController.getDonations);
 router.get('/donations/export', adminController.exportDonations);

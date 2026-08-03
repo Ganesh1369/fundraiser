@@ -12,10 +12,15 @@
     animation: treeBob 2.6s ease-in-out infinite;
 }
 
-/* Waving right arm, pivoting from where it meets the trunk. */
-.tree-arm-right {
-    transform-box: fill-box;
-    transform-origin: 0% 100%;
+/* Waving right arm, pivoting from where it meets the trunk — and the flag it
+   holds, which must swing on exactly the same arc or the pole drifts out of
+   the hand. Percentage origins can't do that: the two groups have different
+   bounding boxes. Pinning both to the shoulder in viewBox units (108,146)
+   keeps the pole welded to the palm through the whole wave. */
+.tree-arm-right,
+.tree-flag {
+    transform-box: view-box;
+    transform-origin: 108px 146px;
     animation: armWave 1.1s ease-in-out infinite;
 }
 
@@ -47,12 +52,57 @@
     95%           { transform: scaleY(0.1); }
 }
 
+/* ── Deep-link focus ring ──────────────────────────────────────────── */
+/* Green rotating ring on the section a donor was sent to from the
+   post-donation cards. Drawn *inside* the element's box so the card's own
+   `overflow-hidden` can't clip it, and masked to just the 2px edge. */
+@property --focus-ring-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.focus-ring::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 1rem; /* matches rounded-2xl on the cards */
+    padding: 2px;
+    background: conic-gradient(
+        from var(--focus-ring-angle),
+        rgba(34, 197, 94, 0) 0deg,
+        rgba(34, 197, 94, 0) 170deg,
+        #86efac 290deg,
+        #22c55e 360deg
+    );
+    /* Punch out the middle so only the border band paints. */
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 10;
+    animation: focusRingSpin 1.8s linear infinite;
+}
+
+/* Browsers without @property just get a steady green ring — still readable. */
+@keyframes focusRingSpin {
+    to { --focus-ring-angle: 360deg; }
+}
+
 /* Respect reduced-motion preferences. */
 @media (prefers-reduced-motion: reduce) {
     .thank-tree,
     .tree-bob,
     .tree-arm-right,
-    .tree-eyes {
+    .tree-eyes,
+    .tree-flag {
         animation: none;
+    }
+
+    /* Keep the ring (it's the wayfinding cue) but stop it spinning. */
+    .focus-ring::after {
+        animation: none;
+        background: #22c55e;
     }
 }

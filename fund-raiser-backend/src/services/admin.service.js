@@ -117,6 +117,81 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
 };
 
 /**
+ * Referral overview — one row per member with any referral activity, i.e. they
+ * either referred somebody or were themselves referred. Members with no
+ * involvement either way are left out, otherwise this is just the user list.
+ *
+ * `referral_count` counts people who signed up on that member's code.
+ * `total_raised` uses donations.referrer_id (set from users.referred_by at
+ * order time), and excludes registration fees so it lines up with the points
+ * shown to the member on their own dashboard.
+ */
+const getReferrals = async ({ page = 1, limit = 20, search, activity }) => {
+    page = parseInt(page); limit = parseInt(limit);
+    const offset = (page - 1) * limit;
+    const params = [];
+    const whereConditions = ['u.is_active = true'];
+
+    if (activity === 'referrers') {
+        whereConditions.push(`EXISTS (SELECT 1 FROM users r WHERE r.referred_by = u.id)`);
+    } else if (activity === 'referred') {
+        whereConditions.push(`u.referred_by IS NOT NULL`);
+    } else {
+        whereConditions.push(`(u.referred_by IS NOT NULL
+                               OR EXISTS (SELECT 1 FROM users r WHERE r.referred_by = u.id))`);
+    }
+
+    if (search) {
+        whereConditions.push(`(u.name LIKE ? OR u.email LIKE ? OR u.referral_code LIKE ?)`);
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+
+    const countResult = await db.query(
+        `SELECT COUNT(*) as count FROM users u ${whereClause}`,
+        params
+    );
+
+    const result = await db.query(
+        `SELECT u.id, u.name, u.email, u.referral_code, u.referral_points, u.created_at,
+                ref.name AS referrer_name,
+                ref.referral_code AS referrer_code,
+                (SELECT COUNT(*) FROM users r WHERE r.referred_by = u.id) AS referral_count,
+                (SELECT COALESCE(SUM(d.amount), 0) FROM donations d
+                  WHERE d.referrer_id = u.id
+                    AND d.status = 'completed'
+                    AND d.purpose = 'donation') AS total_raised
+         FROM users u
+         LEFT JOIN users ref ON ref.id = u.referred_by
+         ${whereClause}
+         ORDER BY referral_count DESC, total_raised DESC, u.created_at DESC
+         LIMIT ${limit} OFFSET ${offset}`,
+        params
+    );
+
+    return {
+        referrals: result.rows.map(r => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            referralCode: r.referral_code,
+            referrerName: r.referrer_name,
+            referrerCode: r.referrer_code,
+            referralCount: parseInt(r.referral_count) || 0,
+            totalRaised: parseFloat(r.total_raised) || 0,
+            referralPoints: parseInt(r.referral_points) || 0,
+            createdAt: r.created_at
+        })),
+        pagination: {
+            total: parseInt(countResult.rows[0].count),
+            page, limit,
+            totalPages: Math.ceil(countResult.rows[0].count / limit)
+        }
+    };
+};
+
+/**
  * Export registrations to Excel buffer
  */
 const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projectId }) => {
@@ -577,7 +652,7 @@ const lookupDonorByContact = async ({ email, phone } = {}) => {
 };
 
 module.exports = {
-    getDashboardStats, getRegistrations, exportRegistrations,
+    getDashboardStats, getRegistrations, exportRegistrations, getReferrals,
     getDonations, exportDonations, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
     getCertificateRequests, exportCertificates, updateCertificateStatus,
