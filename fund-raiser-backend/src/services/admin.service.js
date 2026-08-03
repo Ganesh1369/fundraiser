@@ -126,9 +126,7 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
  * order time), and excludes registration fees so it lines up with the points
  * shown to the member on their own dashboard.
  */
-const getReferrals = async ({ page = 1, limit = 20, search, activity }) => {
-    page = parseInt(page); limit = parseInt(limit);
-    const offset = (page - 1) * limit;
+const buildReferralFilter = ({ search, activity }) => {
     const params = [];
     const whereConditions = ['u.is_active = true'];
 
@@ -146,7 +144,13 @@ const getReferrals = async ({ page = 1, limit = 20, search, activity }) => {
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+    return { whereClause: 'WHERE ' + whereConditions.join(' AND '), params };
+};
+
+const getReferrals = async ({ page = 1, limit = 20, search, activity }) => {
+    page = parseInt(page); limit = parseInt(limit);
+    const offset = (page - 1) * limit;
+    const { whereClause, params } = buildReferralFilter({ search, activity });
 
     const countResult = await db.query(
         `SELECT COUNT(*) as count FROM users u ${whereClause}`,
@@ -192,6 +196,38 @@ const getReferrals = async ({ page = 1, limit = 20, search, activity }) => {
 };
 
 /**
+ * Export the referral overview to an Excel buffer. Same filters as the table,
+ * so what an admin sees on screen is what lands in the file.
+ */
+const exportReferrals = async ({ search, activity }) => {
+    const { whereClause, params } = buildReferralFilter({ search, activity });
+
+    const result = await db.query(
+        `SELECT u.name as "Name", u.email as "Email",
+                u.referral_code as "Referral Code",
+                ref.name as "Referred By",
+                ref.referral_code as "Referrer's Code",
+                (SELECT COUNT(*) FROM users r WHERE r.referred_by = u.id) as "People Referred",
+                (SELECT COALESCE(SUM(d.amount), 0) FROM donations d
+                  WHERE d.referrer_id = u.id AND d.status = 'completed'
+                    AND d.purpose = 'donation') as "Raised via Code (INR)",
+                u.referral_points as "Referral Points",
+                u.created_at as "Joined At"
+         FROM users u
+         LEFT JOIN users ref ON ref.id = u.referred_by
+         ${whereClause}
+         ORDER BY (SELECT COUNT(*) FROM users r WHERE r.referred_by = u.id) DESC,
+                  u.created_at DESC`,
+        params
+    );
+
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(result.rows);
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Referrals');
+    return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+};
+
+/**
  * Export registrations to Excel buffer
  */
 const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projectId }) => {
@@ -219,6 +255,10 @@ const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projec
                 u.organization_name as "Organization Name", u.pan_number as "PAN Number",
                 u.referral_code as "Referral Code",
                 r.name as "Referred By",
+                (SELECT COUNT(*) FROM users r2 WHERE r2.referred_by = u.id) as "People Referred",
+                (SELECT COALESCE(SUM(d3.amount), 0) FROM donations d3
+                  WHERE d3.referrer_id = u.id AND d3.status = 'completed'
+                    AND d3.purpose = 'donation') as "Raised via Referral Code",
                 u.referral_points as "Referral Points",
                 ev.event_name as "Enrolled via Event",
                 fp.project_name as "First Donated Project",
@@ -652,7 +692,7 @@ const lookupDonorByContact = async ({ email, phone } = {}) => {
 };
 
 module.exports = {
-    getDashboardStats, getRegistrations, exportRegistrations, getReferrals,
+    getDashboardStats, getRegistrations, exportRegistrations, getReferrals, exportReferrals,
     getDonations, exportDonations, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
     getCertificateRequests, exportCertificates, updateCertificateStatus,

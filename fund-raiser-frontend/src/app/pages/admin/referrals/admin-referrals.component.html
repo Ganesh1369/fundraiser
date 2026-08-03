@@ -1,6 +1,13 @@
 <header class="admin-header">
-    <h1>Referrals</h1>
-    <p class="subtitle">Who invited whom, how many people used each code, and what those invites raised.</p>
+    <div class="header-row">
+        <div>
+            <h1>Referrals</h1>
+            <p class="subtitle">Who invited whom, how many people used each code, and what those invites raised.</p>
+        </div>
+        <button class="btn btn-primary btn-export" (click)="exportReferrals()">
+            <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Download Excel
+        </button>
+    </div>
 </header>
 
 <div class="filters">

@@ -460,8 +460,11 @@
                         <div>
                             <h2 class="text-base font-semibold text-accent m-0">All referrals</h2>
                             <p class="text-xs text-neutral-400 m-0 mt-0.5">
-                                {{ referralStats!.recentReferrals!.length }} {{ referralStats!.recentReferrals!.length === 1 ? 'person' : 'people' }}
+                                {{ referralStats?.referralCount || 0 }} {{ referralStats?.referralCount === 1 ? 'person' : 'people' }}
                                 · {{ formatCurrency(referralStats?.referralRaised || 0) }} raised
+                                @if (referralStats!.recentReferrals!.length < (referralStats?.referralCount || 0)) {
+                                <span class="block mt-0.5">Showing the {{ referralStats!.recentReferrals!.length }} most recent</span>
+                                }
                             </p>
                         </div>
                         <button class="text-neutral-400 hover:text-neutral-600" (click)="showAllReferralsModal = false">
@@ -544,8 +547,8 @@
                             <div class="min-w-0">
                                 <div class="text-[11px] text-neutral-500 leading-tight">Raised through your code</div>
                                 <div class="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                                    {{ referralStats!.recentReferrals!.length }}
-                                    {{ referralStats!.recentReferrals!.length === 1 ? 'person joined' : 'people joined' }}
+                                    {{ referralStats?.referralCount || 0 }}
+                                    {{ referralStats?.referralCount === 1 ? 'person joined' : 'people joined' }}
                                 </div>
                             </div>
                             <span class="text-base font-bold text-primary shrink-0">{{ formatCurrency(referralStats?.referralRaised || 0) }}</span>

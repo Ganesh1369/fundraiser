@@ -139,6 +139,14 @@ const getReferrals = async (userId, referralCode) => {
         [userId]
     );
 
+    // Aggregated over ALL donations on this code, not just the 50 people listed
+    // above — otherwise a referrer past that cap sees an understated total.
+    const raisedResult = await db.query(
+        `SELECT COALESCE(SUM(amount), 0) AS total FROM donations
+         WHERE referrer_id = ? AND status = 'completed' AND purpose = 'donation'`,
+        [userId]
+    );
+
     const stats = statsResult.rows[0] || { referral_points: 0, referral_count: 0 };
     const recentReferrals = referredResult.rows.map(r => ({
         name: r.name,
@@ -154,7 +162,7 @@ const getReferrals = async (userId, referralCode) => {
         referralLink: `${process.env.FRONTEND_URL}/register?ref=${referralCode}`,
         recentReferrals,
         // Total raised through this code — the headline the referrer cares about.
-        referralRaised: recentReferrals.reduce((sum, r) => sum + r.totalDonated, 0)
+        referralRaised: parseFloat(raisedResult.rows[0].total) || 0
     };
 };
 

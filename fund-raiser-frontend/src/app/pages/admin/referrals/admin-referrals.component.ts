@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { ApiService } from '../../../services/api.service';
+import { environment } from '../../../../environments/environment';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface ReferralRow {
@@ -81,6 +82,28 @@ export class AdminReferralsComponent implements OnInit, OnDestroy {
                 }
             }
         });
+    }
+
+    /** Downloads exactly what the current filters show, not the whole table. */
+    exportReferrals(): void {
+        const token = localStorage.getItem('adminToken');
+        if (!token) return;
+
+        const params = new URLSearchParams();
+        if (this.searchQuery) params.append('search', this.searchQuery);
+        if (this.activityFilter) params.append('activity', this.activityFilter);
+        const qs = params.toString() ? `?${params.toString()}` : '';
+
+        fetch(`${environment.apiUrl}/admin/referrals/export${qs}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.blob()).then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'referrals.xlsx';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }).catch(err => console.error('Export failed:', err));
     }
 
     onSearchInput(value: string): void {

@@ -29,6 +29,17 @@ exports.getReferrals = async (req, res, next) => {
     }
 };
 
+exports.exportReferrals = async (req, res, next) => {
+    try {
+        const buffer = await adminService.exportReferrals(req.query);
+        res.setHeader('Content-Disposition', 'attachment; filename=referrals.xlsx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.exportRegistrations = async (req, res, next) => {
     try {
         const buffer = await adminService.exportRegistrations(req.query);

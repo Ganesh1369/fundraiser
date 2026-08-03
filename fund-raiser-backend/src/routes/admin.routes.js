@@ -29,6 +29,7 @@ router.get('/registrations/export', adminController.exportRegistrations);
 
 // Referral Overview
 router.get('/referrals', adminController.getReferrals);
+router.get('/referrals/export', adminController.exportReferrals);
 
 // Donation Tracking
 router.get('/donations', adminController.getDonations);
