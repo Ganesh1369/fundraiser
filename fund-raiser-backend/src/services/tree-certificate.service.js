@@ -19,15 +19,8 @@ const F = {
     script: path.join(FONTS, 'GreatVibes-Regular.ttf'),
     montBold: path.join(FONTS, 'Montserrat-Bold.ttf')
 };
-// Warm cream tint painted over the SVG to spread the sandal tone from the
-// template's central watercolor cloud to the whole cert. The template's own
-// backdrop is an opaque JPEG (with decorations baked into it), so tinting on
-// top is the least-destructive option — sandal × white ≈ sandal, and the
-// dark greens / navy read fine through the film.
-const SANDAL_BG = '#f5efe1';
-const SANDAL_OPACITY = 0.35;
 const TEMPLATE_SVG = fs.readFileSync(
-    path.join(ASSETS, 'cert', 'tree-donation-certificate-plainv2.svg'),
+    path.join(ASSETS, 'cert', 'tree-donation-certificate-plainv3.svg'),
     'utf8'
 );
 
@@ -44,10 +37,10 @@ const VALUE_GREEN = '#2e6d49';
 // The three stat labels sit with baseline at ~y=582; values are left-aligned
 // under each label at textY=602 (baseline lands ~y=623).
 const SLOT = {
-    name:   { cx: 545, y: 363, w: 540, fontSize: 54 },
-    trees:  { textX: 283, textY: 591 },
-    amount: { textX: 527, textY: 591 },
-    date:   { textX: 773, textY: 591 }
+    name:   { cx: 545, y: 373, w: 540, fontSize: 54 },
+    trees:  { textX: 283, textY: 601 },
+    amount: { textX: 527, textY: 601 },
+    date:   { textX: 773, textY: 601 }
 };
 const STAT_FONT_SIZE = 20;
 
@@ -71,10 +64,6 @@ const drawCertificate = (doc, data) => {
     doc.registerFont('MontBold', F.montBold);
 
     SVGtoPDF(doc, TEMPLATE_SVG, 0, 0, { width: PAGE_W, height: PAGE_H });
-
-    // Sandal-tint film over the whole page so the cream reaches the corners —
-    // the SVG's own tint is only a central watercolor cloud.
-    doc.save().fillOpacity(SANDAL_OPACITY).rect(0, 0, PAGE_W, PAGE_H).fill(SANDAL_BG).restore();
 
     // Donor name — Great Vibes green script, centred above the underline.
     doc.font('Script').fontSize(SLOT.name.fontSize).fillColor(NAME_GREEN)
