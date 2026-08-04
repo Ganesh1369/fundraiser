@@ -248,6 +248,14 @@ export class ApiService {
         });
     }
 
+    /** Download the Certificate of Tree Donation PDF for one of the caller's own tree donations. */
+    downloadTreeCertificate(donationId: string): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/donations/${donationId}/tree-certificate`, {
+            headers: this.getHeaders(),
+            responseType: 'blob'
+        });
+    }
+
     // --- Admin: Organization Settings ---
     getOrgSettings(): Observable<any> {
         return this.http.get(`${this.apiUrl}/admin/settings`, { headers: this.getHeaders(true) });

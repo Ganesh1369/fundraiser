@@ -471,12 +471,20 @@ const recordOfflineDonation = async (adminId, payload) => {
                 .catch(err => console.error('[offline donation] cert auto-gen failed:', err.message));
         }
 
-        emailService.sendDonationConfirmationEmail?.(
-            donorRow.email, donor.name, Number(amount),
-            `${paymentMethod.toUpperCase()}/${String(paymentReference).trim()}`,
-            paymentReceivedAt ? new Date(paymentReceivedAt) : new Date()
-        )?.then?.(info => console.log(`[offline donation email] sent to ${donorRow.email}, id=${info?.messageId || '?'}`))
-         ?.catch?.(err => console.error(`[offline donation email] FAILED to ${donorRow.email}:`, err.message));
+        // Attach the tree-donation cert when num_trees > 0. Mirrors the online flow.
+        const donationForEmail = {
+            amount: Number(amount),
+            num_trees: treesFunded,
+            project_id: resolvedProjectId
+        };
+        const emailDate = paymentReceivedAt ? new Date(paymentReceivedAt) : new Date();
+        const paymentRef = `${paymentMethod.toUpperCase()}/${String(paymentReference).trim()}`;
+        buildDonationEmailOptions(donationForEmail, donor.name, emailDate)
+            .then(opts => emailService.sendDonationConfirmationEmail(
+                donorRow.email, donor.name, Number(amount), paymentRef, emailDate, opts
+            ))
+            .then(info => console.log(`[offline donation email] sent to ${donorRow.email}, id=${info?.messageId || '?'}`))
+            .catch(err => console.error(`[offline donation email] FAILED to ${donorRow.email}:`, err.message));
 
         return {
             donationId,
@@ -579,4 +587,51 @@ const reverseDonation = async (adminId, donationId, reason) => {
     }
 };
 
-module.exports = { createOrder, verifyPayment, cancelPending, recordOfflineDonation, reverseDonation, buildDonationEmailOptions };
+/**
+ * Stream the tree-donation certificate for a completed donation.
+ *
+ * Ownership: donation.user_id must match userId, unless allowAdmin is true.
+ * Throws { status: 404 } if the donation doesn't exist / isn't owned,
+ *        { status: 400 } if the donation isn't a tree donation (num_trees=0)
+ *        { status: 409 } if the donation isn't completed.
+ *
+ * On success: resolves once the PDF has been fully streamed into `stream`.
+ * @param {string} donationId
+ * @param {string} userId
+ * @param {import('stream').Writable} stream
+ * @param {{ allowAdmin?: boolean }} opts
+ */
+const streamTreeCertificate = async (donationId, userId, stream, opts = {}) => {
+    const rows = await db.query(
+        `SELECT d.id, d.user_id, d.amount, d.num_trees, d.status, d.payment_received_at, d.created_at,
+                u.name AS donor_name
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         WHERE d.id = ?`,
+        [donationId]
+    );
+    const donation = rows.rows[0];
+    if (!donation) throw { status: 404, message: 'Donation not found' };
+    if (!opts.allowAdmin && donation.user_id !== userId) {
+        throw { status: 404, message: 'Donation not found' };
+    }
+    if (donation.status !== 'completed') {
+        throw { status: 409, message: 'Certificate is only available for completed donations' };
+    }
+    const trees = Number(donation.num_trees) || 0;
+    if (trees <= 0) throw { status: 400, message: 'This donation does not include a tree pledge' };
+
+    const date = donation.payment_received_at || donation.created_at || new Date();
+    treeCertificateService.renderTreeCertificate({
+        donorName: donation.donor_name,
+        trees,
+        amount: parseFloat(donation.amount),
+        date
+    }, stream);
+};
+
+module.exports = {
+    createOrder, verifyPayment, cancelPending,
+    recordOfflineDonation, reverseDonation,
+    buildDonationEmailOptions, streamTreeCertificate
+};

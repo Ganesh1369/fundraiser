@@ -46,6 +46,7 @@ export class QuickDonateComponent implements OnInit {
     donationComplete = false;
     completedTrees = 0;
     completedAmount = 0;
+    completedDonationId: string | null = null;
 
     treeQuickPicks = TREE_QUICK_PICKS;
     tiers = TREE_TIERS;
@@ -185,8 +186,9 @@ export class QuickDonateComponent implements OnInit {
                 if (res?.success) {
                     this.completedTrees = trees;
                     this.completedAmount = amount;
+                    this.completedDonationId = donationId;
                     this.donationComplete = true;
-                    this.rememberCompletedDonation(trees, amount);
+                    this.rememberCompletedDonation(trees, amount, donationId);
                     this.toast.success('Thank you for your donation!');
                 }
                 this.cdr.markForCheck();
@@ -219,11 +221,11 @@ export class QuickDonateComponent implements OnInit {
 
     private static readonly LAST_DONATION_KEY = 'quickDonateLast';
 
-    private rememberCompletedDonation(trees: number, amount: number): void {
+    private rememberCompletedDonation(trees: number, amount: number, donationId: string | null): void {
         try {
             sessionStorage.setItem(
                 QuickDonateComponent.LAST_DONATION_KEY,
-                JSON.stringify({ trees, amount })
+                JSON.stringify({ trees, amount, donationId })
             );
         } catch { /* private-mode storage failure is non-fatal */ }
     }
@@ -235,6 +237,7 @@ export class QuickDonateComponent implements OnInit {
             const saved = JSON.parse(raw);
             this.completedTrees = saved?.trees ?? 0;
             this.completedAmount = saved?.amount ?? 0;
+            this.completedDonationId = saved?.donationId ?? null;
             this.donationComplete = true;
         } catch { /* fall through to the normal donate form */ }
     }
@@ -317,12 +320,26 @@ export class QuickDonateComponent implements OnInit {
     }
 
     requestTreeCertificate(): void {
-        // Placeholder: tree certificate PDF template doesn't exist yet.
-        // For v1 we acknowledge the request; a follow-up will wire up the actual
-        // PDF generator and email delivery.
-        this.treeCertRequested = true;
-        this.toast.success("We'll email your Tree Certificate within 48 hours.");
-        this.cdr.markForCheck();
+        if (!this.completedDonationId) {
+            this.toast.error('Donation reference lost. Please refresh and try again.');
+            return;
+        }
+        this.api.downloadTreeCertificate(this.completedDonationId).subscribe({
+            next: (blob) => this.zone.run(() => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Tree-Certificate-${this.completedDonationId}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.treeCertRequested = true;
+                this.cdr.markForCheck();
+            }),
+            error: () => this.zone.run(() => {
+                this.toast.error('Failed to download your tree certificate. Please try again.');
+                this.cdr.markForCheck();
+            })
+        });
     }
 
     copyReferralLink(): void {
@@ -349,6 +366,7 @@ export class QuickDonateComponent implements OnInit {
         this.donationAmount = 0;
         this.completedTrees = 0;
         this.completedAmount = 0;
+        this.completedDonationId = null;
         this.treeCertRequested = false;
         try { sessionStorage.removeItem(QuickDonateComponent.LAST_DONATION_KEY); } catch { /* noop */ }
         this.cdr.markForCheck();

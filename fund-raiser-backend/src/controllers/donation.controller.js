@@ -29,6 +29,20 @@ exports.cancelPending = async (req, res, next) => {
     }
 };
 
+// Download the Certificate of Tree Donation for one of the caller's donations.
+exports.downloadTreeCertificate = async (req, res, next) => {
+    try {
+        const donationId = req.params.id;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename="Tree-Donation-Certificate.pdf"');
+        await donationService.streamTreeCertificate(donationId, req.user.id, res);
+    } catch (error) {
+        if (res.headersSent) return next(error);
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 // Verify payment
 exports.verifyPayment = async (req, res, next) => {
     try {

@@ -12,4 +12,7 @@ router.post('/cancel-pending', verifyToken, donationController.cancelPending);
 // Verify payment (requires auth)
 router.post('/verify', verifyToken, donationController.verifyPayment);
 
+// Download Tree Certificate PDF for one of the caller's donations
+router.get('/:id/tree-certificate', verifyToken, donationController.downloadTreeCertificate);
+
 module.exports = router;
