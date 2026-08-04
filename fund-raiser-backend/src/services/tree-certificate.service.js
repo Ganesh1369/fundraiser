@@ -17,9 +17,15 @@ const ASSETS = path.join(__dirname, '..', 'assets');
 const FONTS = path.join(ASSETS, 'fonts');
 const F = {
     script: path.join(FONTS, 'GreatVibes-Regular.ttf'),
-    mont: path.join(FONTS, 'Montserrat-Regular.ttf'),
     montBold: path.join(FONTS, 'Montserrat-Bold.ttf')
 };
+// Warm cream tint painted over the SVG to spread the sandal tone from the
+// template's central watercolor cloud to the whole cert. The template's own
+// backdrop is an opaque JPEG (with decorations baked into it), so tinting on
+// top is the least-destructive option — sandal × white ≈ sandal, and the
+// dark greens / navy read fine through the film.
+const SANDAL_BG = '#f5efe1';
+const SANDAL_OPACITY = 0.35;
 const TEMPLATE_SVG = fs.readFileSync(
     path.join(ASSETS, 'cert', 'tree-donation-certificate-plainv2.svg'),
     'utf8'
@@ -62,11 +68,13 @@ const drawCertificate = (doc, data) => {
     const { donorName, trees, amount, date } = data;
 
     doc.registerFont('Script', F.script);
-    doc.registerFont('Mont', F.mont);
     doc.registerFont('MontBold', F.montBold);
 
-    // Template first — fills the page.
     SVGtoPDF(doc, TEMPLATE_SVG, 0, 0, { width: PAGE_W, height: PAGE_H });
+
+    // Sandal-tint film over the whole page so the cream reaches the corners —
+    // the SVG's own tint is only a central watercolor cloud.
+    doc.save().fillOpacity(SANDAL_OPACITY).rect(0, 0, PAGE_W, PAGE_H).fill(SANDAL_BG).restore();
 
     // Donor name — Great Vibes green script, centred above the underline.
     doc.font('Script').fontSize(SLOT.name.fontSize).fillColor(NAME_GREEN)

@@ -329,7 +329,15 @@ export class QuickDonateComponent implements OnInit {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Tree-Certificate-${this.completedDonationId}.pdf`;
+                // Personalised, thank-you-styled filename matching the backend's
+                // Content-Disposition. Falls back if we don't know the donor's name.
+                const slug = (this.user?.name || '')
+                    .replace(/[^\p{L}\p{N}\s'-]/gu, '')
+                    .trim()
+                    .replace(/\s+/g, '-');
+                a.download = slug
+                    ? `Thank-You-${slug}-Your-Tree-Certificate.pdf`
+                    : 'Thank-You-Your-Tree-Certificate.pdf';
                 a.click();
                 URL.revokeObjectURL(url);
                 this.treeCertRequested = true;

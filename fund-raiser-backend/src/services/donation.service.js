@@ -27,6 +27,23 @@ const resolveProjectId = async (projectId) => {
 };
 
 /**
+ * Warm, personalised filename for the Tree Certificate download / attachment.
+ * Sanitises the donor name to filename-safe chars and wraps it in a phrase
+ * that reads like a thank-you the moment the file lands in the inbox.
+ */
+const treeCertificateFilename = (donorName) => {
+    const slug = String(donorName || '')
+        .trim()
+        .replace(/[^\p{L}\p{N}\s'-]/gu, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    return slug
+        ? `Thank-You-${slug}-Your-Tree-Certificate.pdf`
+        : 'Thank-You-Your-Tree-Certificate.pdf';
+};
+
+/**
  * Build the donation-confirmation email options for a completed donation.
  * For tree donations (num_trees > 0) this generates the Certificate of Tree
  * Donation PDF and returns it as an attachment; otherwise returns empty opts.
@@ -62,7 +79,7 @@ const buildDonationEmailOptions = async (donation, donorName, date) => {
         return {
             trees,
             attachments: [{
-                filename: 'Tree-Donation-Certificate.pdf',
+                filename: treeCertificateFilename(donorName),
                 content: pdfBuffer,
                 contentType: 'application/pdf'
             }]
@@ -633,5 +650,6 @@ const streamTreeCertificate = async (donationId, userId, stream, opts = {}) => {
 module.exports = {
     createOrder, verifyPayment, cancelPending,
     recordOfflineDonation, reverseDonation,
-    buildDonationEmailOptions, streamTreeCertificate
+    buildDonationEmailOptions, streamTreeCertificate,
+    treeCertificateFilename
 };

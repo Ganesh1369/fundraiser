@@ -30,11 +30,14 @@ exports.cancelPending = async (req, res, next) => {
 };
 
 // Download the Certificate of Tree Donation for one of the caller's donations.
+// Filename is personalised with the caller's name so the download reads as a
+// thank-you the moment it lands on disk.
 exports.downloadTreeCertificate = async (req, res, next) => {
     try {
         const donationId = req.params.id;
+        const filename = donationService.treeCertificateFilename(req.user.name);
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename="Tree-Donation-Certificate.pdf"');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         await donationService.streamTreeCertificate(donationId, req.user.id, res);
     } catch (error) {
         if (res.headersSent) return next(error);

@@ -29,7 +29,7 @@ const emailWrapper = (content) => `
             ${content}
         </div>
         <div style="padding: 16px 32px; border-top: 1px solid #f0f0f0; text-align: center;">
-            <p style="color: #a3a3a3; font-size: 11px; margin: 0;">Our City &middot; Our Future &middot; 15 Feb 2026</p>
+            <p style="color: #a3a3a3; font-size: 11px; margin: 0;">ICE Network &middot; It Matters &trade;</p>
         </div>
     </div>
 `;
