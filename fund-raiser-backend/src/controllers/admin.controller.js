@@ -71,6 +71,23 @@ exports.exportDonations = async (req, res, next) => {
     }
 };
 
+exports.exportDonationsCustom = async (req, res, next) => {
+    try {
+        const buffer = await adminService.exportDonationsCustom(req.query);
+        res.setHeader('Content-Disposition', 'attachment; filename=donations-custom.xlsx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getDonationExportColumns = (_req, res) => {
+    const map = adminService.DONATION_EXPORT_COLUMNS;
+    const columns = Object.keys(map).map(key => ({ key, label: map[key].label }));
+    res.json({ success: true, data: { columns } });
+};
+
 exports.recordOfflineDonation = async (req, res, next) => {
     try {
         const data = await donationService.recordOfflineDonation(req.admin.id, req.body);

@@ -149,12 +149,13 @@ export class ApiService {
         return this.http.get(`${this.apiUrl}/admin/stats`, { headers: this.getHeaders(true) });
     }
 
-    getAdminRegistrations(limit: number = 20, page: number = 1, userType?: string, search?: string, eventId?: string, projectId?: string): Observable<any> {
+    getAdminRegistrations(limit: number = 20, page: number = 1, userType?: string, search?: string, eventId?: string, projectId?: string, signupSource?: string): Observable<any> {
         let url = `${this.apiUrl}/admin/registrations?limit=${limit}&page=${page}`;
         if (userType) url += `&userType=${encodeURIComponent(userType)}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
         if (eventId) url += `&eventId=${encodeURIComponent(eventId)}`;
         if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
+        if (signupSource) url += `&signupSource=${encodeURIComponent(signupSource)}`;
         return this.http.get(url, { headers: this.getHeaders(true) });
     }
 

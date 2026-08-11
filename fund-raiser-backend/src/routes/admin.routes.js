@@ -34,6 +34,8 @@ router.get('/referrals/export', adminController.exportReferrals);
 // Donation Tracking
 router.get('/donations', adminController.getDonations);
 router.get('/donations/export', adminController.exportDonations);
+router.get('/donations/export/columns', adminController.getDonationExportColumns);
+router.get('/donations/export/custom', adminController.exportDonationsCustom);
 router.post('/donations/offline', adminController.recordOfflineDonation);
 router.post('/donations/:id/reverse', adminController.reverseDonation);
 router.get('/donations/donor-lookup', adminController.lookupDonor);

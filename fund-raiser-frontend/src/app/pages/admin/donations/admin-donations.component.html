@@ -35,9 +35,14 @@
             }
         </select>
     </div>
-    <button class="btn btn-primary btn-export" (click)="exportDonations()">
-        <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Download Excel
-    </button>
+    <div class="filter-actions">
+        <button class="btn btn-primary" (click)="exportDonations()">
+            <lucide-icon name="download" class="w-4 h-4"></lucide-icon> Download Excel
+        </button>
+        <button class="btn btn-secondary" (click)="openCustomDownloadModal()">
+            <lucide-icon name="sliders-horizontal" class="w-4 h-4"></lucide-icon> Custom Download
+        </button>
+    </div>
 </div>
 
 <div class="card">
@@ -78,13 +83,19 @@
                     <td>{{ donation.payment_method || '—' }}</td>
                     <td>{{ referenceOf(donation) }}</td>
                     <td>{{ formatDate(donation.created_at) }}</td>
-                    <td>
+                    <td class="actions-cell">
                         @if (donation.status === 'completed') {
-                            <button class="btn-link btn-danger" (click)="openReverseModal(donation)">Reverse</button>
+                            <button class="action-btn action-btn-danger" (click)="openReverseModal(donation)" title="Reverse this donation">
+                                <lucide-icon name="rotate-ccw" class="w-3.5 h-3.5"></lucide-icon>
+                                <span>Reverse</span>
+                            </button>
                         } @else if (donation.status === 'reversed') {
-                            <span class="text-neutral-500" [title]="donation.reversal_reason || ''">Reversed</span>
+                            <span class="action-tag action-tag-muted" [title]="donation.reversal_reason || ''">
+                                <lucide-icon name="circle-x" class="w-3.5 h-3.5"></lucide-icon>
+                                Reversed
+                            </span>
                         } @else {
-                            <span>—</span>
+                            <span class="action-placeholder">—</span>
                         }
                     </td>
                 </tr>
@@ -256,6 +267,83 @@
             <button class="btn btn-secondary" (click)="closeOfflineModal()" [disabled]="offlineSubmitting">Cancel</button>
             <button class="btn btn-primary" (click)="submitOfflineDonation()" [disabled]="offlineSubmitting">
                 {{ offlineSubmitting ? 'Recording…' : 'Record donation' }}
+            </button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- ═══════════ Custom download modal ═══════════ -->
+@if (showCustomDownloadModal) {
+<div class="modal-backdrop" (click)="closeCustomDownloadModal()">
+    <div class="modal-panel modal-panel-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Custom Download</h2>
+            <button class="btn-icon" (click)="closeCustomDownloadModal()">
+                <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <p class="modal-hint">
+                Tick the columns you want in the exported Excel. Filters on the page (status / project / event) still apply.
+                The preview below shows sample values from the first {{ customPreviewRows.length }} donation(s) on this page.
+            </p>
+
+            <div class="column-picker-toolbar">
+                <span class="column-picker-count">
+                    {{ selectedColumnKeys.size }} / {{ exportColumns.length }} selected
+                </span>
+                <div class="column-picker-toolbar-actions">
+                    <button type="button" class="btn-link" (click)="selectAllColumns()">Select all</button>
+                    <span class="dot-sep">·</span>
+                    <button type="button" class="btn-link" (click)="clearAllColumns()">Clear</button>
+                </div>
+            </div>
+
+            <div class="column-picker-grid">
+                @for (col of exportColumns; track col.key) {
+                    <label class="column-checkbox">
+                        <input type="checkbox" [checked]="isColumnSelected(col.key)" (change)="toggleColumn(col.key)" />
+                        <span>{{ col.label }}</span>
+                    </label>
+                }
+            </div>
+
+            <h3 class="preview-heading">Preview</h3>
+            @if (selectedColumnList.length === 0) {
+                <div class="notice notice-info">Select at least one column to see a preview.</div>
+            } @else if (customPreviewRows.length === 0) {
+                <div class="notice notice-info">No donations on this page to preview — the export will still run against the full filtered set.</div>
+            } @else {
+                <div class="preview-wrapper">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                @for (col of selectedColumnList; track col.key) {
+                                    <th>{{ col.label }}</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (row of customPreviewRows; track row.id) {
+                                <tr>
+                                    @for (col of selectedColumnList; track col.key) {
+                                        <td>{{ col.preview(row) }}</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeCustomDownloadModal()" [disabled]="customDownloadInFlight">Cancel</button>
+            <button class="btn btn-primary" (click)="downloadCustom()" [disabled]="customDownloadInFlight || selectedColumnKeys.size === 0">
+                <lucide-icon name="download" class="w-4 h-4"></lucide-icon>
+                {{ customDownloadInFlight ? 'Preparing…' : 'Download Excel' }}
             </button>
         </div>
     </div>

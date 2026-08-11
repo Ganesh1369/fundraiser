@@ -136,6 +136,26 @@
     color: #FF9800;
 }
 
+.badge.source-email_login {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+
+.badge.source-register {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4B5563;
+}
+
+.badge.source-admin_offline {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.badge.source-event_register {
+    background: rgba(168, 85, 247, 0.1);
+    color: #9333ea;
+}
+
 .user-link {
     color: #22c55e;
     text-decoration: none;

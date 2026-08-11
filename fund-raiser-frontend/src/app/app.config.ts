@@ -13,7 +13,8 @@ import {
   Phone, Receipt, Star,
   Folder, Award, CheckCircle, RefreshCw, Settings, Upload,
   ShieldCheck, Lock, BadgeCheck, Leaf, Megaphone,
-  TreeDeciduous, School, Sprout, BarChart, Cookie, Bell, BellOff, UserPlus
+  TreeDeciduous, School, Sprout, BarChart, Cookie, Bell, BellOff, UserPlus,
+  RotateCcw, SlidersHorizontal
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -36,6 +37,7 @@ export const appConfig: ApplicationConfig = {
         Folder, Award, CheckCircle, RefreshCw, Settings, Upload,
         ShieldCheck, Lock, BadgeCheck, Leaf, Megaphone,
         School, Sprout, Cookie, Bell, BellOff, UserPlus,
+        RotateCcw, SlidersHorizontal,
         // Aliases — accomplishment seed uses these legacy names.
         Tree: TreeDeciduous,
         Chart: BarChart,

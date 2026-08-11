@@ -68,8 +68,11 @@
     background: #16a34a;
 }
 
-.btn-export {
+.filter-actions {
     margin-left: auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* ===== Card & Table ===== */
@@ -169,6 +172,64 @@
     color: #6B7280;
 }
 
+/* ===== Actions cell (donations table) ===== */
+.actions-cell {
+    white-space: nowrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: transparent;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    line-height: 1;
+}
+
+.action-btn-danger {
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.action-btn-danger:hover {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #B91C1C;
+}
+
+.action-btn-danger:active {
+    background: rgba(220, 38, 38, 0.22);
+}
+
+.action-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+}
+
+.action-tag-muted {
+    color: #6B7280;
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+}
+
+.action-placeholder {
+    color: #D1D5DB;
+    font-weight: 600;
+}
+
 /* ===== Modal ===== */
 .modal-backdrop {
     position: fixed;
@@ -195,6 +256,10 @@
 
 .modal-panel-sm {
     max-width: 480px;
+}
+
+.modal-panel-lg {
+    max-width: 920px;
 }
 
 .modal-header {
@@ -425,4 +490,130 @@
 .page-info {
     font-size: 0.875rem;
     color: #9CA3AF;
+}
+
+/* ===== Custom download modal ===== */
+.modal-hint {
+    margin: 0 0 14px;
+    font-size: 0.875rem;
+    color: #4B5563;
+    line-height: 1.5;
+}
+
+.column-picker-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.column-picker-count {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.column-picker-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+}
+
+.column-picker-toolbar-actions .btn-link {
+    font-size: 0.8125rem;
+}
+
+.dot-sep {
+    color: #D1D5DB;
+}
+
+.column-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px 16px;
+    padding: 14px;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.column-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.column-checkbox:hover {
+    background: #F3F4F6;
+}
+
+.column-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #22c55e;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.preview-heading {
+    margin: 0 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6B7280;
+}
+
+.preview-wrapper {
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 260px;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.preview-table th,
+.preview-table td {
+    padding: 8px 12px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.preview-table th {
+    background: #F9FAFB;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    letter-spacing: 0.03em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.preview-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.preview-table tbody tr:hover {
+    background: #FAFAFA;
 }

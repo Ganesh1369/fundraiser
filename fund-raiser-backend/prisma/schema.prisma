@@ -63,6 +63,13 @@ enum OrgSettingType {
   number
 }
 
+enum SignupSource {
+  register
+  email_login
+  admin_offline
+  event_register
+}
+
 // ===== Tables =====
 
 model User {
@@ -93,6 +100,7 @@ model User {
   registration_fee_paid Boolean  @default(false)
   is_active             Boolean  @default(true)
   enrolled_via_event_id String?  @db.Char(36)
+  signup_source         SignupSource @default(register)
   created_at            DateTime @default(now()) @db.DateTime(0)
   updated_at            DateTime @default(now()) @updatedAt @db.DateTime(0)
 

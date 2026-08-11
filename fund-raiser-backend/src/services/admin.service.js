@@ -60,7 +60,7 @@ const getDashboardStats = cached('stats', 30000, _getDashboardStats);
 /**
  * Get registrations with filters
  */
-const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 20, search, eventId, projectId }) => {
+const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 20, search, eventId, projectId, signupSource }) => {
     page = parseInt(page); limit = parseInt(limit);
     const offset = (page - 1) * limit;
     const params = [];
@@ -74,6 +74,7 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
     if (eventId) { whereConditions.push(`u.enrolled_via_event_id = ?`); params.push(eventId); }
+    if (signupSource) { whereConditions.push(`u.signup_source = ?`); params.push(signupSource); }
     if (projectId) {
         // Donor whose first completed donation went to <projectId>, OR whose enrolled event belongs to <projectId>.
         whereConditions.push(`(EXISTS (SELECT 1 FROM donations d WHERE d.user_id = u.id AND d.status = 'completed' AND d.project_id = ?)
@@ -88,7 +89,8 @@ const getRegistrations = async ({ userType, fromDate, toDate, page = 1, limit = 
         `SELECT u.id, u.user_type, u.name, u.age, u.email, u.phone, u.class_grade, u.school_name,
                 u.city, u.organization_name, u.referral_code, u.referral_points, u.registration_fee_paid, u.created_at,
                 u.enrolled_via_event_id, ev.event_name AS enrolled_event_name,
-                fp.project_id AS first_project_id, fp.project_name AS first_project_name
+                fp.project_id AS first_project_id, fp.project_name AS first_project_name,
+                u.signup_source
          FROM users u
          LEFT JOIN events ev ON ev.id = u.enrolled_via_event_id
          LEFT JOIN (
@@ -230,7 +232,7 @@ const exportReferrals = async ({ search, activity }) => {
 /**
  * Export registrations to Excel buffer
  */
-const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projectId }) => {
+const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projectId, signupSource }) => {
     const params = [];
     let whereConditions = ['u.is_active = true'];
 
@@ -238,6 +240,7 @@ const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projec
     if (fromDate) { whereConditions.push(`u.created_at >= ?`); params.push(fromDate); }
     if (toDate) { whereConditions.push(`u.created_at <= ?`); params.push(toDate); }
     if (eventId) { whereConditions.push(`u.enrolled_via_event_id = ?`); params.push(eventId); }
+    if (signupSource) { whereConditions.push(`u.signup_source = ?`); params.push(signupSource); }
     if (projectId) {
         whereConditions.push(`(EXISTS (SELECT 1 FROM donations d WHERE d.user_id = u.id AND d.status = 'completed' AND d.project_id = ?)
                               OR EXISTS (SELECT 1 FROM events e2 WHERE e2.id = u.enrolled_via_event_id AND e2.project_id = ?))`);
@@ -262,6 +265,12 @@ const exportRegistrations = async ({ userType, fromDate, toDate, eventId, projec
                 u.referral_points as "Referral Points",
                 ev.event_name as "Enrolled via Event",
                 fp.project_name as "First Donated Project",
+                CASE u.signup_source
+                    WHEN 'email_login'    THEN 'Quick Donate'
+                    WHEN 'admin_offline'  THEN 'Admin (Offline)'
+                    WHEN 'event_register' THEN 'Event Register'
+                    ELSE 'Register'
+                END as "Signup Source",
                 u.email_verified as "Email Verified",
                 u.registration_fee_paid as "Fee Paid",
                 u.created_at as "Registered At"
@@ -308,16 +317,19 @@ const getDonations = async ({ status, fromDate, toDate, projectId, eventId, page
 
     const result = await db.query(
         `SELECT d.id, d.user_id, d.amount, d.currency, d.status, d.payment_method,
-                d.razorpay_payment_id, d.payment_reference, d.payment_received_at,
-                d.reversed_at, d.reversal_reason,
+                d.razorpay_order_id, d.razorpay_payment_id, d.payment_reference, d.payment_received_at,
+                d.reversed_at, d.reversal_reason, d.request_80g,
                 d.created_at, d.project_id, d.event_id, d.num_trees,
-                u.name as user_name, u.email as user_email, u.user_type,
+                u.name as user_name, u.email as user_email, u.phone as user_phone,
+                u.user_type, u.city as user_city, u.pan_number as user_pan,
                 p.name as project_name, p.slug as project_slug,
-                e.event_name as event_name
+                e.event_name as event_name,
+                ref.name as referrer_name
          FROM donations d
          JOIN users u ON u.id = d.user_id
          LEFT JOIN projects p ON p.id = d.project_id
          LEFT JOIN events e ON e.id = d.event_id
+         LEFT JOIN users ref ON ref.id = d.referrer_id
          ${whereClause} ORDER BY d.created_at DESC
          LIMIT ${limit} OFFSET ${offset}`,
         params
@@ -374,6 +386,80 @@ const exportDonations = async ({ status, fromDate, toDate, projectId, eventId })
 
     const workbook = xlsx.utils.book_new();
     const worksheet = xlsx.utils.json_to_sheet(result.rows);
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Donations');
+    return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+};
+
+/**
+ * Whitelist of exportable columns for the custom-download picker.
+ * Keys are the stable public identifiers; label is the Excel header;
+ * sql is the SELECT expression (aliased at build time).
+ */
+const DONATION_EXPORT_COLUMNS = {
+    donor_name:          { label: 'Donor Name',                sql: 'u.name' },
+    donor_email:         { label: 'Donor Email',               sql: 'u.email' },
+    donor_phone:         { label: 'Donor Phone',               sql: 'u.phone' },
+    donor_type:          { label: 'Donor Type',                sql: 'u.user_type' },
+    donor_city:          { label: 'Donor City',                sql: 'u.city' },
+    donor_pan:           { label: 'Donor PAN',                 sql: 'u.pan_number' },
+    project:             { label: 'Project',                   sql: 'p.name' },
+    event:               { label: 'Event',                     sql: 'e.event_name' },
+    amount:              { label: 'Amount (INR)',              sql: 'd.amount' },
+    currency:            { label: 'Currency',                  sql: 'd.currency' },
+    status:              { label: 'Payment Status',            sql: 'd.status' },
+    payment_method:      { label: 'Payment Method',            sql: 'd.payment_method' },
+    razorpay_order_id:   { label: 'Razorpay Order ID',         sql: 'd.razorpay_order_id' },
+    razorpay_payment_id: { label: 'Razorpay Payment ID',       sql: 'd.razorpay_payment_id' },
+    offline_reference:   { label: 'Offline Reference',         sql: 'd.payment_reference' },
+    payment_received_at: { label: 'Payment Received On',       sql: 'd.payment_received_at' },
+    reversed_at:         { label: 'Reversed On',               sql: 'd.reversed_at' },
+    reversal_reason:     { label: 'Reversal Reason',           sql: 'd.reversal_reason' },
+    request_80g:         { label: '80G Certificate Requested', sql: 'd.request_80g' },
+    referrer_name:       { label: 'Referrer Name',             sql: 'ref.name' },
+    num_trees:           { label: 'Trees Funded',              sql: 'd.num_trees' },
+    created_at:          { label: 'Donation Date',             sql: 'd.created_at' }
+};
+
+/**
+ * Export donations with a caller-chosen subset of columns.
+ * `columns` is a comma-separated list of keys from DONATION_EXPORT_COLUMNS.
+ * Unknown keys are silently dropped; empty list falls back to the full export.
+ */
+const exportDonationsCustom = async ({ status, fromDate, toDate, projectId, eventId, columns }) => {
+    const requested = String(columns || '').split(',').map(s => s.trim()).filter(Boolean);
+    const validKeys = requested.filter(k => Object.prototype.hasOwnProperty.call(DONATION_EXPORT_COLUMNS, k));
+    if (validKeys.length === 0) {
+        return exportDonations({ status, fromDate, toDate, projectId, eventId });
+    }
+
+    const params = [];
+    const whereConditions = [`d.purpose = 'donation'`];
+    if (status)    { whereConditions.push(`d.status = ?`);     params.push(status); }
+    if (fromDate)  { whereConditions.push(`d.created_at >= ?`); params.push(fromDate); }
+    if (toDate)    { whereConditions.push(`d.created_at <= ?`); params.push(toDate); }
+    if (projectId) { whereConditions.push(`d.project_id = ?`); params.push(projectId); }
+    if (eventId)   { whereConditions.push(`d.event_id = ?`);   params.push(eventId); }
+    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+
+    const selectList = validKeys
+        .map(k => `${DONATION_EXPORT_COLUMNS[k].sql} AS ${JSON.stringify(DONATION_EXPORT_COLUMNS[k].label)}`)
+        .join(', ');
+
+    const result = await db.query(
+        `SELECT ${selectList}
+         FROM donations d
+         JOIN users u ON u.id = d.user_id
+         LEFT JOIN users ref ON ref.id = d.referrer_id
+         LEFT JOIN events e ON e.id = d.event_id
+         LEFT JOIN projects p ON p.id = d.project_id
+         ${whereClause} ORDER BY d.created_at DESC`,
+        params
+    );
+
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(result.rows, {
+        header: validKeys.map(k => DONATION_EXPORT_COLUMNS[k].label)
+    });
     xlsx.utils.book_append_sheet(workbook, worksheet, 'Donations');
     return xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
@@ -693,7 +779,7 @@ const lookupDonorByContact = async ({ email, phone } = {}) => {
 
 module.exports = {
     getDashboardStats, getRegistrations, exportRegistrations, getReferrals, exportReferrals,
-    getDonations, exportDonations, getUserAnalytics,
+    getDonations, exportDonations, exportDonationsCustom, DONATION_EXPORT_COLUMNS, getUserAnalytics,
     getLeaderboard, exportLeaderboard,
     getCertificateRequests, exportCertificates, updateCertificateStatus,
     getUserBySlug, lookupDonorByContact

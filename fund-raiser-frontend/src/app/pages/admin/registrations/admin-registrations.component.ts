@@ -19,7 +19,15 @@ interface Registration {
     created_at: string;
     enrolled_event_name?: string | null;
     first_project_name?: string | null;
+    signup_source?: 'register' | 'email_login' | 'admin_offline' | 'event_register' | null;
 }
+
+const SIGNUP_SOURCE_LABEL: Record<string, string> = {
+    register: 'Register',
+    email_login: 'Quick Donate',
+    admin_offline: 'Admin (Offline)',
+    event_register: 'Event Register'
+};
 
 @Component({
     selector: 'app-admin-registrations',
@@ -34,6 +42,7 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
     userTypeFilter = '';
     eventFilter = '';
     projectFilter = '';
+    signupSourceFilter = '';
     searchQuery = '';
     events: { id: string; event_name: string }[] = [];
     projects: { id: string; name: string }[] = [];
@@ -90,7 +99,7 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
     }
 
     loadRegistrations(page: number = 1): void {
-        this.api.getAdminRegistrations(20, page, this.userTypeFilter, this.searchQuery, this.eventFilter, this.projectFilter).subscribe({
+        this.api.getAdminRegistrations(20, page, this.userTypeFilter, this.searchQuery, this.eventFilter, this.projectFilter, this.signupSourceFilter).subscribe({
             next: (res: any) => {
                 if (res.success) {
                     this.registrations = res.data.registrations || [];
@@ -116,6 +125,7 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
         if (this.userTypeFilter) params.append('userType', this.userTypeFilter);
         if (this.eventFilter) params.append('eventId', this.eventFilter);
         if (this.projectFilter) params.append('projectId', this.projectFilter);
+        if (this.signupSourceFilter) params.append('signupSource', this.signupSourceFilter);
         const qs = params.toString() ? `?${params.toString()}` : '';
 
         fetch(`${environment.apiUrl}/admin/registrations/export${qs}`, {
@@ -145,5 +155,9 @@ export class AdminRegistrationsComponent implements OnInit, OnDestroy {
 
     slugify(name: string): string {
         return name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+    }
+
+    signupSourceLabel(source?: string | null): string {
+        return SIGNUP_SOURCE_LABEL[source || 'register'] || 'Register';
     }
 }

@@ -31,6 +31,16 @@
         </select>
     </div>
     <div class="filter-group">
+        <label class="filter-label">Source</label>
+        <select class="filter-select" [(ngModel)]="signupSourceFilter" (change)="onFilterChange()">
+            <option value="">All sources</option>
+            <option value="register">Register</option>
+            <option value="email_login">Quick Donate</option>
+            <option value="admin_offline">Admin (Offline)</option>
+            <option value="event_register">Event Register</option>
+        </select>
+    </div>
+    <div class="filter-group">
         <label class="filter-label">Search</label>
         <input type="text" class="filter-input" placeholder="Name or email..." [value]="searchQuery"
             (input)="onSearchInput($any($event.target).value)">
@@ -56,6 +66,7 @@
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Type</th>
+                    <th>Source</th>
                     <th>City</th>
                     <th>Enrolled via Event</th>
                     <th>First Donated Project</th>
@@ -69,6 +80,11 @@
                     <td>{{ user.email }}</td>
                     <td>{{ user.phone }}</td>
                     <td><span class="badge" [ngClass]="user.user_type">{{ user.user_type }}</span></td>
+                    <td>
+                        <span class="badge source-{{ user.signup_source || 'register' }}">
+                            {{ signupSourceLabel(user.signup_source) }}
+                        </span>
+                    </td>
                     <td>{{ user.city || '—' }}</td>
                     <td>{{ user.enrolled_event_name || '—' }}</td>
                     <td>{{ user.first_project_name || '—' }}</td>

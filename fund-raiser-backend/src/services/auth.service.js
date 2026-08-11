@@ -177,8 +177,8 @@ const registerUser = async (userData) => {
             `INSERT INTO users (
                 id, user_type, name, age, email, phone, password_hash,
                 class_grade, school_name,
-                organization_name, pan_number, referral_code, referred_by, email_verified
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true)`,
+                organization_name, pan_number, referral_code, referred_by, email_verified, signup_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true, 'register')`,
             [
                 userId, userType, name, age || null, email.toLowerCase(), phone, passwordHash,
                 classGrade || null, schoolName || null,
@@ -308,8 +308,8 @@ const emailLogin = async (name, email, nameChoice) => {
         }
 
         await db.query(
-            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, email_verified)
-             VALUES (?, 'individual', ?, ?, '', ?, ?, true)`,
+            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, email_verified, signup_source)
+             VALUES (?, 'individual', ?, ?, '', ?, ?, true, 'email_login')`,
             [userId, cleanName || 'Friend', normEmail, passwordHash, newReferralCode]
         );
 

@@ -335,8 +335,8 @@ const createStubDonor = async (client, { name, email, phone, userType, organizat
         `INSERT INTO users (
             id, user_type, name, email, phone, password_hash,
             organization_name, pan_number, city, referral_code, referred_by,
-            email_verified, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false, true)`,
+            email_verified, is_active, signup_source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false, true, 'admin_offline')`,
         [
             userId, userType || 'individual', name,
             String(email).toLowerCase(), String(phone), passwordHash,

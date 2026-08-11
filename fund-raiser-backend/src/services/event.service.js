@@ -452,8 +452,8 @@ const registerForEvent = async (eventId, registrationData) => {
         const age = calculateAge(date_of_birth);
         const newUserId = uuidv4();
         await db.query(
-            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, city, age, email_verified, referred_by, enrolled_via_event_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true, ?, ?)`,
+            `INSERT INTO users (id, user_type, name, email, phone, password_hash, referral_code, city, age, email_verified, referred_by, enrolled_via_event_id, signup_source)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true, ?, ?, 'event_register')`,
             [newUserId, selectedType, name, email.toLowerCase(), phone, passwordHash, newReferralCode, city, age, referrerId, eventId]
         );
         const newUserResult = await db.query('SELECT * FROM users WHERE id = ?', [newUserId]);
