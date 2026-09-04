@@ -130,7 +130,8 @@ import { VolunteerAdminService } from '../../../services/volunteer-admin.service
 
         .layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
         .col-main, .col-side { display: flex; flex-direction: column; gap: 20px; }
-        .col-side { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
+        /* No inner scroller — see the CSR enquiry detail page: a nested scroll region hid
+           controls below a fold that nobody expected. */
 
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #F0F0F0; }
@@ -169,7 +170,6 @@ import { VolunteerAdminService } from '../../../services/volunteer-admin.service
         @media (max-width: 1024px) {
             .layout { grid-template-columns: 1fr; }
             .pairs { grid-template-columns: 1fr; }
-            .col-side { position: static; max-height: none; overflow-y: visible; }
         }
     `]
 })

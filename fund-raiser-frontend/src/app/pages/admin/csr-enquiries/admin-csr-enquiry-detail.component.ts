@@ -146,13 +146,18 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
                     <section class="card">
                         <header class="head"><h2>Status</h2></header>
                         <div class="body">
-                            <select [(ngModel)]="pendingStatus">
+                            <p class="current">Currently <strong>{{ e.status_label }}</strong></p>
+                            <select [(ngModel)]="pendingStatus" (ngModelChange)="statusSaved = false">
                                 <option *ngFor="let s of statuses" [value]="s.key">{{ s.label }}</option>
                             </select>
                             <input type="text" [(ngModel)]="statusReason" placeholder="Reason (optional)">
-                            <button class="btn btn-primary full" [disabled]="pendingStatus === e.status || savingStatus" (click)="saveStatus()">
+                            <!-- Enabled whenever nothing is in flight. Disabling it until the
+                                 dropdown changed made it read as broken rather than as "nothing
+                                 to save yet". -->
+                            <button class="btn btn-primary full" [disabled]="savingStatus" (click)="saveStatus()">
                                 {{ savingStatus ? 'Updating…' : 'Update status' }}
                             </button>
+                            <p *ngIf="statusSaved" class="ok">Status updated.</p>
                             <p *ngIf="e.status_reason" class="hint">Last reason: {{ e.status_reason }}</p>
                         </div>
                     </section>
@@ -238,13 +243,10 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
 
         .layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
         .col-main, .col-side { display: flex; flex-direction: column; gap: 20px; }
-        /* The left column (notes, milestones, activity log) grows without limit, so the
-           sidebar sticks and scrolls on its own rather than trailing off the screen. */
-        .col-side { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
-        .col-side::-webkit-scrollbar { width: 6px; }
-        .col-side::-webkit-scrollbar-track { background: transparent; }
-        .col-side::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
-        .col-side::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+        /* The sidebar deliberately has no scroller of its own. Four stacked panels are
+           taller than a laptop viewport, so an inner scroll region put the "Update status"
+           button below a fold nobody expected and it read as missing. Letting the column
+           flow with the page keeps every control reachable by ordinary scrolling. */
 
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #F0F0F0; }
@@ -290,6 +292,9 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
         .mini { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #9CA3AF; }
         .readonly { margin: 0; font-size: 0.875rem; font-weight: 600; color: #102a43; }
         .hint { margin: 0; font-size: 0.75rem; color: #9CA3AF; }
+        .current { margin: 0; font-size: 0.8125rem; color: #6B7280; }
+        .current strong { color: #102a43; }
+        .ok { margin: 0; font-size: 0.8125rem; color: #166534; font-weight: 600; }
         .empty { margin: 0; font-size: 0.8125rem; color: #9CA3AF; font-style: italic; }
 
         .upload { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px dashed #D1D5DB; border-radius: 8px; font-size: 0.8125rem; color: #374151; cursor: pointer; }
@@ -318,7 +323,6 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
         @media (max-width: 1024px) {
             .layout { grid-template-columns: 1fr; }
             .pairs { grid-template-columns: 1fr; }
-            .col-side { position: static; max-height: none; overflow-y: visible; }
         }
     `]
 })
@@ -335,6 +339,7 @@ export class AdminCsrEnquiryDetailComponent implements OnInit {
     pendingStatus = '';
     statusReason = '';
     savingStatus = false;
+    statusSaved = false;
 
     pendingOwner = '';
     savingOwner = false;
@@ -392,9 +397,16 @@ export class AdminCsrEnquiryDetailComponent implements OnInit {
 
     saveStatus(): void {
         this.savingStatus = true;
+        this.statusSaved = false;
         this.actionError = '';
         this.svc.updateStatus(this.id, this.pendingStatus, this.statusReason).subscribe({
-            next: (res) => { this.apply(res?.data); this.savingStatus = false; this.cdr.markForCheck(); },
+            next: (res) => {
+                this.apply(res?.data);
+                this.savingStatus = false;
+                this.statusSaved = true;
+                this.cdr.markForCheck();
+                setTimeout(() => { this.statusSaved = false; this.cdr.markForCheck(); }, 2500);
+            },
             error: (err) => { this.savingStatus = false; this.fail(err); }
         });
     }
