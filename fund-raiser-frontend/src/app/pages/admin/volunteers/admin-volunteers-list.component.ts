@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { VolunteerAdminService, VolunteerFilters } from '../../../services/volunteer-admin.service';
+import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
 
 /**
  * Volunteer Master — the register of everyone who has signed up.
@@ -111,10 +112,8 @@ import { VolunteerAdminService, VolunteerFilters } from '../../../services/volun
                 </div>
                 <div class="f">
                     <label>Area of interest</label>
-                    <select [(ngModel)]="filters.area" (change)="applyFilters()">
-                        <option value="">Any area</option>
-                        <option *ngFor="let a of meta.areas" [value]="a">{{ a }}</option>
-                    </select>
+                    <input type="text" [(ngModel)]="filters.area" (keyup.enter)="applyFilters()"
+                           (change)="applyFilters()" placeholder="Type an area">
                 </div>
                 <div class="f">
                     <label>Occupation type</label>
@@ -125,16 +124,14 @@ import { VolunteerAdminService, VolunteerFilters } from '../../../services/volun
                 </div>
                 <div class="f">
                     <label>Institution</label>
-                    <select [(ngModel)]="filters.institution" (change)="applyFilters()">
-                        <option value="">Any institution</option>
-                        <option *ngFor="let i of meta.institutions" [value]="i">{{ i }}</option>
-                    </select>
+                    <input type="text" [(ngModel)]="filters.institution" (keyup.enter)="applyFilters()"
+                           (change)="applyFilters()" placeholder="Type a college or employer">
                 </div>
                 <div class="f">
                     <label>City</label>
                     <select [(ngModel)]="filters.city" (change)="applyFilters()">
                         <option value="">Any city</option>
-                        <option *ngFor="let c of meta.cities" [value]="c">{{ c }}</option>
+                        <option *ngFor="let c of cities" [value]="c">{{ c }}</option>
                     </select>
                 </div>
                 <div class="f">
@@ -289,6 +286,7 @@ export class AdminVolunteersListComponent implements OnInit {
     pagination: any = null;
 
     meta: any = { areas: [], cities: [], institutions: [], occupations: [], availabilityOptions: [] };
+    readonly cities = TAMIL_NADU_CITIES;
     filters: VolunteerFilters = { page: 1, limit: 20 };
 
     loading = true;

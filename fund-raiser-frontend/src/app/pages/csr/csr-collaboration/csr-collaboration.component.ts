@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
 import { CsrPageService } from '../../../services/csr-page.service';
+import { accentClasses } from '../../../shared/accent-classes';
 import { CsrEnquiryFormComponent, EnquiryProjectOption } from '../../../components/csr-enquiry-form/csr-enquiry-form.component';
 
 interface ProjectStats {
@@ -16,6 +17,8 @@ interface ProjectStats {
 
 interface CsrProject {
     id: string;
+    focus_area: string | null;
+    contribution_modes: string[] | null;
     slug: string;
     name: string;
     tagline: string | null;
@@ -38,14 +41,11 @@ interface CsrTrust {
     signatoryName: string | null;
 }
 
-interface CsrMeta {
-    focusArea: string;
-    modes: string[];
-}
-
-interface OpportunityCard extends CsrProject {
-    focusArea: string;
-    modes: string[];
+interface ContributionArea {
+    title: string;
+    description: string;
+    icon: string;
+    accent: string;
 }
 
 interface RegistrationRow {
@@ -61,86 +61,6 @@ interface Highlight {
     chip: string;
     iconColor: string;
 }
-
-/**
- * Focus area + contribution modes, per project slug.
- *
- * Held in code rather than the DB by client decision (2026-09-04): with two live
- * projects, admin-editable columns were not worth the migration. If that changes,
- * add `focus_area` + `contribution_modes` to the `projects` table and have
- * `buildOpportunities()` read them off the API row — the template stays as is.
- */
-const CSR_META: Record<string, CsrMeta> = {
-    roots: {
-        focusArea: 'Environment',
-        modes: [
-            'Fund a plantation drive',
-            'Sponsor a school green belt',
-            'Employee volunteering day',
-            'Adopt a native-species nursery',
-        ],
-    },
-    zoo: {
-        focusArea: 'Animal Welfare',
-        modes: [
-            'Sponsor animal care & feed',
-            'Fund a habitat enrichment project',
-            'Support conservation awareness camps',
-            'Employee engagement visit',
-        ],
-    },
-};
-
-const CSR_META_FALLBACK: CsrMeta = {
-    focusArea: 'Community',
-    modes: ['Programme sponsorship', 'Employee volunteering', 'In-kind contribution'],
-};
-
-/** Thematic areas ICE accepts CSR contributions under, aligned to Schedule VII. */
-const CONTRIBUTION_AREAS = [
-    {
-        icon: 'leaf',
-        chip: 'bg-primary/10',
-        iconColor: 'text-primary',
-        title: 'Environment',
-        description: 'Afforestation, native-species restoration and urban green cover.',
-    },
-    {
-        icon: 'school',
-        chip: 'bg-blue-50',
-        iconColor: 'text-blue-500',
-        title: 'Education & Skilling',
-        description: 'Learning infrastructure, environmental literacy and rural skilling.',
-    },
-    {
-        icon: 'heart',
-        chip: 'bg-rose-50',
-        iconColor: 'text-rose-500',
-        title: 'Community Health',
-        description: 'Preventive health camps, clean water access and nutrition support.',
-    },
-    {
-        icon: 'sprout',
-        chip: 'bg-amber-50',
-        iconColor: 'text-amber-500',
-        title: 'Rural Development',
-        description: 'Livelihood generation, farmer support and rural infrastructure.',
-    },
-    {
-        icon: 'shield-check',
-        chip: 'bg-purple-50',
-        iconColor: 'text-purple-500',
-        title: 'Animal Welfare',
-        description: 'Habitat protection, animal care and conservation awareness.',
-    },
-    {
-        icon: 'users',
-        chip: 'bg-green-50',
-        iconColor: 'text-green-600',
-        title: 'Employee Engagement',
-        description: 'Volunteering days, team plantation drives and field visits.',
-    },
-];
 
 /** Static asset — drop the signed CSR-1 acknowledgement here as a PDF. */
 const CSR1_CERTIFICATE_URL = '/cert/ice-csr1-certificate.pdf';
@@ -272,7 +192,7 @@ const CSR1_CERTIFICATE_URL = '/cert/ice-csr1-certificate.pdf';
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2 mb-0.5">
                                         <h3 class="text-base font-semibold text-accent m-0 truncate">{{ o.name }}</h3>
-                                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wider shrink-0">{{ o.focusArea }}</span>
+                                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wider shrink-0">{{ o.focus_area }}</span>
                                     </div>
                                     <div *ngIf="o.tagline" class="text-xs text-neutral-500 truncate">{{ o.tagline }}</div>
                                 </div>
@@ -310,7 +230,7 @@ const CSR1_CERTIFICATE_URL = '/cert/ice-csr1-certificate.pdf';
                                     Ways to contribute
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <div *ngFor="let m of o.modes" class="flex items-center gap-2 p-2 bg-neutral-50 rounded-lg">
+                                    <div *ngFor="let m of o.contribution_modes" class="flex items-center gap-2 p-2 bg-neutral-50 rounded-lg">
                                         <lucide-icon name="circle-check" class="w-3.5 h-3.5 text-primary shrink-0"></lucide-icon>
                                         <span class="text-xs text-neutral-700">{{ m }}</span>
                                     </div>
@@ -340,8 +260,8 @@ const CSR1_CERTIFICATE_URL = '/cert/ice-csr1-certificate.pdf';
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div *ngFor="let a of areas" class="bg-white rounded-2xl p-4 shadow-soft">
-                            <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-3" [ngClass]="a.chip">
-                                <lucide-icon [name]="a.icon" class="w-4.5 h-4.5" [ngClass]="a.iconColor"></lucide-icon>
+                            <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-3" [ngClass]="accent(a.accent).chip">
+                                <lucide-icon [name]="a.icon" class="w-4.5 h-4.5" [ngClass]="accent(a.accent).icon"></lucide-icon>
                             </div>
                             <h4 class="text-sm font-semibold text-accent m-0 mb-0.5">{{ a.title }}</h4>
                             <p class="text-xs text-neutral-500 m-0">{{ a.description }}</p>
@@ -512,9 +432,10 @@ const CSR1_CERTIFICATE_URL = '/cert/ice-csr1-certificate.pdf';
 export class CsrCollaborationComponent implements OnInit {
     loading = true;
     trust: CsrTrust | null = null;
-    opportunities: OpportunityCard[] = [];
+    opportunities: CsrProject[] = [];
     highlights: Highlight[] = [];
-    readonly areas = CONTRIBUTION_AREAS;
+    areas: ContributionArea[] = [];
+    readonly accent = accentClasses;
     readonly currentYear = new Date().getFullYear();
 
     certificateUrl = CSR1_CERTIFICATE_URL;
@@ -543,7 +464,8 @@ export class CsrCollaborationComponent implements OnInit {
             next: (res) => {
                 const data = res?.data || {};
                 this.trust = data.trust || null;
-                this.buildOpportunities(data.projects || []);
+                this.areas = data.focusAreas || [];
+                this.opportunities = data.projects || [];
                 this.buildHighlights(data.projects || []);
                 this.loading = false;
                 this.cdr.markForCheck();
@@ -620,7 +542,7 @@ export class CsrCollaborationComponent implements OnInit {
         return this.areas.map(a => a.title);
     }
 
-    openEnquiry(project?: OpportunityCard): void {
+    openEnquiry(project?: CsrProject): void {
         this.enquiryProject = project?.name || null;
         this.enquiryProjectId = project?.id || null;
         this.enquiryOpen = true;
@@ -652,17 +574,6 @@ export class CsrCollaborationComponent implements OnInit {
     truncate(text: string | null, max: number): string {
         if (!text) return '';
         return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
-    }
-
-    /**
-     * Merge the DB project rows with the hardcoded CSR metadata. A project with no
-     * CSR_META entry still renders, using the generic fallback.
-     */
-    private buildOpportunities(projects: CsrProject[]): void {
-        this.opportunities = projects.map(p => {
-            const meta = CSR_META[p.slug] || CSR_META_FALLBACK;
-            return { ...p, focusArea: meta.focusArea, modes: meta.modes };
-        });
     }
 
     /**

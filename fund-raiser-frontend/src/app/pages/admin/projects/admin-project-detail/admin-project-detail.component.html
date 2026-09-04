@@ -67,6 +67,22 @@
             <div class="form-group">
                 <label class="form-label">Banner Image URLs</label>
                 <textarea formControlName="banner_urls_text" rows="4" class="form-input form-textarea" placeholder="One URL per line"></textarea>
+            </div>
+        </section>
+
+        <section class="card form-section">
+            <h2>CSR Collaboration Card</h2>
+            <p class="form-hint">Shown on the public CSR page. Leave blank to hide this project's card details there.</p>
+
+            <div class="form-group">
+                <label class="form-label">Focus Area</label>
+                <input type="text" formControlName="focus_area" class="form-input" placeholder="e.g. Environment">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ways to Contribute</label>
+                <textarea formControlName="contribution_modes_text" rows="4" class="form-input form-textarea"
+                          placeholder="One per line, e.g.&#10;Fund a plantation drive&#10;Employee volunteering day"></textarea>
                 <p class="form-hint">One URL per line. Rendered as a carousel on the public page.</p>
             </div>
         </section>

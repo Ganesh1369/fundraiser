@@ -81,6 +81,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', require('./routes/event.routes'));
 app.use('/api', require('./routes/project.routes'));
 app.use('/api', require('./routes/csr-page.routes'));
+app.use('/api', require('./routes/page-content.routes'));
 app.use('/api', require('./routes/csr-enquiry.routes'));
 app.use('/api', require('./routes/csr-enquiry-admin.routes'));
 app.use('/api', require('./routes/volunteer.routes'));

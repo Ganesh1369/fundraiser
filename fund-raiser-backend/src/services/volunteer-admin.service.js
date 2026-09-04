@@ -49,10 +49,14 @@ const buildFilters = (q = {}) => {
     if (q.status === 'inactive') where.push('v.is_active = false');
     else if (q.status !== 'all') where.push('v.is_active = true');
 
-    if (q.area) { where.push('v.area_of_interest = ?'); params.push(q.area); }
+    // Area, institution and city match on a partial string rather than an exact one.
+    // Volunteers type these freely, so "Christ University" must still be found by typing
+    // "christ", and a city picked from a fixed list must still match "Chennai, TN" or a
+    // stray trailing space in the stored value.
+    if (q.area) { where.push('v.area_of_interest LIKE ?'); params.push(`%${String(q.area).trim()}%`); }
     if (q.occupationType) { where.push('v.occupation_type = ?'); params.push(q.occupationType); }
-    if (q.institution) { where.push('v.institution = ?'); params.push(q.institution); }
-    if (q.city) { where.push('v.city = ?'); params.push(q.city); }
+    if (q.institution) { where.push('v.institution LIKE ?'); params.push(`%${String(q.institution).trim()}%`); }
+    if (q.city) { where.push('v.city LIKE ?'); params.push(`%${String(q.city).trim()}%`); }
     if (q.pincode) { where.push('v.pincode = ?'); params.push(q.pincode); }
 
     // Availability filters on day type; "any" leaves it alone.

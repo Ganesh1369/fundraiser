@@ -1,115 +1,26 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { VolunteerRegistrationFormComponent } from '../../../components/volunteer-registration-form/volunteer-registration-form.component';
+import { VolunteerService } from '../../../services/volunteer.service';
+import { accentClasses } from '../../../shared/accent-classes';
 
 interface VolunteerRole {
     title: string;
-    focusArea: string;
+    focus_area: string;
     location: string;
     commitment: string;
     description: string;
     icon: string;
-    chip: string;
-    iconColor: string;
+    accent: string;
 }
 
-/**
- * Volunteer opportunities.
- *
- * Held in code rather than the database, matching the decision taken for the CSR
- * opportunity cards (2026-09-04): the list is short and changes rarely. Moving it to a
- * `volunteer_roles` table later means replacing this constant with an API call —
- * the template already renders from a typed array and would not change.
- *
- * `focusArea` values double as the Area of Interest options on the registration form, so
- * keep them in step with whatever Workstream 2 stores.
- */
-const VOLUNTEER_ROLES: VolunteerRole[] = [
-    {
-        title: 'Plantation Drive Volunteer',
-        focusArea: 'Environment',
-        location: 'Bengaluru & surrounding districts',
-        commitment: 'Weekends · 4–6 hours per drive',
-        description: 'Join native-species planting drives — pit digging, sapling placement, mulching and geo-tagging each tree.',
-        icon: 'sprout', chip: 'bg-primary/10', iconColor: 'text-primary',
-    },
-    {
-        title: 'Nursery Care Volunteer',
-        focusArea: 'Environment',
-        location: 'ICE nursery, Bengaluru',
-        commitment: 'Weekdays · 3–4 hours per week',
-        description: 'Look after saplings between drives — watering, repotting, shade management and survival record-keeping.',
-        icon: 'leaf', chip: 'bg-green-50', iconColor: 'text-green-600',
-    },
-    {
-        title: 'School Green Club Mentor',
-        focusArea: 'Education',
-        location: 'Partner schools',
-        commitment: 'Weekdays · 2–3 hours per week',
-        description: 'Run environmental sessions with school green clubs and support students through their own campus projects.',
-        icon: 'school', chip: 'bg-blue-50', iconColor: 'text-blue-500',
-    },
-    {
-        title: 'Animal Care Assistant',
-        focusArea: 'Animal Welfare',
-        location: 'ICE ZOO',
-        commitment: 'Flexible · 4 hours per week',
-        description: 'Assist the care team with feeding routines, enclosure enrichment and visitor awareness sessions.',
-        icon: 'shield-check', chip: 'bg-purple-50', iconColor: 'text-purple-500',
-    },
-    {
-        title: 'Event Support Volunteer',
-        focusArea: 'Community',
-        location: 'Event locations across the city',
-        commitment: 'Event days · one-off or recurring',
-        description: 'Help run marathons, awareness camps and donor events — registration desks, wayfinding and participant support.',
-        icon: 'calendar', chip: 'bg-amber-50', iconColor: 'text-amber-500',
-    },
-    {
-        title: 'Content & Outreach Volunteer',
-        focusArea: 'Communications',
-        location: 'Remote',
-        commitment: 'Flexible · 3–5 hours per week',
-        description: 'Write field stories, edit drive photography and help grow ICE\'s reach on social channels.',
-        icon: 'megaphone', chip: 'bg-rose-50', iconColor: 'text-rose-500',
-    },
-];
-
-/** Eligibility — the "Who can apply" section. */
-const ELIGIBILITY = [
-    {
-        icon: 'user-plus',
-        title: 'Aged 16 and above',
-        description: 'Anyone 16 or older can apply. Applicants under 18 need a parent or guardian to countersign the consent form.',
-    },
-    {
-        icon: 'graduation-cap',
-        title: 'Students and professionals',
-        description: 'College students, working professionals, homemakers and retirees are all welcome — no background is a prerequisite.',
-    },
-    {
-        icon: 'heart',
-        title: 'No experience needed',
-        description: 'Every role comes with an orientation and a field lead. Bring willingness; we will cover the rest.',
-    },
-    {
-        icon: 'clock',
-        title: 'A realistic commitment',
-        description: 'Tell us honestly how many hours you can give. A dependable two hours beats an optimistic ten.',
-    },
-    {
-        icon: 'shield-check',
-        title: 'Code of conduct',
-        description: 'All volunteers agree to ICE\'s code of conduct, covering safety, child protection and respectful field behaviour.',
-    },
-    {
-        icon: 'file-text',
-        title: 'Valid ID proof',
-        description: 'A government-issued ID is required at registration — Aadhaar, PAN, passport, or a student ID card.',
-    },
-];
+interface EligibilityPoint {
+    title: string;
+    description: string;
+    icon: string;
+}
 
 @Component({
     selector: 'app-volunteer-landing',
@@ -126,8 +37,10 @@ const ELIGIBILITY = [
                         <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
                     </a>
                     <div class="flex items-center gap-1.5 sm:gap-2">
+                        <!-- Hidden with the opportunities section.
                         <a href="#roles" (click)="scrollTo($event, 'roles')"
                            class="hidden md:inline px-3 py-2 text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Opportunities</a>
+                        -->
                         <a href="#eligibility" (click)="scrollTo($event, 'eligibility')"
                            class="hidden md:inline px-3 py-2 text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Who can apply</a>
                         <a routerLink="/csr-collaboration"
@@ -140,7 +53,11 @@ const ELIGIBILITY = [
                 </div>
             </header>
 
-            <main class="max-w-6xl mx-auto px-5 py-8">
+            <div *ngIf="loading" class="max-w-6xl mx-auto px-5 py-24 flex items-center justify-center">
+                <div class="w-10 h-10 border-4 border-neutral-200 border-t-primary rounded-full animate-spin"></div>
+            </div>
+
+            <main *ngIf="!loading" class="max-w-6xl mx-auto px-5 py-8">
                 <!-- Why volunteer with ICE -->
                 <div class="relative overflow-hidden bg-accent rounded-2xl p-5 md:p-6 mb-8">
                     <div class="relative z-10">
@@ -161,10 +78,12 @@ const ELIGIBILITY = [
                                     class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors inline-flex items-center justify-center gap-2">
                                 Apply Now <lucide-icon name="arrow-right" class="w-4 h-4"></lucide-icon>
                             </button>
+                            <!-- Hidden with the opportunities section.
                             <button (click)="scrollTo($event, 'roles')"
                                     class="px-5 py-2.5 border border-white/20 text-white text-sm font-semibold rounded-xl hover:bg-white/10 transition-colors">
                                 See opportunities
                             </button>
+                            -->
                         </div>
                     </div>
                     <div class="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
@@ -202,7 +121,12 @@ const ELIGIBILITY = [
                     </div>
                 </section>
 
-                <!-- Volunteer opportunities -->
+                <!-- TEMPORARILY HIDDEN — Volunteer opportunities.
+                     Commented out on request; the volunteer_roles rows are untouched, so the
+                     Area of Interest dropdown on the registration form still populates from
+                     them. Uncomment this block and the two nav links above to restore.
+
+                (section: Volunteer opportunities)
                 <section id="roles" class="mb-8 scroll-mt-20">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-base font-semibold text-accent m-0">Volunteer opportunities</h2>
@@ -210,13 +134,13 @@ const ELIGIBILITY = [
                     </div>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div *ngFor="let r of roles" class="bg-white rounded-2xl p-5 shadow-soft flex flex-col">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" [ngClass]="r.chip">
-                                <lucide-icon [name]="r.icon" class="w-5 h-5" [ngClass]="r.iconColor"></lucide-icon>
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" [ngClass]="accent(r.accent).chip">
+                                <lucide-icon [name]="r.icon" class="w-5 h-5" [ngClass]="accent(r.accent).icon"></lucide-icon>
                             </div>
 
                             <h3 class="text-sm font-semibold text-accent m-0 mb-1">{{ r.title }}</h3>
                             <span class="self-start px-2 py-0.5 text-[10px] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wider mb-3">
-                                {{ r.focusArea }}
+                                {{ r.focus_area }}
                             </span>
 
                             <p class="text-xs text-neutral-500 m-0 mb-4 flex-1">{{ r.description }}</p>
@@ -239,6 +163,8 @@ const ELIGIBILITY = [
                         </div>
                     </div>
                 </section>
+
+                -->
 
                 <!-- Who can apply -->
                 <section id="eligibility" class="mb-8 scroll-mt-20">
@@ -324,13 +250,38 @@ const ELIGIBILITY = [
         </div>
     `
 })
-export class VolunteerLandingComponent {
-    readonly roles = VOLUNTEER_ROLES;
-    readonly eligibility = ELIGIBILITY;
-    readonly currentYear = new Date().getFullYear();
+export class VolunteerLandingComponent implements OnInit {
+    roles: VolunteerRole[] = [];
+    eligibility: EligibilityPoint[] = [];
+    /** Area-of-interest options for the form, derived server-side from the live roles. */
+    focusAreas: string[] = [];
+    loading = true;
 
-    /** Area-of-interest options for the form — the focus areas the roles are tagged with. */
-    readonly focusAreas = [...new Set(VOLUNTEER_ROLES.map(r => r.focusArea))];
+    readonly currentYear = new Date().getFullYear();
+    readonly accent = accentClasses;
+
+    constructor(
+        private volunteerService: VolunteerService,
+        private cdr: ChangeDetectorRef
+    ) { }
+
+    ngOnInit(): void {
+        this.volunteerService.getPage().subscribe({
+            next: (res) => {
+                const d = res?.data || {};
+                this.roles = d.roles || [];
+                this.eligibility = d.eligibility || [];
+                this.focusAreas = d.areas || [];
+                this.loading = false;
+                this.cdr.markForCheck();
+            },
+            error: () => {
+                // The static sections still render; the cards simply stay empty.
+                this.loading = false;
+                this.cdr.markForCheck();
+            }
+        });
+    }
 
     applyOpen = false;
     applyRole: string | null = null;

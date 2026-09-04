@@ -11,6 +11,11 @@ export class VolunteerService {
 
     // --- Public ---
 
+    /** Roles, eligibility and the area-of-interest options — all from the database. */
+    getPage(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/volunteer/page`);
+    }
+
     getChallenge(): Observable<any> {
         return this.http.get(`${this.apiUrl}/volunteers/challenge`);
     }

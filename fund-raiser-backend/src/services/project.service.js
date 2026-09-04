@@ -15,7 +15,11 @@ const parseJsonField = (val) => {
 
 const hydrateProject = (row) => {
     if (!row) return row;
-    return { ...row, banner_urls: parseJsonField(row.banner_urls) };
+    return {
+        ...row,
+        banner_urls: parseJsonField(row.banner_urls),
+        contribution_modes: parseJsonField(row.contribution_modes),
+    };
 };
 
 const buildPlaceholders = (count) => Array(count).fill('?').join(',');
@@ -203,7 +207,9 @@ const getByIdForAdmin = async (id) => {
 
 const PROJECT_FIELDS = [
     'slug', 'name', 'tagline', 'logo_url', 'description',
-    'vision', 'mission', 'banner_urls', 'display_order', 'is_active'
+    'vision', 'mission', 'banner_urls', 'display_order', 'is_active',
+    // CSR opportunity card: the focus-area chip and the "Ways to contribute" list.
+    'focus_area', 'contribution_modes'
 ];
 
 const pickProjectFields = (input) => {
@@ -215,8 +221,10 @@ const pickProjectFields = (input) => {
 };
 
 // mysql2 needs JSON columns serialised explicitly to a string.
+const JSON_COLUMNS = ['banner_urls', 'contribution_modes'];
+
 const serialiseValue = (col, val) => {
-    if (col === 'banner_urls' && val != null && typeof val !== 'string') {
+    if (JSON_COLUMNS.includes(col) && val != null && typeof val !== 'string') {
         return JSON.stringify(val);
     }
     return val;

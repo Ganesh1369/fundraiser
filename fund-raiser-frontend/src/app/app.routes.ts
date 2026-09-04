@@ -91,6 +91,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/csr-enquiries/admin-csr-enquiry-detail.component').then(m => m.AdminCsrEnquiryDetailComponent)
             },
             {
+                path: 'page-content',
+                loadComponent: () => import('./pages/admin/page-content/admin-page-content.component').then(m => m.AdminPageContentComponent)
+            },
+            {
                 path: 'csr-email-templates',
                 loadComponent: () => import('./pages/admin/csr-email-templates/admin-csr-email-templates.component').then(m => m.AdminCsrEmailTemplatesComponent)
             },

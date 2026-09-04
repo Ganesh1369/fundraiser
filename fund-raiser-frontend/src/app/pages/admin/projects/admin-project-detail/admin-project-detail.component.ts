@@ -43,6 +43,9 @@ export class AdminProjectDetailComponent implements OnInit {
             vision: [''],
             mission: [''],
             banner_urls_text: [''],
+            // CSR opportunity card fields, shown on /csr-collaboration.
+            focus_area: [''],
+            contribution_modes_text: [''],
             display_order: [0],
             is_active: [true]
         });
@@ -88,6 +91,8 @@ export class AdminProjectDetailComponent implements OnInit {
                     vision: p.vision || '',
                     mission: p.mission || '',
                     banner_urls_text: banners,
+                    focus_area: p.focus_area || '',
+                    contribution_modes_text: (p.contribution_modes || []).join('\n'),
                     display_order: p.display_order ?? 0,
                     is_active: !!p.is_active
                 });
@@ -110,10 +115,14 @@ export class AdminProjectDetailComponent implements OnInit {
         this.successMessage = '';
 
         const raw = this.projectForm.value;
-        const banner_urls = (raw.banner_urls_text || '')
+        // Both textareas are one value per line.
+        const toLines = (text: string): string[] => (text || '')
             .split('\n')
             .map((s: string) => s.trim())
             .filter((s: string) => s.length > 0);
+
+        const banner_urls = toLines(raw.banner_urls_text);
+        const contribution_modes = toLines(raw.contribution_modes_text);
 
         const payload = {
             name: raw.name,
@@ -123,6 +132,8 @@ export class AdminProjectDetailComponent implements OnInit {
             description: raw.description || null,
             vision: raw.vision || null,
             mission: raw.mission || null,
+            focus_area: raw.focus_area || null,
+            contribution_modes: contribution_modes.length ? contribution_modes : null,
             banner_urls,
             display_order: Number(raw.display_order) || 0,
             is_active: !!raw.is_active
