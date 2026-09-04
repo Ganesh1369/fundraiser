@@ -67,6 +67,32 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    /* The sidebar is fixed to the viewport, so the nav has to scroll on its own once the
+       item list outgrows the screen — otherwise the last items and the logout button
+       below become unreachable. min-height:0 is required for a flex child to shrink
+       below its content height and actually scroll. */
+    overflow-y: auto;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Match the scrollbar to the dark sidebar rather than the light default. */
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
 }
 
 .sidebar.dark .nav-item {

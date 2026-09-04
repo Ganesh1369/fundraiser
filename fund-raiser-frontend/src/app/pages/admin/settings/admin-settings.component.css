@@ -80,6 +80,13 @@
     color: #102a43;
 }
 
+/* Explanatory line under a section heading. */
+.form-hint {
+    font-size: 0.75rem;
+    color: #737373;
+    margin: 0;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;

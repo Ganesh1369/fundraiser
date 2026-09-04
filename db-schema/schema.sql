@@ -295,7 +295,13 @@ INSERT INTO org_settings (setting_key, setting_type, label, is_required) VALUES
     ('ice_80g_valid_to',       'date',  '80G validity — to',               true),
     ('ice_signatory_name',     'text',  'Signatory name & designation',    true),
     ('ice_signatory_image',    'image', 'Signatory signature image',       true),
-    ('ice_logo',               'image', 'ICE logo (used on certificate)',  true);
+    ('ice_logo',               'image', 'ICE logo (used on certificate)',  true),
+    -- Display-only compliance numbers surfaced on the CSR Collaboration page and the
+    -- site-wide compliance strip. is_required stays false so assertRequired() (which
+    -- gates 80G cert generation) is unaffected.
+    ('ice_csr1_reg_number',     'text', 'CSR-1 registration number',           false),
+    ('ice_12a_reg_number',      'text', '12A registration number',             false),
+    ('ice_section8_reg_number', 'text', 'Section 8 registration number / CIN', false);
 
 -- ===== Phase 2.1: Projects =====
 -- First-class project entities. Day-2 migration links events.project_id and donations.project_id here.

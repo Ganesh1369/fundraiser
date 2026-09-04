@@ -224,7 +224,26 @@ const sendLoginAcknowledgementEmail = async (to, name) => {
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Send a pre-rendered inner body inside the standard ICE shell.
+ *
+ * Used by the CSR enquiry module, whose message bodies are admin-editable and live in
+ * `csr_email_templates`. Keeping the wrapper here means an admin edits the message only —
+ * the navy header, logo and footer strip can never be broken by a bad edit.
+ */
+const sendWrappedEmail = async ({ to, subject, bodyHtml, replyTo }) => {
+    const mailOptions = {
+        from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to,
+        subject,
+        html: emailWrapper(bodyHtml)
+    };
+    if (replyTo) mailOptions.replyTo = replyTo;
+    return transporter.sendMail(mailOptions);
+};
+
 module.exports = {
+    sendWrappedEmail,
     sendOtpEmail,
     sendLoginAcknowledgementEmail,
     sendPasswordResetEmail,

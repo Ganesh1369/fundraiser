@@ -119,6 +119,8 @@ const getPublicTrust = async () => {
         reg80gValidFrom: val('ice_80g_valid_from'),
         reg80gValidTo:   val('ice_80g_valid_to'),
         regCsr1Number:   val('ice_csr1_reg_number'),
+        reg12aNumber:    val('ice_12a_reg_number'),
+        regSection8Number: val('ice_section8_reg_number'),
         signatoryName:   val('ice_signatory_name'),
     };
 };

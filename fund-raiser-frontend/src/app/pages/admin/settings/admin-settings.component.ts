@@ -64,7 +64,10 @@ export class AdminSettingsComponent implements OnInit {
             ice_80g_reg_number: ['', [Validators.required, Validators.minLength(3)]],
             ice_80g_valid_from: ['', Validators.required],
             ice_80g_valid_to: ['', Validators.required],
-            ice_signatory_name: ['', [Validators.required, Validators.minLength(2)]]
+            ice_signatory_name: ['', [Validators.required, Validators.minLength(2)]],
+            ice_csr1_reg_number: [''],
+            ice_12a_reg_number: [''],
+            ice_section8_reg_number: ['']
         }, { validators: dateRangeValidator });
     }
 
@@ -100,7 +103,10 @@ export class AdminSettingsComponent implements OnInit {
             ice_80g_reg_number: get('ice_80g_reg_number'),
             ice_80g_valid_from: get('ice_80g_valid_from'),
             ice_80g_valid_to: get('ice_80g_valid_to'),
-            ice_signatory_name: get('ice_signatory_name')
+            ice_signatory_name: get('ice_signatory_name'),
+            ice_csr1_reg_number: get('ice_csr1_reg_number'),
+            ice_12a_reg_number: get('ice_12a_reg_number'),
+            ice_section8_reg_number: get('ice_section8_reg_number')
         });
         this.signatoryUrl = get('ice_signatory_image') || null;
         this.logoUrl = get('ice_logo') || null;
@@ -131,7 +137,10 @@ export class AdminSettingsComponent implements OnInit {
             ice_80g_reg_number: (raw.ice_80g_reg_number || '').trim(),
             ice_80g_valid_from: raw.ice_80g_valid_from,
             ice_80g_valid_to: raw.ice_80g_valid_to,
-            ice_signatory_name: (raw.ice_signatory_name || '').trim()
+            ice_signatory_name: (raw.ice_signatory_name || '').trim(),
+            ice_csr1_reg_number: (raw.ice_csr1_reg_number || '').trim(),
+            ice_12a_reg_number: (raw.ice_12a_reg_number || '').trim(),
+            ice_section8_reg_number: (raw.ice_section8_reg_number || '').trim()
         };
 
         this.api.updateOrgSettings(payload).subscribe({

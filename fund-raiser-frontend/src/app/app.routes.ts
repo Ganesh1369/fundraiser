@@ -75,6 +75,26 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/certificates/admin-certificates.component').then(m => m.AdminCertificatesComponent)
             },
             {
+                path: 'volunteers',
+                loadComponent: () => import('./pages/admin/volunteers/admin-volunteers-list.component').then(m => m.AdminVolunteersListComponent)
+            },
+            {
+                path: 'volunteers/:id',
+                loadComponent: () => import('./pages/admin/volunteers/admin-volunteer-detail.component').then(m => m.AdminVolunteerDetailComponent)
+            },
+            {
+                path: 'csr-enquiries',
+                loadComponent: () => import('./pages/admin/csr-enquiries/admin-csr-enquiries-list.component').then(m => m.AdminCsrEnquiriesListComponent)
+            },
+            {
+                path: 'csr-enquiries/:id',
+                loadComponent: () => import('./pages/admin/csr-enquiries/admin-csr-enquiry-detail.component').then(m => m.AdminCsrEnquiryDetailComponent)
+            },
+            {
+                path: 'csr-email-templates',
+                loadComponent: () => import('./pages/admin/csr-email-templates/admin-csr-email-templates.component').then(m => m.AdminCsrEmailTemplatesComponent)
+            },
+            {
                 path: 'settings',
                 loadComponent: () => import('./pages/admin/settings/admin-settings.component').then(m => m.AdminSettingsComponent)
             },
@@ -107,6 +127,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./pages/admin/users/admin-user-detail/admin-user-detail.component').then(m => m.AdminUserDetailComponent)
             }
         ]
+    },
+    {
+        path: 'volunteer',
+        loadComponent: () => import('./pages/volunteer/volunteer-landing/volunteer-landing.component').then(m => m.VolunteerLandingComponent)
+    },
+    {
+        path: 'csr-collaboration',
+        loadComponent: () => import('./pages/csr/csr-collaboration/csr-collaboration.component').then(m => m.CsrCollaborationComponent)
     },
     {
         path: 'projects/:slug',

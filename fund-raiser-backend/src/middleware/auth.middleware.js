@@ -85,7 +85,7 @@ const verifyAdmin = async (req, res, next) => {
         let admin = getCachedUser(`admin:${decoded.userId}`);
         if (!admin) {
             const result = await db.query(
-                'SELECT id, username, name, email FROM admin_users WHERE id = ? AND is_active = true',
+                'SELECT id, username, name, email, role FROM admin_users WHERE id = ? AND is_active = true',
                 [decoded.userId]
             );
             if (result.rows.length === 0) {
@@ -118,7 +118,26 @@ const canRequestTaxCertificate = (req, res, next) => {
     next();
 };
 
+/**
+ * Gate a route on the admin's role.
+ *
+ * A cached admin object from before the `role` column existed has no role field; treating
+ * that as 'admin' keeps behaviour identical to before this was introduced, rather than
+ * locking out a signed-in admin until their cache entry expires.
+ */
+const requireAdminRole = (...allowed) => (req, res, next) => {
+    const role = req.admin?.role || 'admin';
+    if (!allowed.includes(role)) {
+        return res.status(403).json({
+            success: false,
+            message: 'Your role does not permit this action.'
+        });
+    }
+    next();
+};
+
 module.exports = {
+    requireAdminRole,
     verifyToken,
     verifyAdmin,
     canRequestTaxCertificate
