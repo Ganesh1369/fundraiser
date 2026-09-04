@@ -166,13 +166,23 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
                         <header class="head"><h2>Owner</h2></header>
                         <div class="body">
                             <ng-container *ngIf="isAdmin; else ownerReadOnly">
-                                <select [(ngModel)]="pendingOwner">
+                                <select [(ngModel)]="pendingOwner" (ngModelChange)="onOwnerChange($event)">
                                     <option value="">Unassigned</option>
-                                    <option *ngFor="let a of admins" [value]="a.id">{{ a.name || a.username }}</option>
+                                    <option *ngFor="let o of owners" [value]="o.id">{{ o.name }}</option>
+                                    <option value="__new">+ Add new owner…</option>
                                 </select>
+
+                                <!-- Inline creation: a name and an email, not a login account. -->
+                                <ng-container *ngIf="pendingOwner === '__new'">
+                                    <input type="text" [(ngModel)]="newOwnerName" placeholder="Name">
+                                    <input type="email" [(ngModel)]="newOwnerEmail" placeholder="Email address">
+                                </ng-container>
+
                                 <button class="btn btn-primary full" [disabled]="savingOwner" (click)="saveOwner()">
-                                    {{ savingOwner ? 'Saving…' : 'Assign' }}
+                                    {{ savingOwner ? 'Saving…' : (pendingOwner === '__new' ? 'Save and assign' : 'Assign') }}
                                 </button>
+                                <p *ngIf="ownerSaved" class="ok">Owner updated.</p>
+                                <p class="hint">Owners receive the assignment and status emails. They cannot sign in.</p>
                             </ng-container>
                             <ng-template #ownerReadOnly>
                                 <p class="readonly">{{ e.owner_name || 'Unassigned' }}</p>
@@ -329,7 +339,7 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
 export class AdminCsrEnquiryDetailComponent implements OnInit {
     e: any = null;
     statuses: CsrStatus[] = [];
-    admins: any[] = [];
+    owners: { id: string; name: string; email: string }[] = [];
     isAdmin = true;
 
     loading = true;
@@ -342,7 +352,10 @@ export class AdminCsrEnquiryDetailComponent implements OnInit {
     statusSaved = false;
 
     pendingOwner = '';
+    newOwnerName = '';
+    newOwnerEmail = '';
     savingOwner = false;
+    ownerSaved = false;
 
     committedAmount: number | null = null;
     receivedAmount = 0;
@@ -371,7 +384,7 @@ export class AdminCsrEnquiryDetailComponent implements OnInit {
             next: (res) => {
                 const d = res?.data || {};
                 this.statuses = d.statuses || [];
-                this.admins = d.admins || [];
+                this.owners = d.owners || [];
                 this.isAdmin = (d.currentAdmin?.role || 'admin') === 'admin';
                 this.cdr.markForCheck();
             },
@@ -389,7 +402,7 @@ export class AdminCsrEnquiryDetailComponent implements OnInit {
         if (!data) return;
         this.e = data;
         this.pendingStatus = data.status;
-        this.pendingOwner = data.owner_admin_id || '';
+        this.pendingOwner = data.owner_id || '';
         this.committedAmount = data.committed_amount == null ? null : Number(data.committed_amount);
         this.receivedAmount = Number(data.received_amount) || 0;
         this.statusReason = '';
@@ -411,12 +424,48 @@ export class AdminCsrEnquiryDetailComponent implements OnInit {
         });
     }
 
+    onOwnerChange(value: string): void {
+        this.ownerSaved = false;
+        if (value !== '__new') { this.newOwnerName = ''; this.newOwnerEmail = ''; }
+        this.cdr.markForCheck();
+    }
+
     saveOwner(): void {
+        const creating = this.pendingOwner === '__new';
+        if (creating && (!this.newOwnerName.trim() || !this.newOwnerEmail.trim())) {
+            this.actionError = 'Enter a name and an email for the new owner.';
+            this.cdr.markForCheck();
+            return;
+        }
+
         this.savingOwner = true;
+        this.ownerSaved = false;
         this.actionError = '';
-        this.svc.assignOwner(this.id, this.pendingOwner || null).subscribe({
-            next: (res) => { this.apply(res?.data); this.savingOwner = false; this.cdr.markForCheck(); },
+
+        this.svc.assignOwner(
+            this.id,
+            creating ? null : (this.pendingOwner || null),
+            creating ? { name: this.newOwnerName.trim(), email: this.newOwnerEmail.trim() } : undefined
+        ).subscribe({
+            next: (res) => {
+                this.apply(res?.data);
+                this.newOwnerName = '';
+                this.newOwnerEmail = '';
+                this.savingOwner = false;
+                this.ownerSaved = true;
+                // A newly created owner is not in the cached list yet.
+                this.refreshOwners();
+                this.cdr.markForCheck();
+                setTimeout(() => { this.ownerSaved = false; this.cdr.markForCheck(); }, 2500);
+            },
             error: (err) => { this.savingOwner = false; this.fail(err); }
+        });
+    }
+
+    private refreshOwners(): void {
+        this.svc.getMeta().subscribe({
+            next: (res) => { this.owners = res?.data?.owners || this.owners; this.cdr.markForCheck(); },
+            error: () => { /* the dropdown keeps the list it already has */ }
         });
     }
 

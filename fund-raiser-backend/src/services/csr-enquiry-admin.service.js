@@ -83,8 +83,8 @@ const buildFilters = (q = {}) => {
         }
     }
     if (q.ownerId) {
-        if (q.ownerId === 'unassigned') where.push('e.owner_admin_id IS NULL');
-        else { where.push('e.owner_admin_id = ?'); params.push(q.ownerId); }
+        if (q.ownerId === 'unassigned') where.push('e.owner_id IS NULL');
+        else { where.push('e.owner_id = ?'); params.push(q.ownerId); }
     }
     if (q.projectId) { where.push('e.preferred_project_id = ?'); params.push(q.projectId); }
     if (q.area) { where.push('e.area_of_interest = ?'); params.push(q.area); }
@@ -119,10 +119,10 @@ const list = async (q = {}) => {
                 e.phone, e.budget, e.committed_amount, e.received_amount, e.area_of_interest,
                 e.status, e.location, e.created_at,
                 p.name AS project_name, p.slug AS project_slug,
-                a.id AS owner_id, a.name AS owner_name, a.username AS owner_username
+                o.id AS owner_id, o.name AS owner_name, o.email AS owner_email
          FROM csr_enquiries e
          LEFT JOIN projects p ON p.id = e.preferred_project_id
-         LEFT JOIN admin_users a ON a.id = e.owner_admin_id
+         LEFT JOIN csr_owners o ON o.id = e.owner_id
          ${clause}
          ORDER BY ${sortCol} ${sortDir}
          LIMIT ? OFFSET ?`,
@@ -146,7 +146,7 @@ const list = async (q = {}) => {
 const decorate = (row) => ({
     ...row,
     status_label: statusLabel(row.status),
-    owner_name: row.owner_name || row.owner_username || null,
+    owner_name: row.owner_name || null,
 });
 
 // ── Metrics header ───────────────────────────────────────────────────────────
@@ -194,10 +194,10 @@ const metrics = async (q = {}) => {
 const getById = async (id) => {
     const result = await db.query(
         `SELECT e.*, p.name AS project_name, p.slug AS project_slug,
-                a.name AS owner_name, a.username AS owner_username, a.email AS owner_email
+                o.name AS owner_name, o.email AS owner_email
          FROM csr_enquiries e
          LEFT JOIN projects p ON p.id = e.preferred_project_id
-         LEFT JOIN admin_users a ON a.id = e.owner_admin_id
+         LEFT JOIN csr_owners o ON o.id = e.owner_id
          WHERE e.id = ?`, [id]
     );
     const enquiry = result.rows[0];
@@ -239,9 +239,9 @@ const forEmail = async (id) => {
     return r.rows[0];
 };
 
-const ownerOf = async (adminId) => {
-    if (!adminId) return null;
-    const r = await db.query('SELECT id, name, username, email FROM admin_users WHERE id = ?', [adminId]);
+const ownerOf = async (ownerId) => {
+    if (!ownerId) return null;
+    const r = await db.query('SELECT id, name, email FROM csr_owners WHERE id = ?', [ownerId]);
     return r.rows[0] || null;
 };
 
@@ -276,7 +276,7 @@ const notifyStatusChange = async (id, status, admin) => {
         if (!row || (!row.notify_owner && !row.notify_team)) return;
 
         const enquiry = await forEmail(id);
-        const owner = await ownerOf(enquiry.owner_admin_id);
+        const owner = await ownerOf(enquiry.owner_id);
         // notify_team routes to the internal inboxes; notify_owner adds the assignee.
         await emailSvc.sendStatusChange(enquiry, row.notify_owner ? owner : null, { teamCopy: !!row.notify_team });
     } catch (err) {
@@ -284,19 +284,29 @@ const notifyStatusChange = async (id, status, admin) => {
     }
 };
 
-const assignOwner = async (id, ownerAdminId, admin) => {
+/**
+ * Set or clear the owner. `newOwner` may instead carry { name, email } to create the owner
+ * inline — the case where someone is assigning to a colleague who is not on the list yet.
+ */
+const assignOwner = async (id, ownerId, admin, newOwner = null) => {
     const enquiry = await requireEnquiry(id);
-    const owner = ownerAdminId ? await ownerOf(ownerAdminId) : null;
-    if (ownerAdminId && !owner) throw { status: 400, message: 'Unknown admin user' };
+    let resolvedId = ownerId || null;
 
-    await db.query('UPDATE csr_enquiries SET owner_admin_id = ? WHERE id = ?', [ownerAdminId || null, id]);
+    if (!resolvedId && newOwner && (newOwner.name || newOwner.email)) {
+        resolvedId = (await createOwner(newOwner)).id;
+    }
 
-    const previous = await ownerOf(enquiry.owner_admin_id);
+    const owner = resolvedId ? await ownerOf(resolvedId) : null;
+    if (resolvedId && !owner) throw { status: 400, message: 'Unknown owner' };
+
+    await db.query('UPDATE csr_enquiries SET owner_id = ? WHERE id = ?', [resolvedId, id]);
+
+    const previous = await ownerOf(enquiry.owner_id);
     await logActivity(
         id, admin, 'assignment',
-        owner ? `Assigned to ${actorName(owner)}` : 'Owner cleared',
-        previous ? actorName(previous) : null,
-        owner ? actorName(owner) : null
+        owner ? `Assigned to ${owner.name}` : 'Owner cleared',
+        previous ? previous.name : null,
+        owner ? owner.name : null
     );
 
     if (owner) {
@@ -490,7 +500,7 @@ const pipelineReport = async (q = {}) => {
 
     const groupSql = {
         stage: { select: 'e.status AS group_key', join: '' },
-        owner: { select: 'COALESCE(a.name, a.username, \'Unassigned\') AS group_key', join: 'LEFT JOIN admin_users a ON a.id = e.owner_admin_id' },
+        owner: { select: 'COALESCE(o.name, \'Unassigned\') AS group_key', join: 'LEFT JOIN csr_owners o ON o.id = e.owner_id' },
         project: { select: 'COALESCE(p.name, \'No project\') AS group_key', join: 'LEFT JOIN projects p ON p.id = e.preferred_project_id' },
     }[groupBy];
 
@@ -531,10 +541,10 @@ const exportRows = async (q = {}) => {
                 e.budget, e.committed_amount, e.received_amount, e.area_of_interest,
                 e.location, e.status, e.status_reason, e.message, e.created_at,
                 p.name AS project_name,
-                COALESCE(a.name, a.username) AS owner_name
+                o.name AS owner_name
          FROM csr_enquiries e
          LEFT JOIN projects p ON p.id = e.preferred_project_id
-         LEFT JOIN admin_users a ON a.id = e.owner_admin_id
+         LEFT JOIN csr_owners o ON o.id = e.owner_id
          ${clause}
          ORDER BY e.created_at DESC`,
         params
@@ -564,11 +574,34 @@ const exportRows = async (q = {}) => {
 
 // ── Reference data ───────────────────────────────────────────────────────────
 
-const admins = async () => {
+/** Assignable owners, for the dropdown and the list filter. */
+const owners = async () => {
     const r = await db.query(
-        "SELECT id, name, username, email, role FROM admin_users WHERE is_active = true ORDER BY COALESCE(name, username)"
+        'SELECT id, name, email FROM csr_owners WHERE is_active = true ORDER BY name ASC'
     );
     return r.rows;
+};
+
+/**
+ * Add an owner. Re-adding an existing email returns that record rather than failing —
+ * assigning to someone already on the list should not error just because the person
+ * typing did not spot them in the dropdown.
+ */
+const createOwner = async ({ name, email }) => {
+    const cleanName = String(name || '').trim();
+    const cleanEmail = String(email || '').trim().toLowerCase();
+
+    if (cleanName.length < 2) throw { status: 400, message: 'Owner name is required.' };
+    if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(cleanEmail)) {
+        throw { status: 400, message: 'Enter a valid email address for the owner.' };
+    }
+
+    const existing = await db.query('SELECT id, name, email FROM csr_owners WHERE email = ?', [cleanEmail]);
+    if (existing.rows.length) return existing.rows[0];
+
+    await db.query('INSERT INTO csr_owners (name, email) VALUES (?, ?)', [cleanName, cleanEmail]);
+    const created = await db.query('SELECT id, name, email FROM csr_owners WHERE email = ?', [cleanEmail]);
+    return created.rows[0];
 };
 
 /**
@@ -627,7 +660,8 @@ module.exports = {
     deleteDocument,
     pipelineReport,
     exportRows,
-    admins,
+    owners,
+    createOwner,
     areas,
     alertConfig,
     updateAlertConfig,

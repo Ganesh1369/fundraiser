@@ -69,6 +69,9 @@ router.use('/admin/csr-enquiries', verifyAdmin);
 // Reference data for filters
 router.get('/admin/csr-enquiries/meta', ctrl.getMeta);
 
+// Assignable owners — a name and an email, not a login account
+router.post('/admin/csr-enquiries/owners', ctrl.createOwner);
+
 // Reporting — declared before /:id so the literal segments are not read as an id
 router.get('/admin/csr-enquiries/report/pipeline', ctrl.pipelineReport);
 router.get('/admin/csr-enquiries/export', ctrl.exportEnquiries);

@@ -71,8 +71,9 @@ export class CsrEnquiryAdminService {
         return this.http.patch(`${this.base}/${id}/status`, { status, reason }, { headers: this.headers() });
     }
 
-    assignOwner(id: string, ownerAdminId: string | null): Observable<any> {
-        return this.http.patch(`${this.base}/${id}/owner`, { ownerAdminId }, { headers: this.headers() });
+    /** Assign an existing owner, or pass `newOwner` to create one inline while assigning. */
+    assignOwner(id: string, ownerId: string | null, newOwner?: { name: string; email: string }): Observable<any> {
+        return this.http.patch(`${this.base}/${id}/owner`, { ownerId, newOwner }, { headers: this.headers() });
     }
 
     updateAmounts(id: string, committedAmount: number | string | null, receivedAmount: number | string): Observable<any> {

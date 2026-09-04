@@ -120,7 +120,7 @@ import { ProjectService } from '../../../services/project.service';
                     <select [(ngModel)]="filters.ownerId" (change)="applyFilters()">
                         <option value="">Any owner</option>
                         <option value="unassigned">Unassigned</option>
-                        <option *ngFor="let a of admins" [value]="a.id">{{ a.name || a.username }}</option>
+                        <option *ngFor="let o of owners" [value]="o.id">{{ o.name }}</option>
                     </select>
                 </div>
                 <div class="f">
@@ -284,7 +284,7 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
 
     statuses: CsrStatus[] = [];
     datePresets: { key: string; label: string }[] = [];
-    admins: any[] = [];
+    owners: { id: string; name: string; email: string }[] = [];
     areas: string[] = [];
     projects: any[] = [];
 
@@ -311,7 +311,7 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
                 const d = res?.data || {};
                 this.statuses = d.statuses || [];
                 this.datePresets = d.datePresets || [];
-                this.admins = d.admins || [];
+                this.owners = d.owners || [];
                 this.areas = d.areas || [];
                 this.cdr.markForCheck();
             },

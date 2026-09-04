@@ -27,13 +27,13 @@ const withPreset = (query) => {
 /** Everything the list screen needs to render its filters. */
 exports.getMeta = async (req, res, next) => {
     try {
-        const [admins, areas, alertConfig] = await Promise.all([svc.admins(), svc.areas(), svc.alertConfig()]);
+        const [owners, areas, alertConfig] = await Promise.all([svc.owners(), svc.areas(), svc.alertConfig()]);
         res.json({
             success: true,
             data: {
                 statuses: svc.STATUSES,
                 datePresets: svc.PRESETS,
-                admins,
+                owners,
                 areas,
                 alertConfig,
                 currentAdmin: { id: req.admin?.id, role: req.admin?.role || 'admin' },
@@ -69,8 +69,23 @@ exports.updateStatus = async (req, res, next) => {
 
 exports.assignOwner = async (req, res, next) => {
     try {
-        const data = await svc.assignOwner(req.params.id, req.body.ownerAdminId || null, req.admin);
+        // `newOwner` lets the caller create the person inline while assigning, so a
+        // colleague who is not on the list yet does not require a separate round trip.
+        const data = await svc.assignOwner(
+            req.params.id,
+            req.body.ownerId || null,
+            req.admin,
+            req.body.newOwner || null
+        );
         res.json({ success: true, message: 'Owner updated', data });
+    } catch (error) { handleError(res, next, error); }
+};
+
+/** Add an assignable owner without assigning them to anything yet. */
+exports.createOwner = async (req, res, next) => {
+    try {
+        await svc.createOwner(req.body);
+        res.status(201).json({ success: true, message: 'Owner added', data: await svc.owners() });
     } catch (error) { handleError(res, next, error); }
 };
 
