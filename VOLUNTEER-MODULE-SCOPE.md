@@ -15,7 +15,7 @@
 - Student field: college name, course
 - Optional: languages spoken, message
 - Emergency contact: name, relationship, phone
-- Consent checkboxes: code of conduct, data use, photo/media
+- Consent checkboxes: data use, photo/media
 - Photo and ID proof upload with file type/size validation
 - Field-level validation with inline errors; CAPTCHA and rate limiting
 - Duplicate detection on email and phone

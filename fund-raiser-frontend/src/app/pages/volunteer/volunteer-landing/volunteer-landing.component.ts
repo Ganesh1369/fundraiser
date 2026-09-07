@@ -252,13 +252,25 @@ interface EligibilityPoint {
 })
 export class VolunteerLandingComponent implements OnInit {
     roles: VolunteerRole[] = [];
-    eligibility: EligibilityPoint[] = [];
     /** Area-of-interest options for the form, derived server-side from the live roles. */
     focusAreas: string[] = [];
     loading = true;
 
     readonly currentYear = new Date().getFullYear();
     readonly accent = accentClasses;
+
+    /**
+     * Who can apply — fixed content. Held here rather than in volunteer_eligibility so the
+     * tiles never depend on the page request succeeding.
+     */
+    readonly eligibility: EligibilityPoint[] = [
+        { title: 'Aged 16 and above', description: 'Anyone 16 or older can apply. Applicants under 18 need a parent or guardian to countersign the consent form.', icon: 'user-plus' },
+        { title: 'Students and professionals', description: 'College students, working professionals, homemakers and retirees are all welcome — no background is a prerequisite.', icon: 'graduation-cap' },
+        { title: 'No experience needed', description: 'Every role comes with an orientation and a field lead. Bring willingness; we will cover the rest.', icon: 'heart' },
+        { title: 'A realistic commitment', description: 'Tell us honestly how many hours you can give. A dependable two hours beats an optimistic ten.', icon: 'clock' },
+        { title: 'Code of conduct', description: 'All volunteers agree to the ICE code of conduct, covering safety, child protection and respectful field behaviour.', icon: 'shield-check' },
+        { title: 'Valid ID proof', description: 'A government-issued ID is required at registration — Aadhaar, PAN, passport, or a student ID card.', icon: 'file-text' },
+    ];
 
     constructor(
         private volunteerService: VolunteerService,
@@ -270,7 +282,6 @@ export class VolunteerLandingComponent implements OnInit {
             next: (res) => {
                 const d = res?.data || {};
                 this.roles = d.roles || [];
-                this.eligibility = d.eligibility || [];
                 this.focusAreas = d.areas || [];
                 this.loading = false;
                 this.cdr.markForCheck();

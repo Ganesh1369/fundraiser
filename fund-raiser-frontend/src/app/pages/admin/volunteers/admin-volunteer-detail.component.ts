@@ -214,7 +214,6 @@ export class AdminVolunteerDetailComponent implements OnInit {
 
     get consents(): { label: string; given: boolean }[] {
         return [
-            { label: 'Code of conduct', given: !!this.v?.consent_code_of_conduct },
             { label: 'Data use', given: !!this.v?.consent_data_use },
             { label: 'Photo / media use', given: !!this.v?.consent_photo_media },
         ];

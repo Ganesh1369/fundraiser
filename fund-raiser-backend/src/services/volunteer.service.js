@@ -138,8 +138,7 @@ const validate = (body) => {
         errors.emergencyPhone = 'Emergency contact must differ from your own number.';
     }
 
-    // Consent. Code of conduct and data use are required; photo/media is genuinely optional.
-    if (!bool(body.consentCodeOfConduct)) errors.consentCodeOfConduct = 'You must accept the code of conduct.';
+    // Consent. Data use is required; photo/media is genuinely optional.
     if (!bool(body.consentDataUse)) errors.consentDataUse = 'You must consent to how we use your data.';
 
     const languages = str(body.languages);
@@ -172,7 +171,6 @@ const validate = (body) => {
             emergency_name: emName,
             emergency_relationship: emRel,
             emergency_phone: emPhone,
-            consent_code_of_conduct: bool(body.consentCodeOfConduct),
             consent_data_use: bool(body.consentDataUse),
             consent_photo_media: bool(body.consentPhotoMedia),
         },
@@ -243,18 +241,18 @@ const create = async (body, files = {}, meta = {}) => {
                  occupation_type, institution, available_weekday, available_weekend,
                  hours_per_week, area_of_interest, role_of_interest, college_name, course,
                  languages, message, emergency_name, emergency_relationship, emergency_phone,
-                 consent_code_of_conduct, consent_data_use, consent_photo_media,
+                 consent_data_use, consent_photo_media,
                  photo_stored_name, photo_original_name, photo_mime_type, photo_size_bytes,
                  id_proof_stored_name, id_proof_original_name, id_proof_mime_type, id_proof_size_bytes,
                  source_ip, user_agent)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 volunteerId, clean.full_name, clean.date_of_birth, clean.email, clean.phone,
                 clean.city, clean.pincode, clean.occupation_type, clean.institution,
                 clean.available_weekday, clean.available_weekend, clean.hours_per_week,
                 clean.area_of_interest, clean.role_of_interest, clean.college_name, clean.course,
                 clean.languages, clean.message, clean.emergency_name, clean.emergency_relationship,
-                clean.emergency_phone, clean.consent_code_of_conduct, clean.consent_data_use,
+                clean.emergency_phone, clean.consent_data_use,
                 clean.consent_photo_media,
                 photo?.filename || null, photo?.originalname || null, photo?.mimetype || null, photo?.size || null,
                 idProof?.filename || null, idProof?.originalname || null, idProof?.mimetype || null, idProof?.size || null,

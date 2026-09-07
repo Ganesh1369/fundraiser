@@ -194,12 +194,6 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
             <h4 class="section">Consent</h4>
             <div class="flex flex-col gap-2">
                 <label class="check">
-                    <input type="checkbox" formControlName="consentCodeOfConduct">
-                    <span>I have read and accept ICE's <strong>code of conduct</strong>. <span class="req">*</span></span>
-                </label>
-                <p *ngIf="show('consentCodeOfConduct')" class="err">{{ msg('consentCodeOfConduct') }}</p>
-
-                <label class="check">
                     <input type="checkbox" formControlName="consentDataUse">
                     <span>I consent to ICE storing and using my details to coordinate volunteering. <span class="req">*</span></span>
                 </label>
@@ -310,7 +304,6 @@ export class VolunteerRegistrationFormComponent implements OnInit {
             emergencyName: ['', [Validators.required, Validators.minLength(2)]],
             emergencyRelationship: ['', [Validators.required, Validators.minLength(2)]],
             emergencyPhone: ['', [Validators.required, Validators.pattern(/^(?:\+?91[\s-]?)?[0-9][0-9\s-]{7,14}$/)]],
-            consentCodeOfConduct: [false, Validators.requiredTrue],
             consentDataUse: [false, Validators.requiredTrue],
             consentPhotoMedia: [false],
             website: [''],
@@ -460,7 +453,6 @@ const REQUIRED: Record<string, string> = {
     emergencyName: 'Emergency contact name is required.',
     emergencyRelationship: 'Relationship is required.',
     emergencyPhone: 'Emergency contact number is required.',
-    consentCodeOfConduct: 'You must accept the code of conduct.',
     consentDataUse: 'You must consent to how we use your data.',
 };
 

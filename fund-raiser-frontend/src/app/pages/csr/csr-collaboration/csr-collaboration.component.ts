@@ -434,7 +434,6 @@ export class CsrCollaborationComponent implements OnInit {
     trust: CsrTrust | null = null;
     opportunities: CsrProject[] = [];
     highlights: Highlight[] = [];
-    areas: ContributionArea[] = [];
     readonly accent = accentClasses;
     readonly currentYear = new Date().getFullYear();
 
@@ -453,6 +452,20 @@ export class CsrCollaborationComponent implements OnInit {
      */
     readonly complianceBadges = ['CSR-1 Registered', '12A', '80G', 'Section 8'];
 
+    /**
+     * Areas of contribution — fixed content, mapped to Schedule VII. Held here rather than
+     * in csr_focus_areas so the tiles (and the enquiry form's area options) never depend on
+     * the page request succeeding.
+     */
+    readonly areas: ContributionArea[] = [
+        { title: 'Environment & Sustainability', description: 'Afforestation, native-species restoration and urban green cover.', icon: 'leaf', accent: 'primary' },
+        { title: 'Education & Skilling', description: 'Learning infrastructure, environmental literacy and rural skilling.', icon: 'school', accent: 'blue' },
+        { title: 'Community Health', description: 'Preventive health camps, clean water access and nutrition support.', icon: 'heart', accent: 'rose' },
+        { title: 'Rural Development', description: 'Livelihood generation, farmer support and rural infrastructure.', icon: 'sprout', accent: 'amber' },
+        { title: 'Animal Welfare', description: 'Habitat protection, animal care and conservation awareness.', icon: 'shield-check', accent: 'purple' },
+        { title: 'Employee Engagement', description: 'Volunteering days, team plantation drives and field visits.', icon: 'users', accent: 'green' },
+    ];
+
     constructor(
         private csrPageService: CsrPageService,
         private cdr: ChangeDetectorRef,
@@ -464,7 +477,6 @@ export class CsrCollaborationComponent implements OnInit {
             next: (res) => {
                 const data = res?.data || {};
                 this.trust = data.trust || null;
-                this.areas = data.focusAreas || [];
                 this.opportunities = data.projects || [];
                 this.buildHighlights(data.projects || []);
                 this.loading = false;

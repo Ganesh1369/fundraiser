@@ -268,7 +268,6 @@ const exportRows = async (q = {}) => {
         'Emergency Contact': v.emergency_name,
         'Emergency Relationship': v.emergency_relationship,
         'Emergency Phone': v.emergency_phone,
-        'Consent — Code of Conduct': v.consent_code_of_conduct ? 'Yes' : 'No',
         'Consent — Data Use': v.consent_data_use ? 'Yes' : 'No',
         'Consent — Photo/Media': v.consent_photo_media ? 'Yes' : 'No',
         'Photo Uploaded': v.photo_stored_name ? 'Yes' : 'No',

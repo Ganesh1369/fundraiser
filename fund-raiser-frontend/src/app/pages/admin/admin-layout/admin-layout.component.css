@@ -119,6 +119,13 @@
     color: #22c55e;
 }
 
+/* Runs the full sidebar width — the nav's own 16px padding is cancelled out. */
+.sidebar.dark .nav-divider {
+    margin: 8px -16px;
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .sidebar-footer {
     padding: 16px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
