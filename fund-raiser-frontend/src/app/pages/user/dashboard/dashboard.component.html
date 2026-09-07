@@ -7,10 +7,6 @@
                 <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
             </a>
             <div class="flex items-center gap-1.5 sm:gap-2">
-                <a routerLink="/volunteer"
-                    class="hidden md:inline px-3 py-2 text-sm font-medium text-neutral-600 hover:text-accent no-underline">Volunteer</a>
-                <a routerLink="/csr-collaboration"
-                    class="hidden md:inline px-3 py-2 text-sm font-medium text-neutral-600 hover:text-accent no-underline">CSR</a>
                 <button class="px-3 sm:px-4 py-2 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors"
                     (click)="onDonateClick()">
                     Donate
@@ -169,43 +165,6 @@
                         {{ linkCopied ? 'Copied' : 'Copy invite link' }}
                     </button>
                 </div>
-            </div>
-        </section>
-
-        <!-- More ways to get involved -->
-        <section class="mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-base font-semibold text-accent m-0">More ways to get involved</h2>
-                <span class="text-xs text-neutral-400">Beyond donating</span>
-            </div>
-            <div class="grid md:grid-cols-2 gap-4">
-                <!-- Volunteer -->
-                <a routerLink="/volunteer" class="bg-white rounded-2xl p-5 shadow-soft hover:shadow-card transition-shadow no-underline group flex items-start gap-4">
-                    <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <lucide-icon name="users" class="w-5 h-5 text-primary"></lucide-icon>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <h3 class="text-sm font-semibold text-accent m-0">Volunteer with ICE</h3>
-                            <lucide-icon name="arrow-right" class="w-3.5 h-3.5 text-neutral-300 group-hover:text-primary transition-colors shrink-0"></lucide-icon>
-                        </div>
-                        <p class="text-xs text-neutral-500 m-0">Give a few hours a week — plantation drives, nursery care, school mentoring and more.</p>
-                    </div>
-                </a>
-
-                <!-- CSR -->
-                <a routerLink="/csr-collaboration" class="bg-white rounded-2xl p-5 shadow-soft hover:shadow-card transition-shadow no-underline group flex items-start gap-4">
-                    <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                        <lucide-icon name="handshake" class="w-5 h-5 text-blue-500"></lucide-icon>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <h3 class="text-sm font-semibold text-accent m-0">CSR partnerships</h3>
-                            <lucide-icon name="arrow-right" class="w-3.5 h-3.5 text-neutral-300 group-hover:text-primary transition-colors shrink-0"></lucide-icon>
-                        </div>
-                        <p class="text-xs text-neutral-500 m-0">Work somewhere with a CSR budget? Partner with ICE on a measurable, compliance-ready programme.</p>
-                    </div>
-                </a>
             </div>
         </section>
 

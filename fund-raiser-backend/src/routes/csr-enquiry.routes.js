@@ -26,6 +26,11 @@ const submitLimiter = rateLimit({
 // Public
 router.post('/csr-enquiries', submitLimiter, csrEnquiry.create);
 
+// Admin — record an enquiry that arrived by phone, email or in person.
+// No submitLimiter: the 5/hour cap exists to stop anonymous abuse, and would otherwise
+// block staff working through a batch of enquiries.
+router.post('/admin/csr-enquiries', verifyAdmin, csrEnquiry.adminCreate);
+
 // Admin — editable ICE-branded email templates
 router.get('/admin/csr-enquiries/templates', verifyAdmin, csrEnquiry.adminListTemplates);
 router.put('/admin/csr-enquiries/templates/:key', verifyAdmin, csrEnquiry.adminUpdateTemplate);

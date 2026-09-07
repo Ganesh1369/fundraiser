@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { VolunteerAdminService, VolunteerFilters } from '../../../services/volunteer-admin.service';
+import { VolunteerService } from '../../../services/volunteer.service';
+import { VolunteerRegistrationFormComponent } from '../../../components/volunteer-registration-form/volunteer-registration-form.component';
 import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
 
 /**
@@ -15,7 +17,7 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
 @Component({
     selector: 'app-admin-volunteers-list',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
+    imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, VolunteerRegistrationFormComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="admin-header">
@@ -24,10 +26,13 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
                 <p class="subtitle">{{ summary?.total || 0 }} volunteers in the current view.</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-outline" [disabled]="exporting" (click)="exportAs('csv')">CSV</button>
                 <button class="btn btn-primary" [disabled]="exporting" (click)="exportAs('xlsx')">
                     <lucide-icon name="download" class="w-4 h-4"></lucide-icon>
                     {{ exporting ? 'Exporting…' : 'Export Excel' }}
+                </button>
+                <button class="btn btn-primary" (click)="openRegistration()">
+                    <lucide-icon name="user-plus" class="w-4 h-4"></lucide-icon>
+                    Add Volunteer
                 </button>
             </div>
         </div>
@@ -167,48 +172,66 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
         <div *ngIf="loading" class="loading-block">Loading volunteers…</div>
 
         <section class="card" *ngIf="!loading">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th (click)="sort('volunteer_id')">Volunteer ID</th>
-                        <th (click)="sort('full_name')">Name</th>
-                        <th (click)="sort('city')">City</th>
-                        <th>Occupation</th>
-                        <th>Institution</th>
-                        <th>Area of interest</th>
-                        <th>Availability</th>
-                        <th (click)="sort('created_at')">Registered</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let v of volunteers" class="row" [class.inactive]="!v.is_active" (click)="open(v.id)">
-                        <td class="mono">{{ v.volunteer_id }}</td>
-                        <td class="strong">
-                            {{ v.full_name }}
-                            <span class="sub">{{ v.email }}</span>
-                        </td>
-                        <td>
-                            {{ v.city }}
-                            <span class="sub">{{ v.pincode }}</span>
-                        </td>
-                        <td>{{ v.occupation_label }}</td>
-                        <td>{{ v.institution }}</td>
-                        <td>{{ v.area_of_interest }}</td>
-                        <td class="sub-cell">{{ v.availability_label }}</td>
-                        <td class="sub-cell">{{ v.created_at | date:'d MMM y' }}</td>
-                        <td class="right" (click)="$event.stopPropagation()">
-                            <button class="toggle" [class.on]="v.is_active" (click)="toggleActive(v)"
-                                    [title]="v.is_active ? 'Mark inactive' : 'Mark active'">
-                                {{ v.is_active ? 'Active' : 'Inactive' }}
-                            </button>
-                        </td>
-                    </tr>
-                    <tr *ngIf="!volunteers.length">
-                        <td colspan="9" class="empty-cell">No volunteers match these filters.</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th (click)="sort('volunteer_id')">Volunteer ID</th>
+                            <th (click)="sort('full_name')">Name</th>
+                            <th (click)="sort('city')">City</th>
+                            <th>Occupation</th>
+                            <th>Institution</th>
+                            <th>Area of interest</th>
+                            <th>Availability</th>
+                            <th>Registered by</th>
+                            <th (click)="sort('created_at')">Registered</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let v of volunteers" class="row" [class.inactive]="!v.is_active" (click)="open(v.id)">
+                            <td class="mono">{{ v.volunteer_id }}</td>
+                            <td class="strong">
+                                {{ v.full_name }}
+                                <span class="sub">{{ v.email }}</span>
+                            </td>
+                            <td>
+                                {{ v.city }}
+                                <span class="sub">{{ v.pincode }}</span>
+                            </td>
+                            <td>{{ v.occupation_label }}</td>
+                            <td>{{ v.institution }}</td>
+                            <td>{{ v.area_of_interest }}</td>
+                            <td class="sub-cell">{{ v.availability_label }}</td>
+                            <td>
+                                <span class="source" [class.by-ice]="v.submitted_via === 'ice'">
+                                    {{ v.submitted_via_label }}
+                                </span>
+                            </td>
+                            <td class="sub-cell">{{ v.created_at | date:'d MMM y' }}</td>
+                            <td class="right" (click)="$event.stopPropagation()">
+                                <button class="toggle" [class.on]="v.is_active" (click)="toggleActive(v)"
+                                        [title]="v.is_active ? 'Mark inactive' : 'Mark active'">
+                                    {{ v.is_active ? 'Active' : 'Inactive' }}
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="!volunteers.length">
+                            <td colspan="10" class="empty-cell">No volunteers match these filters.</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="10" class="add-cell">
+                                <button type="button" class="add-row" (click)="openRegistration()">
+                                    <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
+                                    Add volunteer
+                                </button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
             <div class="pager" *ngIf="pagination && pagination.pages > 1">
                 <button class="btn btn-outline" [disabled]="pagination.page <= 1" (click)="goToPage(pagination.page - 1)">Previous</button>
@@ -216,12 +239,40 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
                 <button class="btn btn-outline" [disabled]="pagination.page >= pagination.pages" (click)="goToPage(pagination.page + 1)">Next</button>
             </div>
         </section>
+
+        <!-- Volunteer registration — the same form the public page uses, so a walk-in
+             sign-up is recorded identically to a self-registration. -->
+        <div *ngIf="registrationOpen" class="modal-backdrop" role="dialog" aria-modal="true"
+             aria-label="Volunteer registration" (click)="closeRegistration()">
+            <div class="modal" (click)="$event.stopPropagation()">
+                <button class="modal-close" type="button" aria-label="Close" (click)="closeRegistration()">
+                    <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">Volunteer registration</h2>
+                    <p class="modal-sub">The volunteer appears in the register below once saved.</p>
+                    <app-volunteer-registration-form
+                        [adminMode]="true"
+                        [areas]="registrationAreas"
+                        (registered)="onVolunteerRegistered()">
+                    </app-volunteer-registration-form>
+                </div>
+            </div>
+        </div>
     `,
     styles: [`
         .admin-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
         .admin-header h1 { font-size: 1.5rem; margin: 0; }
         .admin-header .subtitle { margin: 4px 0 0; font-size: 0.875rem; color: #6B7280; }
-        .header-actions { display: flex; gap: 8px; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .modal-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal { position: relative; width: 100%; max-width: 640px; max-height: 92vh; overflow-y: auto; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+        .modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #F3F4F6; border: none; border-radius: 9999px; color: #6B7280; cursor: pointer; }
+        .modal-close:hover { background: #E5E7EB; }
+        .modal-body { padding: 24px; }
+        .modal-title { font-size: 1rem; font-weight: 600; color: #102a43; margin: 0 0 4px; }
+        .modal-sub { font-size: 0.75rem; color: #6B7280; margin: 0 0 16px; }
 
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
 
@@ -250,7 +301,20 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
         .f input:focus, .f select:focus { outline: none; border-color: #22c55e; background: white; }
         .filter-actions { display: flex; gap: 8px; margin-top: 12px; }
 
-        .table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        /* Nine columns do not fit a narrow window — scroll the table, not the page. */
+        .table-wrapper { overflow-x: auto; }
+        .table { width: 100%; min-width: 1180px; border-collapse: collapse; font-size: 0.875rem; }
+
+        /* Add row: sits under the last volunteer, sticky to the left so it stays visible
+           while the table is scrolled sideways. */
+        .add-cell { padding: 0; border-bottom: none; }
+        .add-row { display: inline-flex; align-items: center; gap: 6px; position: sticky; left: 0; width: auto; padding: 12px 14px; background: none; border: none; color: #16a34a; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+        .add-row:hover { color: #15803d; }
+
+        /* Neutral for a self-registration, tinted for one ICE entered — the exception is
+           the one worth spotting at a glance. */
+        .source { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; background: #F3F4F6; color: #4B5563; }
+        .source.by-ice { background: rgba(59,130,246,0.12); color: #1d4ed8; }
         .table th { text-align: left; padding: 12px 14px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #9CA3AF; border-bottom: 1px solid #F0F0F0; cursor: pointer; white-space: nowrap; }
         .table td { padding: 12px 14px; border-bottom: 1px solid #F7F7F7; color: #374151; vertical-align: top; }
         .table .right { text-align: right; }
@@ -293,15 +357,50 @@ export class AdminVolunteersListComponent implements OnInit {
     exporting = false;
     errorMessage = '';
 
+    registrationOpen = false;
+    /**
+     * Area-of-interest options for the form. Taken from the public page endpoint — the
+     * live volunteer roles — not from `meta.areas`, which only lists areas already used
+     * by registered volunteers and so would be empty on a fresh register.
+     */
+    registrationAreas: string[] = [];
+
     constructor(
         private svc: VolunteerAdminService,
+        private volunteerService: VolunteerService,
         private router: Router,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
         this.loadMeta();
+        this.loadRegistrationAreas();
         this.load();
+    }
+
+    private loadRegistrationAreas(): void {
+        this.volunteerService.getPage().subscribe({
+            next: (res) => { this.registrationAreas = res?.data?.areas || []; this.cdr.markForCheck(); },
+            error: () => { /* the dropdown simply stays empty */ }
+        });
+    }
+
+    openRegistration(): void {
+        this.registrationOpen = true;
+    }
+
+    closeRegistration(): void {
+        this.registrationOpen = false;
+    }
+
+    /**
+     * The form keeps showing the new volunteer ID after a save, so the modal stays open
+     * for the admin to note it down; the register refreshes underneath in the meantime.
+     */
+    onVolunteerRegistered(): void {
+        this.filters.page = 1;
+        this.load();
+        this.loadMeta();
     }
 
     private loadMeta(): void {

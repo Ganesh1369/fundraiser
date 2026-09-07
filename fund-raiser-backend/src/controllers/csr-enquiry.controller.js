@@ -42,6 +42,37 @@ exports.create = async (req, res, next) => {
     } catch (error) { handleError(res, next, error); }
 };
 
+// ── Admin: record an enquiry taken off-line ──────────────────────────────────
+
+/**
+ * Same form as the public one, entered by staff for an enquiry that arrived by phone,
+ * email or in person. `viaAdmin` is set here rather than read from the body, so only a
+ * request that got past verifyAdmin can be stamped as staff-entered.
+ */
+exports.adminCreate = async (req, res, next) => {
+    try {
+        const enquiry = await csrEnquiryService.create(req.body, {
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            viaAdmin: true,
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Enquiry recorded',
+            data: {
+                csrId: enquiry.csr_id,
+                companyName: enquiry.company_name,
+                contactPerson: enquiry.contact_person,
+                email: enquiry.email,
+                projectName: enquiry.project_name || null,
+            },
+        });
+
+        csrEnquiryEmailService.notifyNewEnquiry(enquiry);
+    } catch (error) { handleError(res, next, error); }
+};
+
 // ── Admin: email templates ───────────────────────────────────────────────────
 
 exports.adminListTemplates = async (req, res, next) => {

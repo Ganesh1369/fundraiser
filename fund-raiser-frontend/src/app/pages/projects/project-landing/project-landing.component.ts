@@ -103,8 +103,6 @@ interface Project {
                         <a href="#about" *ngIf="project.description"   (click)="scrollTo($event, 'about')"   class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">About</a>
                         <a href="#impact" *ngIf="project.accomplishments.length > 0"  (click)="scrollTo($event, 'impact')"  class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Impact</a>
                         <a href="#events" *ngIf="project.relatedEvents.length"  (click)="scrollTo($event, 'events')" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline cursor-pointer">Events</a>
-                        <a routerLink="/csr-collaboration" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline">CSR</a>
-                        <a routerLink="/volunteer" class="hidden md:inline text-sm font-medium text-neutral-600 hover:text-accent no-underline">Volunteer</a>
                         <button (click)="share()" class="relative px-3 sm:px-4 py-2 border border-neutral-200 text-neutral-700 text-sm font-medium rounded-xl hover:border-primary hover:text-primary inline-flex items-center gap-1.5">
                             <lucide-icon name="share-2" class="w-4 h-4"></lucide-icon>
                             <span class="hidden sm:inline">Share</span>

@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const volunteer = require('../controllers/volunteer.controller');
+const { verifyAdmin } = require('../middleware/auth.middleware');
 
 const uploadDir = path.join(__dirname, '../../uploads/volunteers');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -68,5 +69,10 @@ const registerLimiter = rateLimit({
 
 // Public Routes
 router.post('/volunteers', registerLimiter, handleUpload, volunteer.register);
+
+// Admin — record a walk-in sign-up.
+// No registerLimiter: the 5/hour cap exists to stop anonymous abuse, and would otherwise
+// block staff registering a group at an event.
+router.post('/admin/volunteers', verifyAdmin, handleUpload, volunteer.adminRegister);
 
 module.exports = router;

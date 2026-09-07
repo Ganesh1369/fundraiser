@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const emailSvc = require('./csr-enquiry-email.service');
+const { SUBMITTED_VIA_LABELS } = require('./utils/submission-source');
 
 /**
  * Admin-side CSR enquiry module: pipeline workflow, notes, documents, milestones,
@@ -117,7 +118,7 @@ const list = async (q = {}) => {
     const rows = await db.query(
         `SELECT e.id, e.csr_id, e.company_name, e.contact_person, e.designation, e.email,
                 e.phone, e.budget, e.committed_amount, e.received_amount, e.area_of_interest,
-                e.status, e.location, e.created_at,
+                e.status, e.location, e.created_at, e.submitted_via,
                 p.name AS project_name, p.slug AS project_slug,
                 o.id AS owner_id, o.name AS owner_name, o.email AS owner_email
          FROM csr_enquiries e
@@ -146,6 +147,7 @@ const list = async (q = {}) => {
 const decorate = (row) => ({
     ...row,
     status_label: statusLabel(row.status),
+    submitted_via_label: SUBMITTED_VIA_LABELS[row.submitted_via] || SUBMITTED_VIA_LABELS.self,
     owner_name: row.owner_name || null,
 });
 
@@ -539,7 +541,7 @@ const exportRows = async (q = {}) => {
     const rows = await db.query(
         `SELECT e.csr_id, e.company_name, e.contact_person, e.designation, e.email, e.phone,
                 e.budget, e.committed_amount, e.received_amount, e.area_of_interest,
-                e.location, e.status, e.status_reason, e.message, e.created_at,
+                e.location, e.status, e.status_reason, e.message, e.created_at, e.submitted_via,
                 p.name AS project_name,
                 o.name AS owner_name
          FROM csr_enquiries e
@@ -568,6 +570,7 @@ const exportRows = async (q = {}) => {
         'Status Reason': r.status_reason || '',
         'Owner': r.owner_name || 'Unassigned',
         'Message': r.message || '',
+        'Submitted By': SUBMITTED_VIA_LABELS[r.submitted_via] || SUBMITTED_VIA_LABELS.self,
         'Submitted On': new Date(r.created_at).toLocaleString('en-IN'),
     }));
 };

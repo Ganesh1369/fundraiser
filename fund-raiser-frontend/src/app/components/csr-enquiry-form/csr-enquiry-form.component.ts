@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -129,8 +129,10 @@ export interface EnquiryProjectOption {
                     <label>Website<input type="text" formControlName="website" tabindex="-1" autocomplete="off"></label>
                 </div>
 
-                <!-- reCAPTCHA v2 checkbox. Submit stays disabled until it is ticked. -->
-                <div class="sm:col-span-2">
+                <!-- reCAPTCHA v2 checkbox. Submit stays disabled until it is ticked.
+                     Skipped for admin entry: the request is already authenticated, and a
+                     captcha proves nothing about a signed-in member of staff. -->
+                <div class="sm:col-span-2" *ngIf="!adminMode">
                     <app-recaptcha-box #captcha (resolved)="onCaptcha($event)"></app-recaptcha-box>
                     <p *ngIf="captchaError" class="text-xs text-rose-500 mt-1 mb-0">{{ captchaError }}</p>
                 </div>
@@ -138,7 +140,7 @@ export interface EnquiryProjectOption {
 
             <p *ngIf="formError" class="mt-4 mb-0 px-3.5 py-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600">{{ formError }}</p>
 
-            <button type="submit" [disabled]="submitting || !captchaToken"
+            <button type="submit" [disabled]="submitting || (!adminMode && !captchaToken)"
                     class="w-full mt-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">
                 <span *ngIf="submitting" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                 {{ submitting ? 'Submitting…' : 'Submit enquiry' }}
@@ -157,6 +159,19 @@ export class CsrEnquiryFormComponent implements OnInit {
     @Input() areas: string[] = [];
     /** Pre-selects the project when opened from a specific opportunity card. */
     @Input() preselectedProjectId: string | null = null;
+
+    /**
+     * Set when the form is hosted inside the admin panel. Submits through the
+     * authenticated admin route — which records the enquiry as ICE-entered and is exempt
+     * from the public rate limit — and drops the captcha.
+     */
+    @Input() adminMode = false;
+
+    /**
+     * Fires once the enquiry is accepted, carrying { csrId, contactPerson, email }.
+     * The admin list listens for this to pull the new row into the table.
+     */
+    @Output() submitted = new EventEmitter<{ csrId: string; contactPerson: string; email: string }>();
 
     form!: FormGroup;
 
@@ -250,7 +265,7 @@ export class CsrEnquiryFormComponent implements OnInit {
             this.cdr.markForCheck();
             return;
         }
-        if (!this.captchaToken) {
+        if (!this.adminMode && !this.captchaToken) {
             this.captchaError = 'Please confirm you are not a robot.';
             this.cdr.markForCheck();
             return;
@@ -268,7 +283,11 @@ export class CsrEnquiryFormComponent implements OnInit {
     }
 
     private send(payload: any): void {
-        this.csrEnquiryService.submit(payload).subscribe({
+        const request = this.adminMode
+            ? this.csrEnquiryService.adminSubmit(payload)
+            : this.csrEnquiryService.submit(payload);
+
+        request.subscribe({
             next: (res) => {
                 const data = res?.data || {};
                 this.submittedCsrId = data.csrId || '';
@@ -276,6 +295,11 @@ export class CsrEnquiryFormComponent implements OnInit {
                 this.submittedEmail = data.email || '';
                 this.submitting = false;
                 this.cdr.markForCheck();
+                this.submitted.emit({
+                    csrId: this.submittedCsrId,
+                    contactPerson: this.submittedContact,
+                    email: this.submittedEmail,
+                });
             },
             error: (err) => {
                 this.submitting = false;

@@ -111,16 +111,25 @@ const validate = (body) => {
 /**
  * Record an enquiry and mint its reference. Throws { status, message, errors } which
  * the controller turns into a 4xx; anything else bubbles to the error middleware.
+ *
+ * `meta.viaAdmin` marks an enquiry typed in by ICE staff from the admin panel. It comes
+ * from the route the request arrived on — never from the request body — so a public
+ * caller cannot label its own submission as staff-entered. Admin entry skips the
+ * honeypot and captcha, both of which only make sense against an anonymous visitor.
  */
 const create = async (body, meta = {}) => {
-    // Honeypot: a real person never fills a field that is hidden from them.
-    if (str(body.website)) {
-        throw { status: 400, message: 'Submission rejected.' };
-    }
+    const viaAdmin = meta.viaAdmin === true;
 
-    const captcha = await recaptcha.verify(body.recaptchaToken, 'csr_enquiry', meta.ip);
-    if (!captcha.ok) {
-        throw { status: 400, message: recaptcha.failureMessage(captcha.reason) };
+    if (!viaAdmin) {
+        // Honeypot: a real person never fills a field that is hidden from them.
+        if (str(body.website)) {
+            throw { status: 400, message: 'Submission rejected.' };
+        }
+
+        const captcha = await recaptcha.verify(body.recaptchaToken, 'csr_enquiry', meta.ip);
+        if (!captcha.ok) {
+            throw { status: 400, message: recaptcha.failureMessage(captcha.reason) };
+        }
     }
 
     const { errors, clean } = validate(body);
@@ -151,13 +160,15 @@ const create = async (body, meta = {}) => {
         await conn.query(
             `INSERT INTO csr_enquiries
                 (csr_id, company_name, contact_person, designation, email, phone, budget,
-                 area_of_interest, preferred_project_id, location, message, source_ip, user_agent)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 area_of_interest, preferred_project_id, location, message, source_ip, user_agent,
+                 submitted_via)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 csrId, clean.company_name, clean.contact_person, clean.designation,
                 clean.email, clean.phone, clean.budget, clean.area_of_interest,
                 clean.preferred_project_id, clean.location, clean.message,
                 meta.ip || null, (meta.userAgent || '').slice(0, 255) || null,
+                viaAdmin ? 'ice' : 'self',
             ]
         );
 

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -210,15 +210,17 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
                 <label>Website<input type="text" formControlName="website" tabindex="-1" autocomplete="off"></label>
             </div>
 
-            <!-- reCAPTCHA v2 checkbox. Submit stays disabled until it is ticked. -->
-            <div class="mt-4">
+            <!-- reCAPTCHA v2 checkbox. Submit stays disabled until it is ticked.
+                 Skipped for admin entry: the request is already authenticated, and a
+                 captcha proves nothing about a signed-in member of staff. -->
+            <div class="mt-4" *ngIf="!adminMode">
                 <app-recaptcha-box #captcha (resolved)="onCaptcha($event)"></app-recaptcha-box>
                 <p *ngIf="captchaError" class="err">{{ captchaError }}</p>
             </div>
 
             <p *ngIf="formError" class="mt-4 mb-0 px-3.5 py-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600">{{ formError }}</p>
 
-            <button type="submit" [disabled]="submitting || !captchaToken"
+            <button type="submit" [disabled]="submitting || (!adminMode && !captchaToken)"
                     class="w-full mt-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">
                 <span *ngIf="submitting" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                 {{ submitting ? 'Submitting…' : 'Submit registration' }}
@@ -250,6 +252,19 @@ export class VolunteerRegistrationFormComponent implements OnInit {
     @Input() areas: string[] = [];
     /** Pre-filled when the form is opened from a specific opportunity card. */
     @Input() roleOfInterest: string | null = null;
+
+    /**
+     * Set when the form is hosted inside the admin panel. Submits through the
+     * authenticated admin route — which records the volunteer as ICE-entered and is
+     * exempt from the public rate limit — and drops the captcha.
+     */
+    @Input() adminMode = false;
+
+    /**
+     * Fires once registration is accepted, carrying { volunteerId, fullName }.
+     * The admin list listens for this to pull the new row into the table.
+     */
+    @Output() registered = new EventEmitter<{ volunteerId: string; fullName: string }>();
 
     form!: FormGroup;
 
@@ -392,7 +407,7 @@ export class VolunteerRegistrationFormComponent implements OnInit {
             this.cdr.markForCheck();
             return;
         }
-        if (!this.captchaToken) {
+        if (!this.adminMode && !this.captchaToken) {
             this.captchaError = 'Please confirm you are not a robot.';
             this.cdr.markForCheck();
             return;
@@ -414,13 +429,18 @@ export class VolunteerRegistrationFormComponent implements OnInit {
     }
 
     private send(payload: Record<string, any>): void {
-        this.volunteerService.register(payload, this.photo, this.idProof).subscribe({
+        const request = this.adminMode
+            ? this.volunteerService.adminRegister(payload, this.photo, this.idProof)
+            : this.volunteerService.register(payload, this.photo, this.idProof);
+
+        request.subscribe({
             next: (res) => {
                 const d = res?.data || {};
                 this.registeredId = d.volunteerId || '';
                 this.registeredName = d.fullName || '';
                 this.submitting = false;
                 this.cdr.markForCheck();
+                this.registered.emit({ volunteerId: this.registeredId, fullName: this.registeredName });
             },
             error: (err) => {
                 this.submitting = false;

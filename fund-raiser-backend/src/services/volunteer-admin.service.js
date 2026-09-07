@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { submittedViaLabel } = require('./utils/submission-source');
 
 /**
  * Admin-side Volunteer Master: list, filters, detail, active toggle, summary and export.
@@ -34,6 +35,7 @@ const decorate = (row) => ({
     ...row,
     occupation_label: OCCUPATION_LABELS[row.occupation_type] || row.occupation_type,
     availability_label: availabilityLabel(row),
+    submitted_via_label: submittedViaLabel(row.submitted_via),
 });
 
 /**
@@ -89,7 +91,7 @@ const list = async (q = {}) => {
         `SELECT v.id, v.volunteer_id, v.full_name, v.email, v.phone, v.city, v.pincode,
                 v.occupation_type, v.institution, v.area_of_interest, v.role_of_interest,
                 v.available_weekday, v.available_weekend, v.hours_per_week,
-                v.is_active, v.created_at
+                v.is_active, v.created_at, v.submitted_via
          FROM volunteers v
          ${clause}
          ORDER BY ${sortCol} ${sortDir}
@@ -272,6 +274,7 @@ const exportRows = async (q = {}) => {
         'Consent — Photo/Media': v.consent_photo_media ? 'Yes' : 'No',
         'Photo Uploaded': v.photo_stored_name ? 'Yes' : 'No',
         'ID Proof Uploaded': v.id_proof_stored_name ? 'Yes' : 'No',
+        'Registered By': submittedViaLabel(v.submitted_via),
         'Status': v.is_active ? 'Active' : 'Inactive',
         'Message': v.message || '',
         'Registered On': new Date(v.created_at).toLocaleString('en-IN'),

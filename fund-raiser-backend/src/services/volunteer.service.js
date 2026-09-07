@@ -208,13 +208,23 @@ const findDuplicate = async (email, phone) => {
 
 // ── Create ───────────────────────────────────────────────────────────────────
 
+/**
+ * `meta.viaAdmin` marks a registration typed in by ICE staff from the admin panel. It
+ * comes from the route the request arrived on — never from the request body — so a
+ * public caller cannot label its own registration as staff-entered. Admin entry skips
+ * the honeypot and captcha, both of which only make sense against an anonymous visitor.
+ */
 const create = async (body, files = {}, meta = {}) => {
-    // Honeypot: a real person never fills a field that is hidden from them.
-    if (str(body.website)) throw { status: 400, message: 'Submission rejected.' };
+    const viaAdmin = meta.viaAdmin === true;
 
-    const captcha = await recaptcha.verify(body.recaptchaToken, 'volunteer_registration', meta.ip);
-    if (!captcha.ok) {
-        throw { status: 400, message: recaptcha.failureMessage(captcha.reason) };
+    if (!viaAdmin) {
+        // Honeypot: a real person never fills a field that is hidden from them.
+        if (str(body.website)) throw { status: 400, message: 'Submission rejected.' };
+
+        const captcha = await recaptcha.verify(body.recaptchaToken, 'volunteer_registration', meta.ip);
+        if (!captcha.ok) {
+            throw { status: 400, message: recaptcha.failureMessage(captcha.reason) };
+        }
     }
 
     const { errors, clean } = validate(body);
@@ -244,8 +254,8 @@ const create = async (body, files = {}, meta = {}) => {
                  consent_data_use, consent_photo_media,
                  photo_stored_name, photo_original_name, photo_mime_type, photo_size_bytes,
                  id_proof_stored_name, id_proof_original_name, id_proof_mime_type, id_proof_size_bytes,
-                 source_ip, user_agent)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 source_ip, user_agent, submitted_via)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 volunteerId, clean.full_name, clean.date_of_birth, clean.email, clean.phone,
                 clean.city, clean.pincode, clean.occupation_type, clean.institution,
@@ -257,6 +267,7 @@ const create = async (body, files = {}, meta = {}) => {
                 photo?.filename || null, photo?.originalname || null, photo?.mimetype || null, photo?.size || null,
                 idProof?.filename || null, idProof?.originalname || null, idProof?.mimetype || null, idProof?.size || null,
                 meta.ip || null, (meta.userAgent || '').slice(0, 255) || null,
+                viaAdmin ? 'ice' : 'self',
             ]
         );
 

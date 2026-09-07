@@ -46,6 +46,16 @@ export class CsrEnquiryService {
         return this.http.post(`${this.apiUrl}/csr-enquiries`, payload);
     }
 
+    // --- Admin: record an enquiry taken off-line ---
+
+    /**
+     * Same form, entered by staff. The server stamps the row as ICE-entered off the back
+     * of this route, and skips the captcha and the public rate limit.
+     */
+    adminSubmit(payload: CsrEnquiryPayload): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/csr-enquiries`, payload, { headers: this.adminHeaders() });
+    }
+
     // --- Admin: ICE-branded email templates ---
 
     adminListTemplates(): Observable<any> {

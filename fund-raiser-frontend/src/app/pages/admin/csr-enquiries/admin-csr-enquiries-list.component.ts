@@ -5,6 +5,8 @@ import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { CsrEnquiryAdminService, CsrEnquiryFilters, CsrStatus } from '../../../services/csr-enquiry-admin.service';
 import { ProjectService } from '../../../services/project.service';
+import { CsrEnquiryFormComponent, EnquiryProjectOption } from '../../../components/csr-enquiry-form/csr-enquiry-form.component';
+import { CSR_CONTRIBUTION_AREA_TITLES } from '../../../shared/csr-contribution-areas';
 
 /**
  * CSR enquiry pipeline — list view, filters, summary metrics and exports.
@@ -15,7 +17,7 @@ import { ProjectService } from '../../../services/project.service';
 @Component({
     selector: 'app-admin-csr-enquiries-list',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
+    imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, CsrEnquiryFormComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="admin-header">
@@ -28,10 +30,13 @@ import { ProjectService } from '../../../services/project.service';
                     <lucide-icon name="chart-no-axes-combined" class="w-4 h-4"></lucide-icon>
                     {{ showReport ? 'Hide report' : 'Pipeline report' }}
                 </button>
-                <button class="btn btn-outline" [disabled]="exporting" (click)="exportAs('csv')">CSV</button>
                 <button class="btn btn-primary" [disabled]="exporting" (click)="exportAs('xlsx')">
                     <lucide-icon name="download" class="w-4 h-4"></lucide-icon>
                     {{ exporting ? 'Exporting…' : 'Export Excel' }}
+                </button>
+                <button class="btn btn-primary" (click)="openEnquiry()">
+                    <lucide-icon name="handshake" class="w-4 h-4"></lucide-icon>
+                    Partner With Us
                 </button>
             </div>
         </div>
@@ -82,29 +87,31 @@ import { ProjectService } from '../../../services/project.service';
                             (click)="setGroupBy(g)">By {{ g }}</button>
                 </div>
             </header>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>{{ groupBy | titlecase }}</th>
-                        <th class="num">Enquiries</th>
-                        <th class="num">Indicated</th>
-                        <th class="num">Committed</th>
-                        <th class="num">Received</th>
-                        <th class="num">Outstanding</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let r of reportRows">
-                        <td>{{ r.label }}</td>
-                        <td class="num">{{ r.enquiries }}</td>
-                        <td class="num">{{ money(r.indicated) }}</td>
-                        <td class="num">{{ money(r.committed) }}</td>
-                        <td class="num received">{{ money(r.received) }}</td>
-                        <td class="num">{{ money(r.outstanding) }}</td>
-                    </tr>
-                    <tr *ngIf="!reportRows.length"><td colspan="6" class="empty-cell">No data for these filters.</td></tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ groupBy | titlecase }}</th>
+                            <th class="num">Enquiries</th>
+                            <th class="num">Indicated</th>
+                            <th class="num">Committed</th>
+                            <th class="num">Received</th>
+                            <th class="num">Outstanding</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let r of reportRows">
+                            <td>{{ r.label }}</td>
+                            <td class="num">{{ r.enquiries }}</td>
+                            <td class="num">{{ money(r.indicated) }}</td>
+                            <td class="num">{{ money(r.committed) }}</td>
+                            <td class="num received">{{ money(r.received) }}</td>
+                            <td class="num">{{ money(r.outstanding) }}</td>
+                        </tr>
+                        <tr *ngIf="!reportRows.length"><td colspan="6" class="empty-cell">No data for these filters.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <!-- Filters -->
@@ -171,40 +178,58 @@ import { ProjectService } from '../../../services/project.service';
 
         <!-- List -->
         <section class="card" *ngIf="!loading">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th (click)="sort('csr_id')">CSR ID</th>
-                        <th (click)="sort('company_name')">Company</th>
-                        <th>Contact</th>
-                        <th class="num" (click)="sort('budget')">Budget</th>
-                        <th>Area</th>
-                        <th>Project</th>
-                        <th (click)="sort('status')">Status</th>
-                        <th>Owner</th>
-                        <th (click)="sort('created_at')">Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let e of enquiries" class="row" (click)="open(e.id)">
-                        <td class="mono">{{ e.csr_id }}</td>
-                        <td class="strong">{{ e.company_name }}</td>
-                        <td>
-                            {{ e.contact_person }}
-                            <span class="sub">{{ e.designation }}</span>
-                        </td>
-                        <td class="num">{{ money(e.budget) }}</td>
-                        <td>{{ e.area_of_interest }}</td>
-                        <td>{{ e.project_name || '—' }}</td>
-                        <td><span class="badge">{{ e.status_label }}</span></td>
-                        <td>{{ e.owner_name || 'Unassigned' }}</td>
-                        <td class="sub">{{ e.created_at | date:'d MMM y' }}</td>
-                    </tr>
-                    <tr *ngIf="!enquiries.length">
-                        <td colspan="9" class="empty-cell">No enquiries match these filters.</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="table wide">
+                    <thead>
+                        <tr>
+                            <th (click)="sort('csr_id')">CSR ID</th>
+                            <th (click)="sort('company_name')">Company</th>
+                            <th>Contact</th>
+                            <th class="num" (click)="sort('budget')">Budget</th>
+                            <th>Area</th>
+                            <th>Project</th>
+                            <th (click)="sort('status')">Status</th>
+                            <th>Owner</th>
+                            <th>Submitted by</th>
+                            <th (click)="sort('created_at')">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let e of enquiries" class="row" (click)="open(e.id)">
+                            <td class="mono">{{ e.csr_id }}</td>
+                            <td class="strong">{{ e.company_name }}</td>
+                            <td>
+                                {{ e.contact_person }}
+                                <span class="sub">{{ e.designation }}</span>
+                            </td>
+                            <td class="num">{{ money(e.budget) }}</td>
+                            <td>{{ e.area_of_interest }}</td>
+                            <td>{{ e.project_name || '—' }}</td>
+                            <td><span class="badge">{{ e.status_label }}</span></td>
+                            <td>{{ e.owner_name || 'Unassigned' }}</td>
+                            <td>
+                                <span class="source" [class.by-ice]="e.submitted_via === 'ice'">
+                                    {{ e.submitted_via_label }}
+                                </span>
+                            </td>
+                            <td class="sub">{{ e.created_at | date:'d MMM y' }}</td>
+                        </tr>
+                        <tr *ngIf="!enquiries.length">
+                            <td colspan="10" class="empty-cell">No enquiries match these filters.</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="10" class="add-cell">
+                                <button type="button" class="add-row" (click)="openEnquiry()">
+                                    <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
+                                    Add enquiry
+                                </button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
             <div class="pager" *ngIf="pagination && pagination.pages > 1">
                 <button class="btn btn-outline" [disabled]="pagination.page <= 1" (click)="goToPage(pagination.page - 1)">Previous</button>
@@ -212,6 +237,27 @@ import { ProjectService } from '../../../services/project.service';
                 <button class="btn btn-outline" [disabled]="pagination.page >= pagination.pages" (click)="goToPage(pagination.page + 1)">Next</button>
             </div>
         </section>
+
+        <!-- Partner With ICE — the same enquiry form the public CSR page uses, so an
+             enquiry taken over the phone lands in the pipeline identically. -->
+        <div *ngIf="enquiryOpen" class="modal-backdrop" role="dialog" aria-modal="true"
+             aria-label="Partner with ICE" (click)="closeEnquiry()">
+            <div class="modal" (click)="$event.stopPropagation()">
+                <button class="modal-close" type="button" aria-label="Close" (click)="closeEnquiry()">
+                    <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">Partner With ICE</h2>
+                    <p class="modal-sub">Record a corporate enquiry — it appears in the pipeline below once saved.</p>
+                    <app-csr-enquiry-form
+                        [adminMode]="true"
+                        [projects]="enquiryProjects"
+                        [areas]="enquiryAreas"
+                        (submitted)="onEnquirySubmitted()">
+                    </app-csr-enquiry-form>
+                </div>
+            </div>
+        </div>
     `,
     styles: [`
         .admin-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
@@ -250,7 +296,13 @@ import { ProjectService } from '../../../services/project.service';
         .f input:focus, .f select:focus { outline: none; border-color: #22c55e; background: white; }
         .filter-actions { display: flex; gap: 8px; margin-top: 12px; }
 
+        /* Nine columns do not fit a narrow window — scroll the table, not the page. */
+        .table-wrapper { overflow-x: auto; }
         .table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        /* Nine columns: let them keep their natural width and scroll, rather than
+           wrapping every company name and owner onto three lines. */
+        .table.wide { min-width: 1320px; }
+        .table.wide td { white-space: nowrap; }
         .table th { text-align: left; padding: 12px 16px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #9CA3AF; border-bottom: 1px solid #F0F0F0; cursor: pointer; white-space: nowrap; }
         .table td { padding: 12px 16px; border-bottom: 1px solid #F7F7F7; color: #374151; vertical-align: top; }
         .table .num { text-align: right; }
@@ -275,6 +327,25 @@ import { ProjectService } from '../../../services/project.service';
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .error-banner { margin: 0 0 16px; padding: 12px; background: rgba(234,67,53,0.1); border: 1px solid rgba(234,67,53,0.3); border-radius: 8px; color: #EA4335; font-size: 0.875rem; font-weight: 500; }
+
+        /* Add row: sits under the last enquiry, sticky to the left so it stays visible
+           while the table is scrolled sideways. */
+        .add-cell { padding: 0; border-bottom: none; }
+        .add-row { display: inline-flex; align-items: center; gap: 6px; position: sticky; left: 0; width: auto; padding: 12px 16px; background: none; border: none; color: #16a34a; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+        .add-row:hover { color: #15803d; }
+
+        /* Neutral for a self-submitted enquiry, tinted for one ICE entered — the exception
+           is the one worth spotting at a glance. */
+        .source { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; background: #F3F4F6; color: #4B5563; }
+        .source.by-ice { background: rgba(59,130,246,0.12); color: #1d4ed8; }
+
+        .modal-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal { position: relative; width: 100%; max-width: 640px; max-height: 92vh; overflow-y: auto; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+        .modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #F3F4F6; border: none; border-radius: 9999px; color: #6B7280; cursor: pointer; }
+        .modal-close:hover { background: #E5E7EB; }
+        .modal-body { padding: 24px; }
+        .modal-title { font-size: 1rem; font-weight: 600; color: #102a43; margin: 0 0 4px; }
+        .modal-sub { font-size: 0.75rem; color: #6B7280; margin: 0 0 16px; }
     `]
 })
 export class AdminCsrEnquiriesListComponent implements OnInit {
@@ -297,6 +368,10 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
     reportRows: any[] = [];
 
     exporting = false;
+
+    enquiryOpen = false;
+    /** Fixed list, shared with the public CSR page. */
+    readonly enquiryAreas = CSR_CONTRIBUTION_AREA_TITLES;
 
     constructor(
         private svc: CsrEnquiryAdminService,
@@ -327,6 +402,35 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
         });
 
         this.load();
+    }
+
+    /** Preferred-project options for the enquiry form. */
+    get enquiryProjects(): EnquiryProjectOption[] {
+        return this.projects.map(p => ({ id: p.id, name: p.name }));
+    }
+
+    openEnquiry(): void {
+        this.enquiryOpen = true;
+    }
+
+    closeEnquiry(): void {
+        this.enquiryOpen = false;
+    }
+
+    /**
+     * The form keeps showing its reference number after a save, so the modal stays open
+     * for the admin to note it down; the table refreshes underneath in the meantime.
+     */
+    onEnquirySubmitted(): void {
+        this.filters.page = 1;
+        this.load();
+        this.svc.getMeta().subscribe({
+            next: (res) => {
+                this.areas = res?.data?.areas || this.areas;
+                this.cdr.markForCheck();
+            },
+            error: () => { /* the filter list simply keeps its previous values */ }
+        });
     }
 
     load(): void {
