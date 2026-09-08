@@ -114,8 +114,9 @@ const validate = (body) => {
  *
  * `meta.viaAdmin` marks an enquiry typed in by ICE staff from the admin panel. It comes
  * from the route the request arrived on — never from the request body — so a public
- * caller cannot label its own submission as staff-entered. Admin entry skips the
- * honeypot and captcha, both of which only make sense against an anonymous visitor.
+ * caller cannot label its own submission as staff-entered. Admin entry skips only the
+ * honeypot, which makes sense against an anonymous visitor alone; the captcha is
+ * required on both paths.
  */
 const create = async (body, meta = {}) => {
     const viaAdmin = meta.viaAdmin === true;
@@ -125,11 +126,13 @@ const create = async (body, meta = {}) => {
         if (str(body.website)) {
             throw { status: 400, message: 'Submission rejected.' };
         }
+    }
 
-        const captcha = await recaptcha.verify(body.recaptchaToken, 'csr_enquiry', meta.ip);
-        if (!captcha.ok) {
-            throw { status: 400, message: recaptcha.failureMessage(captcha.reason) };
-        }
+    // Verified on admin entry too: the panel's form shows the checkbox on both paths,
+    // so a missing or replayed token is a genuine failure, not a staff exemption.
+    const captcha = await recaptcha.verify(body.recaptchaToken, 'csr_enquiry', meta.ip);
+    if (!captcha.ok) {
+        throw { status: 400, message: recaptcha.failureMessage(captcha.reason) };
     }
 
     const { errors, clean } = validate(body);

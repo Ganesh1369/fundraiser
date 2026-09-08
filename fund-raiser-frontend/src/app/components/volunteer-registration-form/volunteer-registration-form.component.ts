@@ -211,16 +211,16 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
             </div>
 
             <!-- reCAPTCHA v2 checkbox. Submit stays disabled until it is ticked.
-                 Skipped for admin entry: the request is already authenticated, and a
-                 captcha proves nothing about a signed-in member of staff. -->
-            <div class="mt-4" *ngIf="!adminMode">
+                 Shown on admin entry too, so a staff-typed record passes the same
+                 verification as a public submission. -->
+            <div class="mt-4">
                 <app-recaptcha-box #captcha (resolved)="onCaptcha($event)"></app-recaptcha-box>
                 <p *ngIf="captchaError" class="err">{{ captchaError }}</p>
             </div>
 
             <p *ngIf="formError" class="mt-4 mb-0 px-3.5 py-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600">{{ formError }}</p>
 
-            <button type="submit" [disabled]="submitting || (!adminMode && !captchaToken)"
+            <button type="submit" [disabled]="submitting || !captchaToken"
                     class="w-full mt-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">
                 <span *ngIf="submitting" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                 {{ submitting ? 'Submitting…' : 'Submit registration' }}
@@ -256,7 +256,7 @@ export class VolunteerRegistrationFormComponent implements OnInit {
     /**
      * Set when the form is hosted inside the admin panel. Submits through the
      * authenticated admin route — which records the volunteer as ICE-entered and is
-     * exempt from the public rate limit — and drops the captcha.
+     * exempt from the public rate limit — and still requires the captcha.
      */
     @Input() adminMode = false;
 
@@ -407,7 +407,7 @@ export class VolunteerRegistrationFormComponent implements OnInit {
             this.cdr.markForCheck();
             return;
         }
-        if (!this.adminMode && !this.captchaToken) {
+        if (!this.captchaToken) {
             this.captchaError = 'Please confirm you are not a robot.';
             this.cdr.markForCheck();
             return;

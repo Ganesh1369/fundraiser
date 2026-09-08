@@ -22,7 +22,7 @@ import { CSR_CONTRIBUTION_AREA_TITLES } from '../../../shared/csr-contribution-a
     template: `
         <div class="admin-header">
             <div>
-                <h1>CSR Enquiries</h1>
+                <h1>CSR</h1>
                 <p class="subtitle">Corporate partnership pipeline — {{ metrics?.total || 0 }} enquiries in the current view.</p>
             </div>
             <div class="header-actions">

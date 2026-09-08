@@ -1,4 +1,5 @@
 const volunteerService = require('../services/volunteer.service');
+const volunteerEmailService = require('../services/volunteer-email.service');
 
 const handleError = (res, next, error) => {
     if (error?.status) {
@@ -23,7 +24,12 @@ const respond = (res, volunteer, message) => {
     });
 };
 
-/** Register a volunteer and return their reference number. */
+/**
+ * Register a volunteer and return their reference number.
+ *
+ * Notifications are fired after the response is composed: a volunteer must get their ID
+ * even if SMTP is unavailable.
+ */
 exports.register = async (req, res, next) => {
     try {
         const volunteer = await volunteerService.create(req.body, req.files || {}, {
@@ -31,6 +37,8 @@ exports.register = async (req, res, next) => {
             userAgent: req.get('user-agent'),
         });
         respond(res, volunteer, 'Registration received');
+
+        volunteerEmailService.notifyNewRegistration(volunteer);
     } catch (error) { handleError(res, next, error); }
 };
 
@@ -47,5 +55,7 @@ exports.adminRegister = async (req, res, next) => {
             viaAdmin: true,
         });
         respond(res, volunteer, 'Volunteer added');
+
+        volunteerEmailService.notifyNewRegistration(volunteer);
     } catch (error) { handleError(res, next, error); }
 };

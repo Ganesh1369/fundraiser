@@ -22,7 +22,7 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
     template: `
         <div class="admin-header">
             <div>
-                <h1>Volunteer Master</h1>
+                <h1>Volunteer</h1>
                 <p class="subtitle">{{ summary?.total || 0 }} volunteers in the current view.</p>
             </div>
             <div class="header-actions">
