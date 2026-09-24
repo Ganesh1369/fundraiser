@@ -29,18 +29,5 @@
 ## Workstream 3 — Admin Dashboard CSR Module
 **Cost:** 32,000 INR · **Duration:** 5 days
 
-- Enquiry list view (CSR ID, company, contact, budget, area, project, status, owner, date)
-- Search + filters: status, owner, project, area, budget range, date range, free-text
-- Enquiry detail screen (data, status, owner, notes, documents, milestones, history)
-- Summary metrics header: total enquiries, by stage, committed value, funds received, active partnerships
-- Role-based access tied to existing admin/sub-admin roles
-- 13-stage status workflow (New Enquiry → Closed/Renewal)
-- Status update with optional reason capture
-- Assign/reassign owner
-- Timestamped attributed internal notes
-- Document upload with file type/size validation
-- Milestones with target vs actual dates
-- Immutable activity/audit log
-- CSR pipeline report (by stage, owner, project, with committed vs received values)
-- Excel/CSV export of any filtered view
-- Date-range reporting including financial-year presets
+
+
