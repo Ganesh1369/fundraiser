@@ -89,53 +89,46 @@ const validate = (body) => {
     if (city.length < 2) errors.city = 'City is required.';
     else if (city.length > 100) errors.city = 'City name is too long.';
 
-    if (!PINCODE_RE.test(pincode)) errors.pincode = 'Enter a valid 6-digit pincode.';
+    // Everything below up to consent is optional on the public form: blank is accepted,
+    // anything given is still checked.
+    if (pincode && !PINCODE_RE.test(pincode)) errors.pincode = 'Enter a valid 6-digit pincode.';
 
-    if (!OCCUPATIONS.includes(occupation)) errors.occupationType = 'Select your occupation type.';
+    if (occupation && !OCCUPATIONS.includes(occupation)) errors.occupationType = 'Select your occupation type.';
 
-    if (institution.length < 2) {
-        errors.institution = occupation === 'student'
-            ? 'Institution is required.'
-            : 'Employer or organisation is required.';
-    } else if (institution.length > 200) {
-        errors.institution = 'This is too long.';
-    }
+    if (institution.length > 200) errors.institution = 'This is too long.';
 
-    // Availability: at least one day type, and a sane hours figure.
     const weekday = bool(body.availableWeekday);
     const weekend = bool(body.availableWeekend);
-    if (!weekday && !weekend) errors.availability = 'Select weekday, weekend, or both.';
 
-    const hours = Number(body.hoursPerWeek);
-    if (!Number.isFinite(hours) || hours < 1) errors.hoursPerWeek = 'Enter how many hours a week you can give.';
-    else if (hours > MAX_HOURS) errors.hoursPerWeek = `That is more than ${MAX_HOURS} hours a week — please check.`;
-
-    if (!area) errors.areaOfInterest = 'Select an area of interest.';
-    else if (area.length > 150) errors.areaOfInterest = 'Area of interest is too long.';
-
-    // Student-only fields.
-    const collegeName = str(body.collegeName);
-    const course = str(body.course);
-    if (occupation === 'student') {
-        if (collegeName.length < 2) errors.collegeName = 'College name is required for students.';
-        if (course.length < 2) errors.course = 'Course is required for students.';
+    const rawHours = str(String(body.hoursPerWeek ?? ''));
+    const hours = rawHours === '' ? null : Number(rawHours);
+    if (hours !== null) {
+        if (!Number.isFinite(hours) || hours < 1) errors.hoursPerWeek = 'Enter how many hours a week you can give.';
+        else if (hours > MAX_HOURS) errors.hoursPerWeek = `That is more than ${MAX_HOURS} hours a week — please check.`;
     }
 
-    // Emergency contact.
+    if (area.length > 150) errors.areaOfInterest = 'Area of interest is too long.';
+
+    // Student-only fields, kept only while "student" is the answer.
+    const collegeName = str(body.collegeName);
+    const course = str(body.course);
+    if (collegeName.length > 200) errors.collegeName = 'This is too long.';
+    if (course.length > 150) errors.course = 'This is too long.';
+
+    // Emergency contact is no longer collected by the public form, but staff can still
+    // record one; when a number is given it must be a real one and not the volunteer's own.
     const emName = str(body.emergencyName);
     const emRel = str(body.emergencyRelationship);
     const emPhone = str(body.emergencyPhone);
-    if (emName.length < 2) errors.emergencyName = 'Emergency contact name is required.';
-    if (emRel.length < 2) errors.emergencyRelationship = 'Relationship is required.';
-
-    const emDigits = digitsOf(emPhone);
-    if (!PHONE_RE.test(emPhone) || emDigits.length < 10 || emDigits.length > 12) {
-        errors.emergencyPhone = 'Enter a valid emergency contact number.';
-    } else if (emDigits.slice(-10) === phoneDigits.slice(-10)) {
-        // An emergency contact that rings the volunteer's own phone is useless. Compared on
-        // the last 10 digits so "+91 98765 43210" and "9876543210" are seen as one number,
-        // matching how findDuplicate() normalises phones.
-        errors.emergencyPhone = 'Emergency contact must differ from your own number.';
+    if (emPhone) {
+        const emDigits = digitsOf(emPhone);
+        if (!PHONE_RE.test(emPhone) || emDigits.length < 10 || emDigits.length > 12) {
+            errors.emergencyPhone = 'Enter a valid emergency contact number.';
+        } else if (emDigits.slice(-10) === phoneDigits.slice(-10)) {
+            // Compared on the last 10 digits so "+91 98765 43210" and "9876543210" are seen
+            // as one number, matching how findDuplicate() normalises phones.
+            errors.emergencyPhone = 'Emergency contact must differ from your own number.';
+        }
     }
 
     // Consent. Data use is required; photo/media is genuinely optional.
@@ -154,23 +147,23 @@ const validate = (body) => {
             email,
             phone,
             city,
-            pincode,
-            occupation_type: occupation,
-            institution,
+            pincode: pincode || null,
+            occupation_type: occupation || null,
+            institution: institution || null,
             available_weekday: weekday,
             available_weekend: weekend,
-            hours_per_week: Math.round(hours),
-            area_of_interest: area,
+            hours_per_week: hours === null ? null : Math.round(hours),
+            area_of_interest: area || null,
             role_of_interest: str(body.roleOfInterest) || null,
             // Student fields are cleared for non-students so a changed answer cannot leave
             // stale college details behind.
-            college_name: occupation === 'student' ? collegeName : null,
-            course: occupation === 'student' ? course : null,
+            college_name: occupation === 'student' ? collegeName || null : null,
+            course: occupation === 'student' ? course || null : null,
             languages: languages || null,
             message: message || null,
-            emergency_name: emName,
-            emergency_relationship: emRel,
-            emergency_phone: emPhone,
+            emergency_name: emName || null,
+            emergency_relationship: emRel || null,
+            emergency_phone: emPhone || null,
             consent_data_use: bool(body.consentDataUse),
             consent_photo_media: bool(body.consentPhotoMedia),
         },

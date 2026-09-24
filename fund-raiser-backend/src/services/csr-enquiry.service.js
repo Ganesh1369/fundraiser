@@ -77,14 +77,15 @@ const validate = (body) => {
         errors.phone = 'Enter a valid phone number (10 digits, optionally +91).';
     }
 
-    const budget = Number(body.budget);
-    if (!Number.isFinite(budget) || budget <= 0) errors.budget = 'Enter your CSR budget as a number.';
-    else if (budget > MAX_BUDGET) errors.budget = 'That budget looks too large — please check.';
+    // Budget, area of interest and preferred project are optional; checked only when given.
+    const rawBudget = body.budget === undefined || body.budget === null ? '' : String(body.budget).trim();
+    const budget = rawBudget === '' ? null : Number(rawBudget);
+    if (budget !== null) {
+        if (!Number.isFinite(budget) || budget <= 0) errors.budget = 'Enter your CSR budget as a number.';
+        else if (budget > MAX_BUDGET) errors.budget = 'That budget looks too large — please check.';
+    }
 
-    if (!area) errors.areaOfInterest = 'Select an area of interest.';
-    else if (area.length > 150) errors.areaOfInterest = 'Area of interest is too long.';
-
-    if (!str(body.preferredProjectId)) errors.preferredProjectId = 'Select a preferred project.';
+    if (area.length > 150) errors.areaOfInterest = 'Area of interest is too long.';
 
     if (location.length > 200) errors.location = 'Location is too long.';
     if (message.length > 2000) errors.message = 'Message is too long (2000 characters max).';
@@ -98,7 +99,7 @@ const validate = (body) => {
             email,
             phone,
             budget,
-            area_of_interest: area,
+            area_of_interest: area || null,
             preferred_project_id: str(body.preferredProjectId) || null,
             location: location || null,
             message: message || null,

@@ -151,7 +151,8 @@ const valuesFor = (enquiry, extra = {}) => ({
     designation: enquiry.designation,
     email: enquiry.email,
     phone: enquiry.phone,
-    budget: formatCurrency(enquiry.budget),
+    // Optional on the form: a blank budget renders as "—", not "₹0".
+    budget: enquiry.budget == null ? '' : formatCurrency(enquiry.budget),
     areaOfInterest: enquiry.area_of_interest,
     projectName: enquiry.project_name || '',
     location: enquiry.location || '',

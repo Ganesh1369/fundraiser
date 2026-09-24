@@ -559,7 +559,7 @@ const exportRows = async (q = {}) => {
         'Designation': r.designation,
         'Email': r.email,
         'Phone': r.phone,
-        'Indicated Budget': Number(r.budget),
+        'Indicated Budget': r.budget == null ? '' : Number(r.budget),
         'Committed Amount': r.committed_amount == null ? '' : Number(r.committed_amount),
         'Received Amount': Number(r.received_amount),
         'Outstanding': r.committed_amount == null ? '' : Number(r.committed_amount) - Number(r.received_amount),

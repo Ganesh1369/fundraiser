@@ -28,7 +28,8 @@ const availabilityLabel = (row) => {
     if (row.available_weekday) parts.push('Weekdays');
     if (row.available_weekend) parts.push('Weekends');
     const days = parts.length === 2 ? 'Weekdays & weekends' : (parts[0] || 'Not specified');
-    return `${days} · ${row.hours_per_week} hrs/week`;
+    // Hours are optional on the public form.
+    return row.hours_per_week == null ? days : `${days} · ${row.hours_per_week} hrs/week`;
 };
 
 const decorate = (row) => ({
