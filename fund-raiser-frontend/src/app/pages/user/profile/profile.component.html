@@ -3,7 +3,7 @@
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
         <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-2.5">
             <a routerLink="/" class="flex items-center gap-2 text-lg font-bold text-accent no-underline shrink-0">
-                <img src="/ice_logo.svg" alt="ICE" class="h-6">
+                <img src="/ice_logo.svg" alt="ICE" class="h-5 sm:h-6">
                 <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
             </a>
             <div class="flex items-center gap-1.5 sm:gap-2">
@@ -14,9 +14,11 @@
                     <span class="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-xs font-bold">{{ getInitials(user?.name) }}</span>
                     }
                 </button>
-                <button class="px-2 sm:px-3 py-2 text-xs sm:text-sm text-neutral-500 hover:text-red-500 transition-colors"
-                    (click)="logout()">
-                    Logout
+                <!-- Icon only on phones; the label comes back from sm up. -->
+                <button class="flex items-center gap-1.5 p-2 sm:px-3 text-xs sm:text-sm text-neutral-500 hover:text-red-500 transition-colors"
+                    (click)="logout()" aria-label="Logout" title="Logout">
+                    <lucide-icon name="log-out" class="w-5 h-5 sm:w-4 sm:h-4"></lucide-icon>
+                    <span class="hidden sm:inline">Logout</span>
                 </button>
             </div>
         </div>

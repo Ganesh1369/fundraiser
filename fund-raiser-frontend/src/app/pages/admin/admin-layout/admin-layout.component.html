@@ -1,15 +1,31 @@
 <div class="admin-layout">
+    <!-- Mobile top bar — only shown below 768px, where the sidebar becomes a drawer. -->
+    <header class="mobile-topbar">
+        <button class="menu-toggle" type="button" aria-label="Open menu" (click)="menuOpen = true">
+            <lucide-icon name="menu" class="w-5 h-5"></lucide-icon>
+        </button>
+        <a routerLink="/" class="mobile-logo">
+            <img src="/ice_logo.svg" alt="ICE">
+        </a>
+        <span class="admin-badge">Admin</span>
+    </header>
+
+    <div class="sidebar-backdrop" *ngIf="menuOpen" (click)="menuOpen = false"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar dark">
+    <aside class="sidebar dark" [class.open]="menuOpen">
         <div class="sidebar-header">
             <a routerLink="/" class="logo">
                 <img src="/ice_logo.svg" alt="ICE" class="h-6">
                 <span class="logo-text"><span class="text-gold"> Portal</span></span>
             </a>
             <span class="admin-badge">Admin</span>
+            <button class="menu-close" type="button" aria-label="Close menu" (click)="menuOpen = false">
+                <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+            </button>
         </div>
 
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" (click)="menuOpen = false">
             <a class="nav-item" routerLink="/admin/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
                 <lucide-icon name="bar-chart-3" class="nav-icon w-4 h-4"></lucide-icon>
                 Dashboard

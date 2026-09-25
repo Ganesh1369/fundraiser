@@ -7,10 +7,11 @@
                 <img src="/ice_logo.svg" alt="ICE" class="h-6">
                 <span>ICE <span class="text-primary">Network</span></span>
             </a>
-            <button type="button" (click)="logout()"
-                class="text-sm text-neutral-500 hover:text-neutral-700 flex items-center gap-1.5">
-                <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon>
-                Sign out
+            <!-- Icon only on phones; the label comes back from sm up. -->
+            <button type="button" (click)="logout()" aria-label="Sign out" title="Sign out"
+                class="text-sm text-neutral-500 hover:text-neutral-700 flex items-center gap-1.5 p-2 -m-2 sm:p-0 sm:m-0">
+                <lucide-icon name="log-out" class="w-5 h-5 sm:w-4 sm:h-4"></lucide-icon>
+                <span class="hidden sm:inline">Sign out</span>
             </button>
         </div>
     </header>

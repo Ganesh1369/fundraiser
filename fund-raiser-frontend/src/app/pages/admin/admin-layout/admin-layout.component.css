@@ -165,13 +165,90 @@
     padding: 24px;
 }
 
+/* ===== Mobile top bar & drawer (hidden on desktop) ===== */
+.mobile-topbar,
+.menu-close,
+.sidebar-backdrop {
+    display: none;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
+    .mobile-topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        padding: 0 16px;
+        background: linear-gradient(90deg, #102a43 0%, #1e3a8a 100%);
+        z-index: 90;
+    }
+
+    .mobile-topbar .mobile-logo {
+        display: flex;
+        align-items: center;
+        margin-right: auto;
+    }
+
+    .mobile-topbar .mobile-logo img {
+        width: 90px;
+        height: auto;
+        filter: brightness(0) invert(1);
+    }
+
+    .menu-toggle,
+    .menu-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+    }
+
+    /* The sidebar becomes an off-canvas drawer that slides in from the left. */
     .sidebar.dark {
-        display: none;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        width: 260px;
+        max-width: 85vw;
+    }
+
+    .sidebar.dark.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Keep the close button beside the badge instead of pushing it away. */
+    .sidebar-header {
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sidebar-header .logo {
+        margin-right: auto;
+    }
+
+    .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 95;
     }
 
     .main-content {
         margin-left: 0;
+        padding: 16px;
+        padding-top: 72px; /* 56px top bar + 16px */
     }
 }

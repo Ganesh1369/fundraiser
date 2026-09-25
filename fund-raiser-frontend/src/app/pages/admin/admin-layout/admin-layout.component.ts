@@ -11,6 +11,9 @@ import { LucideAngularModule } from 'lucide-angular';
     styleUrl: './admin-layout.component.css'
 })
 export class AdminLayoutComponent {
+    /** Mobile-only: whether the sidebar drawer is slid open. */
+    menuOpen = false;
+
     constructor(private router: Router) {
         const token = localStorage.getItem('adminToken');
         if (!token) {

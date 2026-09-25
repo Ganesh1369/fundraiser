@@ -3,7 +3,7 @@
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
         <div class="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-5 py-3">
             <a routerLink="/" class="flex items-center gap-2 text-lg font-bold text-accent no-underline shrink-0">
-                <img src="/ice_logo.svg" alt="ICE" class="h-6">
+                <img src="/ice_logo.svg" alt="ICE" class="h-5 sm:h-6">
                 <span class="hidden sm:inline">ICE <span class="text-primary">Network</span></span>
             </a>
             <div class="flex items-center gap-1.5 sm:gap-2">
@@ -26,9 +26,11 @@
                     <span class="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-xs font-bold">{{ getInitials(user?.name) }}</span>
                     }
                 </button>
-                <button class="px-2 sm:px-3 py-2 text-xs sm:text-sm text-neutral-500 hover:text-red-500 transition-colors"
-                    (click)="logout()">
-                    Logout
+                <!-- Icon only on phones; the label comes back from sm up. -->
+                <button class="flex items-center gap-1.5 p-2 sm:px-3 text-xs sm:text-sm text-neutral-500 hover:text-red-500 transition-colors"
+                    (click)="logout()" aria-label="Logout" title="Logout">
+                    <lucide-icon name="log-out" class="w-5 h-5 sm:w-4 sm:h-4"></lucide-icon>
+                    <span class="hidden sm:inline">Logout</span>
                 </button>
             </div>
         </div>
@@ -85,7 +87,7 @@
                 <h2 class="text-base font-semibold text-accent m-0">Where can I contribute</h2>
                 <span class="text-xs text-neutral-400">Pick a way to give back</span>
             </div>
-            <div class="grid md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Projects tile -->
                 <div class="bg-white rounded-2xl p-5 shadow-soft flex flex-col">
                     <div class="flex items-center gap-3 mb-3">
@@ -317,10 +319,10 @@
         }
 
         <!-- Main Grid -->
-        <div class="grid lg:grid-cols-5 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <!-- Donation History (wider) -->
-            <div class="lg:col-span-3 bg-white rounded-2xl shadow-soft overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+            <div class="min-w-0 lg:col-span-3 bg-white rounded-2xl shadow-soft overflow-hidden">
+                <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-neutral-100">
                     <h2 class="text-base font-semibold text-accent m-0">Donation History</h2>
                     <select class="px-3 py-1.5 text-xs border border-neutral-200 rounded-lg bg-white text-neutral-600 focus:border-primary focus:ring-1 focus:ring-primary/10"
                         [(ngModel)]="selectedFilter" (change)="onFilterChange()">
@@ -331,7 +333,7 @@
                         <option value="year">Past Year</option>
                     </select>
                 </div>
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     @if (donations.length === 0) {
                     <div class="text-center py-10">
                         <div class="w-14 h-14 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-3"><lucide-icon name="inbox" class="w-7 h-7 text-neutral-400"></lucide-icon></div>
@@ -342,12 +344,12 @@
                     } @else {
                     <div class="flex flex-col gap-3">
                         @for (donation of donations.slice(0, donationsPreviewCount); track donation.id) {
-                        <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                        <div class="flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 bg-neutral-50 rounded-xl">
                             <div>
                                 <div class="text-sm font-semibold text-accent">{{ formatCurrency(donation.amount) }}</div>
                                 <div class="text-xs text-neutral-400 mt-0.5">{{ formatDate(donation.createdAt) }}</div>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center justify-end gap-2">
                                 @if (donation.request80g && donation.status === 'completed') {
                                 <span class="px-2 py-0.5 text-xs font-medium rounded-full"
                                     [ngClass]="{
@@ -502,24 +504,24 @@
             }
 
             <!-- Referral Card (narrower) -->
-            <div id="referral-card" class="relative lg:col-span-2 bg-white rounded-2xl shadow-soft overflow-hidden scroll-mt-20"
+            <div id="referral-card" class="relative min-w-0 lg:col-span-2 bg-white rounded-2xl shadow-soft overflow-hidden scroll-mt-20"
                 [class.focus-ring]="focusHighlight === 'referral'">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-neutral-100">
                     <h2 class="text-base font-semibold text-accent m-0">Invite & Earn</h2>
                     <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">{{ referralStats?.referralPoints || 0 }} pts</span>
                 </div>
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     <p class="text-sm text-neutral-500 mb-5">
                         Earn <strong class="text-accent">1 point for every &#8377;100</strong> donated by people you refer!
                     </p>
 
                     <div class="flex flex-col items-center bg-neutral-50 rounded-xl p-4 mb-4">
                         <span class="text-xs text-neutral-400 mb-1">Your Code</span>
-                        <span class="text-xl font-bold text-primary tracking-widest">{{ referralStats?.referralCode || user?.referralCode }}</span>
+                        <span class="text-lg sm:text-xl font-bold text-primary tracking-widest break-all text-center">{{ referralStats?.referralCode || user?.referralCode }}</span>
                     </div>
 
                     <div class="flex gap-2 mb-4">
-                        <input type="text" class="flex-1 px-3 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg truncate"
+                        <input type="text" class="flex-1 min-w-0 px-3 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg truncate"
                             [value]="referralStats?.referralLink || ''" readonly>
                         <button class="px-3 py-2.5 bg-accent text-white text-sm rounded-lg hover:bg-accent-600 transition-colors"
                             (click)="copyReferralLink()">
@@ -593,7 +595,7 @@
 
             <!-- Project scope, status & updates -->
             @if (projectDetails.length > 0) {
-            <div class="lg:col-span-5">
+            <div class="min-w-0 lg:col-span-5">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="text-base font-semibold text-accent m-0">
@@ -606,9 +608,9 @@
                         </p>
                     </div>
                 </div>
-                <div class="grid md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @for (p of projectDetails; track p.id) {
-                    <a [routerLink]="['/projects', p.slug]" class="block bg-white rounded-2xl p-5 shadow-soft hover:shadow-card transition-shadow no-underline group">
+                    <a [routerLink]="['/projects', p.slug]" class="block min-w-0 bg-white rounded-2xl p-4 sm:p-5 shadow-soft hover:shadow-card transition-shadow no-underline group">
                         <!-- Header -->
                         <div class="flex items-start gap-3 mb-4">
                             @if (p.logo_url) {
