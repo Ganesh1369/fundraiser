@@ -66,6 +66,9 @@ import { VolunteerAdminService } from '../../../services/volunteer-admin.service
                                 <div><dt>Availability</dt><dd>{{ v.availability_label }}</dd></div>
                                 <div><dt>Area of interest</dt><dd>{{ v.area_of_interest }}</dd></div>
                                 <div *ngIf="v.role_of_interest"><dt>Role applied for</dt><dd>{{ v.role_of_interest }}</dd></div>
+                                <div *ngIf="v.volunteer_mode"><dt>Volunteering mode</dt><dd>{{ v.volunteer_mode_label }}</dd></div>
+                                <div *ngIf="v.preferred_duration"><dt>Preferred duration</dt><dd>{{ v.preferred_duration }}</dd></div>
+                                <div *ngIf="v.skills"><dt>Skills</dt><dd>{{ v.skills }}</dd></div>
                             </dl>
                         </div>
                     </section>

@@ -22,6 +22,13 @@ const OCCUPATION_LABELS = {
     other: 'Other',
 };
 
+const VOLUNTEER_MODE_LABELS = {
+    in_house: 'In-House',
+    remote: 'Remote (work from home)',
+    hybrid: 'Hybrid',
+    field: 'Field',
+};
+
 /** "Weekdays & weekends", "Weekends", etc. — how availability reads in a list. */
 const availabilityLabel = (row) => {
     const parts = [];
@@ -35,6 +42,7 @@ const availabilityLabel = (row) => {
 const decorate = (row) => ({
     ...row,
     occupation_label: OCCUPATION_LABELS[row.occupation_type] || row.occupation_type,
+    volunteer_mode_label: VOLUNTEER_MODE_LABELS[row.volunteer_mode] || row.volunteer_mode,
     availability_label: availabilityLabel(row),
     submitted_via_label: submittedViaLabel(row.submitted_via),
 });
@@ -167,7 +175,7 @@ const getById = async (id) => {
     if (!r.rows.length) throw { status: 404, message: 'Volunteer not found' };
 
     const v = decorate(r.rows[0]);
-    // Present the two uploads uniformly so the detail view can loop rather than branch.
+    // Present the uploads uniformly so the detail view can loop rather than branch.
     v.documents = [
         v.photo_stored_name && {
             kind: 'photo', label: 'Photo',
@@ -177,21 +185,29 @@ const getById = async (id) => {
             kind: 'idProof', label: 'ID proof',
             originalName: v.id_proof_original_name, mimeType: v.id_proof_mime_type, sizeBytes: v.id_proof_size_bytes,
         },
+        v.cv_stored_name && {
+            kind: 'cv', label: 'CV',
+            originalName: v.cv_original_name, mimeType: v.cv_mime_type, sizeBytes: v.cv_size_bytes,
+        },
     ].filter(Boolean);
 
     return v;
 };
 
-/** The stored filename for one of a volunteer's two uploads. */
+/** Column prefix for each kind of upload a volunteer can have. */
+const DOCUMENT_COLUMNS = { photo: 'photo', idProof: 'id_proof', cv: 'cv' };
+
+/** The stored filename for one of a volunteer's uploads. */
 const getDocument = async (id, kind) => {
-    if (!['photo', 'idProof'].includes(kind)) throw { status: 400, message: 'Unknown document type' };
+    const prefix = DOCUMENT_COLUMNS[kind];
+    if (!prefix) throw { status: 400, message: 'Unknown document type' };
 
     const r = await db.query('SELECT * FROM volunteers WHERE id = ?', [id]);
     if (!r.rows.length) throw { status: 404, message: 'Volunteer not found' };
     const v = r.rows[0];
 
-    const stored = kind === 'photo' ? v.photo_stored_name : v.id_proof_stored_name;
-    const original = kind === 'photo' ? v.photo_original_name : v.id_proof_original_name;
+    const stored = v[`${prefix}_stored_name`];
+    const original = v[`${prefix}_original_name`];
     if (!stored) throw { status: 404, message: 'No such document for this volunteer' };
 
     return { storedName: stored, originalName: original };
@@ -265,6 +281,9 @@ const exportRows = async (q = {}) => {
         'Course': v.course || '',
         'Area of Interest': v.area_of_interest,
         'Role of Interest': v.role_of_interest || '',
+        'Volunteering Mode': VOLUNTEER_MODE_LABELS[v.volunteer_mode] || v.volunteer_mode || '',
+        'Preferred Duration': v.preferred_duration || '',
+        'Skills': v.skills || '',
         'Availability': availabilityLabel(v),
         'Hours per Week': v.hours_per_week,
         'Languages': v.languages || '',
@@ -275,6 +294,7 @@ const exportRows = async (q = {}) => {
         'Consent — Photo/Media': v.consent_photo_media ? 'Yes' : 'No',
         'Photo Uploaded': v.photo_stored_name ? 'Yes' : 'No',
         'ID Proof Uploaded': v.id_proof_stored_name ? 'Yes' : 'No',
+        'CV Uploaded': v.cv_stored_name ? 'Yes' : 'No',
         'Registered By': submittedViaLabel(v.submitted_via),
         'Status': v.is_active ? 'Active' : 'Inactive',
         'Message': v.message || '',
@@ -292,4 +312,5 @@ module.exports = {
     exportRows,
     availabilityLabel,
     OCCUPATION_LABELS,
+    VOLUNTEER_MODE_LABELS,
 };

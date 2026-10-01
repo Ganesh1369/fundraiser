@@ -230,8 +230,11 @@ const sendLoginAcknowledgementEmail = async (to, name) => {
  * Used by the CSR enquiry module, whose message bodies are admin-editable and live in
  * `csr_email_templates`. Keeping the wrapper here means an admin edits the message only —
  * the navy header, logo and footer strip can never be broken by a bad edit.
+ *
+ * `attachments` (optional) is a nodemailer attachments array — the contact form uses it
+ * to pass a CV along.
  */
-const sendWrappedEmail = async ({ to, subject, bodyHtml, replyTo }) => {
+const sendWrappedEmail = async ({ to, subject, bodyHtml, replyTo, attachments }) => {
     const mailOptions = {
         from: `"ICE Network" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to,
@@ -239,6 +242,7 @@ const sendWrappedEmail = async ({ to, subject, bodyHtml, replyTo }) => {
         html: emailWrapper(bodyHtml)
     };
     if (replyTo) mailOptions.replyTo = replyTo;
+    if (attachments?.length) mailOptions.attachments = attachments;
     return transporter.sendMail(mailOptions);
 };
 

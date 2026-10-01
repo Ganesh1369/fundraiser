@@ -86,6 +86,7 @@ app.use('/api', require('./routes/csr-enquiry.routes'));
 app.use('/api', require('./routes/csr-enquiry-admin.routes'));
 app.use('/api', require('./routes/volunteer.routes'));
 app.use('/api', require('./routes/volunteer-admin.routes'));
+app.use('/api', require('./routes/contact.routes'));
 app.use('/api', require('./routes/share-lead.routes'));
 app.use('/api', require('./routes/push.routes'));
 app.use('/api/webhooks', webhookRoutes);

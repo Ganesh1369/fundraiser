@@ -28,6 +28,9 @@ const formatDate = (value) => new Date(value).toLocaleDateString('en-IN', {
 });
 
 const OCCUPATION_LABELS = { student: 'Student', working: 'Working professional', other: 'Other' };
+const VOLUNTEER_MODE_LABELS = {
+    in_house: 'In-House', remote: 'Remote (work from home)', hybrid: 'Hybrid', field: 'Field',
+};
 
 /** "Weekdays and weekends", or whichever single one was ticked. */
 const availability = (volunteer) => {
@@ -63,6 +66,10 @@ const detailRows = (volunteer) => [
     ['Availability', availability(volunteer)],
     ['Area of interest', volunteer.area_of_interest],
     ['Role of interest', volunteer.role_of_interest],
+    ['Volunteering mode', VOLUNTEER_MODE_LABELS[volunteer.volunteer_mode] || volunteer.volunteer_mode],
+    ['Preferred duration', volunteer.preferred_duration],
+    ['Skills', volunteer.skills],
+    ['CV', volunteer.cv_stored_name ? 'Uploaded' : ''],
     ['Languages', volunteer.languages],
     ['Emergency contact', volunteer.emergency_name
         ? `${volunteer.emergency_name} (${volunteer.emergency_relationship}) · ${volunteer.emergency_phone}`

@@ -33,6 +33,8 @@ const PHONE_RE = /^(?:\+?91[\s-]?)?[0-9][0-9\s-]{7,14}$/;
 const PINCODE_RE = /^[1-9][0-9]{5}$/;
 
 const OCCUPATIONS = ['student', 'working', 'other'];
+// How the person wants to volunteer: from the office, remotely, a mix, or on field drives.
+const VOLUNTEER_MODES = ['in_house', 'remote', 'hybrid', 'field'];
 const MIN_AGE = 16;
 const MAX_HOURS = 60;
 
@@ -109,6 +111,17 @@ const validate = (body) => {
 
     if (area.length > 150) errors.areaOfInterest = 'Area of interest is too long.';
 
+    const role = str(body.roleOfInterest);
+    if (role.length > 200) errors.roleOfInterest = 'This is too long.';
+
+    // How, for how long, and with what skills — all optional.
+    const mode = str(body.volunteerMode);
+    const duration = str(body.preferredDuration);
+    const skills = str(body.skills);
+    if (mode && !VOLUNTEER_MODES.includes(mode)) errors.volunteerMode = 'Select how you would like to volunteer.';
+    if (duration.length > 100) errors.preferredDuration = 'This is too long.';
+    if (skills.length > 1000) errors.skills = 'This is too long (1000 characters max).';
+
     // Student-only fields, kept only while "student" is the answer.
     const collegeName = str(body.collegeName);
     const course = str(body.course);
@@ -154,7 +167,10 @@ const validate = (body) => {
             available_weekend: weekend,
             hours_per_week: hours === null ? null : Math.round(hours),
             area_of_interest: area || null,
-            role_of_interest: str(body.roleOfInterest) || null,
+            role_of_interest: role || null,
+            volunteer_mode: mode || null,
+            preferred_duration: duration || null,
+            skills: skills || null,
             // Student fields are cleared for non-students so a changed answer cannot leave
             // stale college details behind.
             college_name: occupation === 'student' ? collegeName || null : null,
@@ -235,6 +251,7 @@ const create = async (body, files = {}, meta = {}) => {
 
     const photo = files.photo?.[0] || null;
     const idProof = files.idProof?.[0] || null;
+    const cv = files.cv?.[0] || null;
 
     const conn = await db.getClient();
     try {
@@ -245,23 +262,29 @@ const create = async (body, files = {}, meta = {}) => {
             `INSERT INTO volunteers
                 (volunteer_id, full_name, date_of_birth, email, phone, city, pincode,
                  occupation_type, institution, available_weekday, available_weekend,
-                 hours_per_week, area_of_interest, role_of_interest, college_name, course,
+                 hours_per_week, area_of_interest, role_of_interest,
+                 volunteer_mode, preferred_duration, skills, college_name, course,
                  languages, message, emergency_name, emergency_relationship, emergency_phone,
                  consent_data_use, consent_photo_media,
                  photo_stored_name, photo_original_name, photo_mime_type, photo_size_bytes,
                  id_proof_stored_name, id_proof_original_name, id_proof_mime_type, id_proof_size_bytes,
+                 cv_stored_name, cv_original_name, cv_mime_type, cv_size_bytes,
                  source_ip, user_agent, submitted_via)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 volunteerId, clean.full_name, clean.date_of_birth, clean.email, clean.phone,
                 clean.city, clean.pincode, clean.occupation_type, clean.institution,
                 clean.available_weekday, clean.available_weekend, clean.hours_per_week,
-                clean.area_of_interest, clean.role_of_interest, clean.college_name, clean.course,
+                clean.area_of_interest, clean.role_of_interest,
+                clean.volunteer_mode, clean.preferred_duration, clean.skills,
+                clean.college_name, clean.course,
                 clean.languages, clean.message, clean.emergency_name, clean.emergency_relationship,
                 clean.emergency_phone, clean.consent_data_use,
                 clean.consent_photo_media,
                 photo?.filename || null, photo?.originalname || null, photo?.mimetype || null, photo?.size || null,
                 idProof?.filename || null, idProof?.originalname || null, idProof?.mimetype || null, idProof?.size || null,
+                cv?.filename || null, cv?.originalname || null, cv?.mimetype || null, cv?.size || null,
                 meta.ip || null, (meta.userAgent || '').slice(0, 255) || null,
                 viaAdmin ? 'ice' : 'self',
             ]
@@ -295,5 +318,6 @@ module.exports = {
     findDuplicate,
     ageFrom,
     OCCUPATIONS,
+    VOLUNTEER_MODES,
     MIN_AGE,
 };
