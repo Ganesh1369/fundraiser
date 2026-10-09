@@ -26,32 +26,31 @@ export class VolunteerService {
     }
 
     /**
-     * The form carries two file uploads, so it is sent as multipart/form-data rather than
-     * JSON. Booleans are stringified by FormData; the server coerces them back.
+     * The form carries an optional CV upload, so it is sent as multipart/form-data rather
+     * than JSON. Booleans are stringified by FormData; the server coerces them back.
      */
-    register(payload: Record<string, any>, photo: File | null, idProof: File | null): Observable<any> {
-        return this.http.post(`${this.apiUrl}/volunteers`, this.formData(payload, photo, idProof));
+    register(payload: Record<string, any>, cv: File | null): Observable<any> {
+        return this.http.post(`${this.apiUrl}/volunteers`, this.formData(payload, cv));
     }
 
     // --- Admin ---
 
     /**
      * Same form, entered by staff. The server stamps the row as ICE-entered off the back
-     * of this route, and skips the captcha and the public rate limit.
+     * of this route, and skips the public rate limit.
      */
-    adminRegister(payload: Record<string, any>, photo: File | null, idProof: File | null): Observable<any> {
-        return this.http.post(`${this.apiUrl}/admin/volunteers`, this.formData(payload, photo, idProof), {
+    adminRegister(payload: Record<string, any>, cv: File | null): Observable<any> {
+        return this.http.post(`${this.apiUrl}/admin/volunteers`, this.formData(payload, cv), {
             headers: this.adminHeaders()
         });
     }
 
-    private formData(payload: Record<string, any>, photo: File | null, idProof: File | null): FormData {
+    private formData(payload: Record<string, any>, cv: File | null): FormData {
         const fd = new FormData();
         Object.entries(payload).forEach(([k, v]) => {
             if (v !== null && v !== undefined) fd.append(k, String(v));
         });
-        if (photo) fd.append('photo', photo);
-        if (idProof) fd.append('idProof', idProof);
+        if (cv) fd.append('cv', cv);
         return fd;
     }
 }

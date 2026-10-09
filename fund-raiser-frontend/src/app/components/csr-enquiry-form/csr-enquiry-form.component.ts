@@ -5,16 +5,13 @@ import { LucideAngularModule } from 'lucide-angular';
 import { CsrEnquiryService } from '../../services/csr-enquiry.service';
 import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component';
 
-export interface EnquiryProjectOption {
-    id: string;
-    name: string;
-}
-
 /**
  * The "Partner With ICE" enquiry form.
  *
- * Lives inside the modal on the CSR Collaboration page — submitting never navigates away.
- * On success the form is replaced in place by the reference number (ICE-CSR-2026-0001).
+ * The same fields as the public form on icenetwork.in/csr: company, contact person,
+ * designation, email and phone are required; budget, area of interest, location and
+ * message are optional. Lives inside a modal — submitting never navigates away. On
+ * success the form is replaced in place by the reference number (ICE-CSR-2026-0001).
  */
 @Component({
     selector: 'app-csr-enquiry-form',
@@ -79,9 +76,9 @@ export interface EnquiryProjectOption {
                     <p *ngIf="showError('phone')" class="text-xs text-rose-500 mt-1 mb-0">{{ errorFor('phone') }}</p>
                 </div>
 
-                <!-- Budget -->
+                <!-- Budget (optional) -->
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-semibold text-neutral-600 mb-1.5">Indicative CSR budget <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-semibold text-neutral-600 mb-1.5">Indicative CSR budget <span class="text-neutral-400 font-normal">(optional)</span></label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-neutral-400">&#8377;</span>
                         <input type="number" formControlName="budget" [class]="inputClass('budget') + ' pl-8'" placeholder="500000" min="1" step="1000">
@@ -90,24 +87,14 @@ export interface EnquiryProjectOption {
                     <p *ngIf="!showError('budget') && budgetPreview" class="text-xs text-neutral-400 mt-1 mb-0">{{ budgetPreview }}</p>
                 </div>
 
-                <!-- Area of interest -->
-                <div>
-                    <label class="block text-xs font-semibold text-neutral-600 mb-1.5">Area of interest <span class="text-rose-500">*</span></label>
+                <!-- Area of interest (optional) -->
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-neutral-600 mb-1.5">Area of interest <span class="text-neutral-400 font-normal">(optional)</span></label>
                     <select formControlName="areaOfInterest" [class]="inputClass('areaOfInterest')">
                         <option value="">Select an area</option>
                         <option *ngFor="let a of areas" [value]="a">{{ a }}</option>
                     </select>
                     <p *ngIf="showError('areaOfInterest')" class="text-xs text-rose-500 mt-1 mb-0">{{ errorFor('areaOfInterest') }}</p>
-                </div>
-
-                <!-- Preferred project -->
-                <div>
-                    <label class="block text-xs font-semibold text-neutral-600 mb-1.5">Preferred project <span class="text-rose-500">*</span></label>
-                    <select formControlName="preferredProjectId" [class]="inputClass('preferredProjectId')">
-                        <option value="">Select a project</option>
-                        <option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</option>
-                    </select>
-                    <p *ngIf="showError('preferredProjectId')" class="text-xs text-rose-500 mt-1 mb-0">{{ errorFor('preferredProjectId') }}</p>
                 </div>
 
                 <!-- Location (optional) -->
@@ -153,11 +140,12 @@ export interface EnquiryProjectOption {
     `
 })
 export class CsrEnquiryFormComponent implements OnInit {
-    /** Live from the Projects module — drives the Preferred Project dropdown. */
-    @Input() projects: EnquiryProjectOption[] = [];
     /** Thematic areas shown on the page — drives the Area of Interest dropdown. */
     @Input() areas: string[] = [];
-    /** Pre-selects the project when opened from a specific opportunity card. */
+    /**
+     * Not shown as a field — carries the project along when the form is opened from a
+     * specific opportunity card, so the enquiry is still linked to it.
+     */
     @Input() preselectedProjectId: string | null = null;
 
     /**
@@ -204,9 +192,9 @@ export class CsrEnquiryFormComponent implements OnInit {
             designation: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
             email: ['', [Validators.required, Validators.pattern(/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/)]],
             phone: ['', [Validators.required, Validators.pattern(/^(?:\+?91[\s-]?)?[0-9][0-9\s-]{7,14}$/)]],
-            budget: ['', [Validators.required, Validators.min(1)]],
-            areaOfInterest: ['', Validators.required],
-            preferredProjectId: [this.preselectedProjectId || '', Validators.required],
+            budget: ['', Validators.min(1)],
+            areaOfInterest: [''],
+            preferredProjectId: [this.preselectedProjectId || ''],
             location: ['', Validators.maxLength(200)],
             message: ['', Validators.maxLength(2000)],
             website: [''],
@@ -322,9 +310,6 @@ const REQUIRED_MESSAGES: Record<string, string> = {
     designation: 'Designation is required.',
     email: 'Email address is required.',
     phone: 'Phone number is required.',
-    budget: 'Enter your indicative CSR budget.',
-    areaOfInterest: 'Select an area of interest.',
-    preferredProjectId: 'Select a preferred project.',
 };
 
 const PATTERN_MESSAGES: Record<string, string> = {

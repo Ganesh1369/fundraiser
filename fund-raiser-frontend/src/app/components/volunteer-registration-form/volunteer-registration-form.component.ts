@@ -1,15 +1,33 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { VolunteerService } from '../../services/volunteer.service';
 import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component';
 
+/** How someone can volunteer — the four ways listed on the page. Values are the API's. */
+const VOLUNTEER_MODES = [
+    { value: 'in_house', label: 'In-House' },
+    { value: 'remote', label: 'Remote (work from home)' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'field', label: 'Field' },
+];
+
+/** What the CV upload accepts — the same types and size the API enforces. */
+const CV_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const MAX_CV_BYTES = 5 * 1024 * 1024;
+
 /**
  * Volunteer registration form.
  *
- * Lives inside the modal on the volunteer page — submitting never navigates away. On
- * success the form is replaced in place by the volunteer's reference number.
+ * The same fields as the public form on icenetwork.in/volunteer: only name, date of
+ * birth, phone, email and city are required; everything else is optional. Lives inside
+ * a modal — submitting never navigates away. On success the form is replaced in place
+ * by the volunteer's reference number.
  */
 @Component({
     selector: 'app-volunteer-registration-form',
@@ -38,8 +56,8 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
             <h4 class="section">About you</h4>
             <div class="grid sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                    <label class="lbl">Full name <span class="req">*</span></label>
-                    <input type="text" formControlName="fullName" [class]="cls('fullName')" placeholder="As it appears on your ID">
+                    <label class="lbl">Name <span class="req">*</span></label>
+                    <input type="text" formControlName="fullName" [class]="cls('fullName')" placeholder="Your full name">
                     <p *ngIf="show('fullName')" class="err">{{ msg('fullName') }}</p>
                 </div>
                 <div>
@@ -48,7 +66,7 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
                     <p *ngIf="show('dateOfBirth')" class="err">{{ msg('dateOfBirth') }}</p>
                 </div>
                 <div>
-                    <label class="lbl">Phone <span class="req">*</span></label>
+                    <label class="lbl">Mobile <span class="req">*</span></label>
                     <input type="tel" formControlName="phone" [class]="cls('phone')" placeholder="10-digit mobile">
                     <p *ngIf="show('phone')" class="err">{{ msg('phone') }}</p>
                 </div>
@@ -63,51 +81,53 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
                     <p *ngIf="show('city')" class="err">{{ msg('city') }}</p>
                 </div>
                 <div>
-                    <label class="lbl">Pincode <span class="req">*</span></label>
-                    <input type="text" formControlName="pincode" [class]="cls('pincode')" maxlength="6" placeholder="560001">
-                    <p *ngIf="show('pincode')" class="err">{{ msg('pincode') }}</p>
-                </div>
-            </div>
-
-            <!-- Occupation -->
-            <h4 class="section">Occupation</h4>
-            <div class="grid sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="lbl">I am a <span class="req">*</span></label>
-                    <select formControlName="occupationType" [class]="cls('occupationType')">
-                        <option value="">Select</option>
-                        <option value="student">Student</option>
-                        <option value="working">Working professional</option>
-                        <option value="other">Other</option>
-                    </select>
-                    <p *ngIf="show('occupationType')" class="err">{{ msg('occupationType') }}</p>
-                </div>
-                <div>
-                    <label class="lbl">{{ isStudent ? 'Institution' : 'Employer / organisation' }} <span class="req">*</span></label>
+                    <label class="lbl">Current organisation / college <span class="opt">(optional)</span></label>
                     <input type="text" formControlName="institution" [class]="cls('institution')">
                     <p *ngIf="show('institution')" class="err">{{ msg('institution') }}</p>
                 </div>
+            </div>
 
-                <!-- Student-only -->
-                <ng-container *ngIf="isStudent">
-                    <div>
-                        <label class="lbl">College name <span class="req">*</span></label>
-                        <input type="text" formControlName="collegeName" [class]="cls('collegeName')">
-                        <p *ngIf="show('collegeName')" class="err">{{ msg('collegeName') }}</p>
-                    </div>
-                    <div>
-                        <label class="lbl">Course <span class="req">*</span></label>
-                        <input type="text" formControlName="course" [class]="cls('course')" placeholder="e.g. BSc Environmental Science">
-                        <p *ngIf="show('course')" class="err">{{ msg('course') }}</p>
-                    </div>
-                </ng-container>
+            <!-- Interests -->
+            <h4 class="section">Your interests</h4>
+            <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="lbl">Area of interest <span class="opt">(optional)</span></label>
+                    <select formControlName="areaOfInterest" [class]="cls('areaOfInterest')">
+                        <option value="">Select an area</option>
+                        <option *ngFor="let a of areas" [value]="a">{{ a }}</option>
+                    </select>
+                    <p *ngIf="show('areaOfInterest')" class="err">{{ msg('areaOfInterest') }}</p>
+                </div>
+                <div>
+                    <label class="lbl">Preferred role <span class="opt">(optional)</span></label>
+                    <input type="text" formControlName="roleOfInterest" [class]="cls('roleOfInterest')" placeholder="e.g. Content writer">
+                    <p *ngIf="show('roleOfInterest')" class="err">{{ msg('roleOfInterest') }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="lbl">Skills <span class="opt">(optional)</span></label>
+                    <input type="text" formControlName="skills" [class]="cls('skills')" placeholder="e.g. Writing, design, data entry, research">
+                    <p *ngIf="show('skills')" class="err">{{ msg('skills') }}</p>
+                </div>
             </div>
 
             <!-- Availability -->
             <h4 class="section">Availability</h4>
             <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="lbl">How would you like to volunteer? <span class="opt">(optional)</span></label>
+                    <select formControlName="volunteerMode" [class]="cls('volunteerMode')">
+                        <option value="">Select</option>
+                        <option *ngFor="let m of modes" [value]="m.value">{{ m.label }}</option>
+                    </select>
+                    <p *ngIf="show('volunteerMode')" class="err">{{ msg('volunteerMode') }}</p>
+                </div>
+                <div>
+                    <label class="lbl">Preferred duration <span class="opt">(optional)</span></label>
+                    <input type="text" formControlName="preferredDuration" [class]="cls('preferredDuration')" placeholder="e.g. 3 months">
+                    <p *ngIf="show('preferredDuration')" class="err">{{ msg('preferredDuration') }}</p>
+                </div>
                 <div class="sm:col-span-2">
-                    <label class="lbl">When are you free? <span class="req">*</span></label>
+                    <label class="lbl">When are you free? <span class="opt">(optional)</span></label>
                     <div class="flex gap-2">
                         <label class="pill" [class.on]="form.get('availableWeekday')?.value">
                             <input type="checkbox" formControlName="availableWeekday" hidden> Weekdays
@@ -116,78 +136,28 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
                             <input type="checkbox" formControlName="availableWeekend" hidden> Weekends
                         </label>
                     </div>
-                    <p *ngIf="serverErrors['availability'] || availabilityMissing" class="err">
-                        {{ serverErrors['availability'] || 'Select weekday, weekend, or both.' }}
-                    </p>
-                </div>
-                <div>
-                    <label class="lbl">Hours per week <span class="req">*</span></label>
-                    <input type="number" formControlName="hoursPerWeek" [class]="cls('hoursPerWeek')" min="1" max="60" placeholder="4">
-                    <p *ngIf="show('hoursPerWeek')" class="err">{{ msg('hoursPerWeek') }}</p>
-                </div>
-                <div>
-                    <label class="lbl">Area of interest <span class="req">*</span></label>
-                    <select formControlName="areaOfInterest" [class]="cls('areaOfInterest')">
-                        <option value="">Select an area</option>
-                        <option *ngFor="let a of areas" [value]="a">{{ a }}</option>
-                    </select>
-                    <p *ngIf="show('areaOfInterest')" class="err">{{ msg('areaOfInterest') }}</p>
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="lbl">Languages spoken <span class="opt">(optional)</span></label>
-                    <input type="text" formControlName="languages" [class]="cls('languages')" placeholder="e.g. English, Kannada, Tamil">
-                    <p *ngIf="show('languages')" class="err">{{ msg('languages') }}</p>
+                    <p *ngIf="serverErrors['availability']" class="err">{{ serverErrors['availability'] }}</p>
                 </div>
             </div>
 
-            <!-- Emergency contact -->
-            <h4 class="section">Emergency contact</h4>
-            <div class="grid sm:grid-cols-3 gap-3">
-                <div>
-                    <label class="lbl">Name <span class="req">*</span></label>
-                    <input type="text" formControlName="emergencyName" [class]="cls('emergencyName')">
-                    <p *ngIf="show('emergencyName')" class="err">{{ msg('emergencyName') }}</p>
-                </div>
-                <div>
-                    <label class="lbl">Relationship <span class="req">*</span></label>
-                    <input type="text" formControlName="emergencyRelationship" [class]="cls('emergencyRelationship')" placeholder="e.g. Parent">
-                    <p *ngIf="show('emergencyRelationship')" class="err">{{ msg('emergencyRelationship') }}</p>
-                </div>
-                <div>
-                    <label class="lbl">Phone <span class="req">*</span></label>
-                    <input type="tel" formControlName="emergencyPhone" [class]="cls('emergencyPhone')">
-                    <p *ngIf="show('emergencyPhone')" class="err">{{ msg('emergencyPhone') }}</p>
-                </div>
-            </div>
-
-            <!-- Uploads -->
-            <h4 class="section">Documents</h4>
-            <div class="grid sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="lbl">Photo <span class="opt">(JPG, PNG, WebP · 5 MB)</span></label>
-                    <label class="file" [class.picked]="photo">
-                        <input type="file" hidden accept="image/jpeg,image/png,image/webp" (change)="onPhoto($event)">
-                        <lucide-icon [name]="photo ? 'check' : 'upload'" class="w-4 h-4"></lucide-icon>
-                        <span class="truncate">{{ photo?.name || 'Choose a photo' }}</span>
-                    </label>
-                    <p *ngIf="serverErrors['photo']" class="err">{{ serverErrors['photo'] }}</p>
-                </div>
-                <div>
-                    <label class="lbl">ID proof <span class="opt">(JPG, PNG, WebP, PDF · 5 MB)</span></label>
-                    <label class="file" [class.picked]="idProof">
-                        <input type="file" hidden accept="image/jpeg,image/png,image/webp,application/pdf" (change)="onIdProof($event)">
-                        <lucide-icon [name]="idProof ? 'check' : 'upload'" class="w-4 h-4"></lucide-icon>
-                        <span class="truncate">{{ idProof?.name || 'Choose an ID proof' }}</span>
-                    </label>
-                    <p *ngIf="serverErrors['idProof']" class="err">{{ serverErrors['idProof'] }}</p>
-                </div>
-            </div>
-
-            <!-- Message -->
+            <!-- Motivation -->
             <div class="mt-3">
-                <label class="lbl">Anything else? <span class="opt">(optional)</span></label>
-                <textarea formControlName="message" rows="2" [class]="cls('message')" placeholder="Tell us anything we should know"></textarea>
+                <label class="lbl">Why would you like to volunteer with ICE? <span class="opt">(optional)</span></label>
+                <textarea formControlName="message" rows="3" [class]="cls('message')" placeholder="Tell us what draws you to this work"></textarea>
                 <p *ngIf="show('message')" class="err">{{ msg('message') }}</p>
+            </div>
+
+            <!-- CV -->
+            <div class="mt-3">
+                <label class="lbl">CV <span class="opt">(optional · PDF or Word · 5 MB)</span></label>
+                <label class="file" [class.picked]="cv">
+                    <input type="file" hidden
+                           accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                           (change)="onCv($event)">
+                    <lucide-icon [name]="cv ? 'check' : 'upload'" class="w-4 h-4"></lucide-icon>
+                    <span class="truncate">{{ cv?.name || 'Upload a CV' }}</span>
+                </label>
+                <p *ngIf="cvError || serverErrors['cv']" class="err">{{ cvError || serverErrors['cv'] }}</p>
             </div>
 
             <!-- Consent -->
@@ -247,10 +217,10 @@ import { RecaptchaBoxComponent } from '../recaptcha-box/recaptcha-box.component'
         .check input { accent-color: #22c55e; width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; cursor: pointer; }
     `]
 })
-export class VolunteerRegistrationFormComponent implements OnInit {
+export class VolunteerRegistrationFormComponent implements OnInit, OnChanges {
     /** Area-of-interest options — the focus areas listed on the volunteer page. */
     @Input() areas: string[] = [];
-    /** Pre-filled when the form is opened from a specific opportunity card. */
+    /** Pre-filled into "Preferred role" when the form is opened from a specific opportunity card. */
     @Input() roleOfInterest: string | null = null;
 
     /**
@@ -267,13 +237,14 @@ export class VolunteerRegistrationFormComponent implements OnInit {
     @Output() registered = new EventEmitter<{ volunteerId: string; fullName: string }>();
 
     form!: FormGroup;
+    readonly modes = VOLUNTEER_MODES;
 
     @ViewChild('captcha') captchaBox?: RecaptchaBoxComponent;
     captchaToken: string | null = null;
     captchaError = '';
 
-    photo: File | null = null;
-    idProof: File | null = null;
+    cv: File | null = null;
+    cvError = '';
 
     submitting = false;
     formError = '';
@@ -305,36 +276,18 @@ export class VolunteerRegistrationFormComponent implements OnInit {
             email: ['', [Validators.required, Validators.pattern(/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/)]],
             phone: ['', [Validators.required, Validators.pattern(/^(?:\+?91[\s-]?)?[0-9][0-9\s-]{7,14}$/)]],
             city: ['', [Validators.required, Validators.minLength(2)]],
-            pincode: ['', [Validators.required, Validators.pattern(/^[1-9][0-9]{5}$/)]],
-            occupationType: ['', Validators.required],
-            institution: ['', [Validators.required, Validators.minLength(2)]],
-            collegeName: [''],
-            course: [''],
+            institution: ['', [Validators.minLength(2), Validators.maxLength(200)]],
+            areaOfInterest: [''],
+            roleOfInterest: [this.roleOfInterest || '', Validators.maxLength(200)],
+            skills: ['', Validators.maxLength(1000)],
+            volunteerMode: [''],
+            preferredDuration: ['', Validators.maxLength(100)],
             availableWeekday: [false],
             availableWeekend: [false],
-            hoursPerWeek: ['', [Validators.required, Validators.min(1), Validators.max(60)]],
-            areaOfInterest: ['', Validators.required],
-            languages: ['', Validators.maxLength(255)],
             message: ['', Validators.maxLength(2000)],
-            emergencyName: ['', [Validators.required, Validators.minLength(2)]],
-            emergencyRelationship: ['', [Validators.required, Validators.minLength(2)]],
-            emergencyPhone: ['', [Validators.required, Validators.pattern(/^(?:\+?91[\s-]?)?[0-9][0-9\s-]{7,14}$/)]],
             consentDataUse: [false, Validators.requiredTrue],
             consentPhotoMedia: [false],
             website: [''],
-        });
-
-        // College and course are only required while "student" is selected, so the
-        // validators are attached and removed as the answer changes.
-        this.form.get('occupationType')!.valueChanges.subscribe((value) => {
-            const student = value === 'student';
-            ['collegeName', 'course'].forEach((name) => {
-                const c = this.form.get(name)!;
-                if (student) c.setValidators([Validators.required, Validators.minLength(2)]);
-                else { c.clearValidators(); c.setValue(''); }
-                c.updateValueAndValidity({ emitEvent: false });
-            });
-            this.cdr.markForCheck();
         });
 
         // Server-side field errors are stale the moment that field is edited.
@@ -344,29 +297,28 @@ export class VolunteerRegistrationFormComponent implements OnInit {
                 this.cdr.markForCheck();
             }
         });
-
     }
 
-    get isStudent(): boolean {
-        return this.form?.get('occupationType')?.value === 'student';
+    /** A different opportunity card was clicked: reflect it in the Preferred role field. */
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['roleOfInterest'] && this.form && this.roleOfInterest) {
+            this.form.get('roleOfInterest')!.setValue(this.roleOfInterest);
+        }
     }
 
-    get availabilityMissing(): boolean {
-        const f = this.form;
-        if (!f) return false;
-        const touched = f.get('hoursPerWeek')?.touched || f.get('availableWeekday')?.touched;
-        return !!touched && !f.get('availableWeekday')?.value && !f.get('availableWeekend')?.value;
-    }
+    onCv(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0] || null;
+        delete this.serverErrors['cv'];
 
-    onPhoto(event: Event): void {
-        this.photo = (event.target as HTMLInputElement).files?.[0] || null;
-        delete this.serverErrors['photo'];
-        this.cdr.markForCheck();
-    }
+        // Checked here as well as on the server, so a wrong file is caught before submitting.
+        let problem = '';
+        if (file && !CV_TYPES.includes(file.type)) problem = 'CV must be a PDF or Word document.';
+        else if (file && file.size > MAX_CV_BYTES) problem = 'File is too large (5 MB maximum).';
 
-    onIdProof(event: Event): void {
-        this.idProof = (event.target as HTMLInputElement).files?.[0] || null;
-        delete this.serverErrors['idProof'];
+        if (problem) input.value = '';
+        this.cv = problem ? null : file;
+        this.cvError = problem;
         this.cdr.markForCheck();
     }
 
@@ -390,8 +342,6 @@ export class VolunteerRegistrationFormComponent implements OnInit {
         if (c.errors['pattern']) return PATTERN[field] || 'Please check this value.';
         if (c.errors['minlength']) return 'This is too short.';
         if (c.errors['maxlength']) return 'This is too long.';
-        if (c.errors['min']) return 'Enter at least 1 hour.';
-        if (c.errors['max']) return 'That looks like too many hours — please check.';
         return 'Please check this value.';
     }
 
@@ -400,10 +350,8 @@ export class VolunteerRegistrationFormComponent implements OnInit {
         this.formError = '';
         this.serverErrors = {};
 
-        const noDaySelected = !this.form.get('availableWeekday')!.value && !this.form.get('availableWeekend')!.value;
-        if (this.form.invalid || noDaySelected) {
+        if (this.form.invalid) {
             this.form.markAllAsTouched();
-            if (noDaySelected) this.serverErrors['availability'] = 'Select weekday, weekend, or both.';
             this.cdr.markForCheck();
             return;
         }
@@ -416,7 +364,6 @@ export class VolunteerRegistrationFormComponent implements OnInit {
         this.submitting = true;
         this.send({
             ...this.form.value,
-            roleOfInterest: this.roleOfInterest || '',
             recaptchaToken: this.captchaToken,
         });
     }
@@ -430,8 +377,8 @@ export class VolunteerRegistrationFormComponent implements OnInit {
 
     private send(payload: Record<string, any>): void {
         const request = this.adminMode
-            ? this.volunteerService.adminRegister(payload, this.photo, this.idProof)
-            : this.volunteerService.register(payload, this.photo, this.idProof);
+            ? this.volunteerService.adminRegister(payload, this.cv)
+            : this.volunteerService.register(payload, this.cv);
 
         request.subscribe({
             next: (res) => {
@@ -463,22 +410,10 @@ const REQUIRED: Record<string, string> = {
     email: 'Email address is required.',
     phone: 'Phone number is required.',
     city: 'City is required.',
-    pincode: 'Pincode is required.',
-    occupationType: 'Select your occupation type.',
-    institution: 'This is required.',
-    collegeName: 'College name is required for students.',
-    course: 'Course is required for students.',
-    hoursPerWeek: 'Enter how many hours a week you can give.',
-    areaOfInterest: 'Select an area of interest.',
-    emergencyName: 'Emergency contact name is required.',
-    emergencyRelationship: 'Relationship is required.',
-    emergencyPhone: 'Emergency contact number is required.',
     consentDataUse: 'You must consent to how we use your data.',
 };
 
 const PATTERN: Record<string, string> = {
     email: 'Enter a valid email address.',
     phone: 'Enter a valid phone number (10 digits, optionally +91).',
-    emergencyPhone: 'Enter a valid phone number (10 digits, optionally +91).',
-    pincode: 'Enter a valid 6-digit pincode.',
 };

@@ -62,6 +62,18 @@
             <span>Pending review</span>
         </div>
     </div>
+
+    <a routerLink="/admin/csr-enquiries" class="stat-card stat-link">
+        <div class="stat-header">
+            <lucide-icon name="briefcase" class="stat-icon w-5 h-5"></lucide-icon>
+            <span class="stat-label">CSR Enquiries</span>
+        </div>
+        <div class="stat-value">{{ stats?.csr?.total || 0 }}</div>
+        <div class="stat-breakdown">
+            <span>{{ stats?.csr?.newEnquiries || 0 }} new</span>
+            <span>{{ stats?.csr?.thisMonth || 0 }} this month</span>
+        </div>
+    </a>
 </div>
 
 @if (projects.length > 0) {

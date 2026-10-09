@@ -110,7 +110,16 @@ const createOrder = async (userId, userName, amount, request80g = false, purpose
         notes: { userId, userName }
     };
 
-    const order = await razorpay.orders.create(options);
+    let order;
+    try {
+        order = await razorpay.orders.create(options);
+    } catch (err) {
+        // The Razorpay SDK rejects with { statusCode, error: { code, description } } and no
+        // .message, so without this the client only ever sees a bare 500.
+        const reason = err?.error?.description || err?.message || 'unknown error';
+        console.error('Razorpay order creation failed:', err?.statusCode, err?.error?.code, reason);
+        throw { status: 502, message: `Payment gateway error: ${reason}` };
+    }
 
     const donationId = uuidv4();
     const referrerResult = await db.query('SELECT referred_by FROM users WHERE id = ?', [userId]);

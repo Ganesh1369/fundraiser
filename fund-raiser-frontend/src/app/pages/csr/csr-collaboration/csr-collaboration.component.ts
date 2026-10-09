@@ -6,7 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { CsrPageService } from '../../../services/csr-page.service';
 import { accentClasses } from '../../../shared/accent-classes';
 import { CSR_CONTRIBUTION_AREAS, ContributionArea } from '../../../shared/csr-contribution-areas';
-import { CsrEnquiryFormComponent, EnquiryProjectOption } from '../../../components/csr-enquiry-form/csr-enquiry-form.component';
+import { CsrEnquiryFormComponent } from '../../../components/csr-enquiry-form/csr-enquiry-form.component';
 
 interface ProjectStats {
     totalRaised: number;
@@ -414,7 +414,6 @@ const CSR1_CERTIFICATE_URL = '/cert/ice-csr1-certificate.pdf';
                         Programme of interest: <span class="font-semibold text-neutral-700">{{ enquiryProject }}</span>
                     </p>
                     <app-csr-enquiry-form
-                        [projects]="enquiryProjects"
                         [areas]="areaTitles"
                         [preselectedProjectId]="enquiryProjectId">
                     </app-csr-enquiry-form>
@@ -525,11 +524,6 @@ export class CsrCollaborationComponent implements OnInit {
     scrollTo(event: Event, id: string): void {
         event.preventDefault();
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    /** Dropdown options for the form — live from the Projects module. */
-    get enquiryProjects(): EnquiryProjectOption[] {
-        return this.opportunities.map(o => ({ id: o.id, name: o.name }));
     }
 
     /** Area-of-interest options — the same thematic areas the page lists. */

@@ -34,6 +34,16 @@ const _getDashboardStats = async () => {
     const recentUsers = await db.query(
         `SELECT COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL 7 DAY`
     );
+    // CSR enquiries: how many have come in, how many are still at intake, and the money
+    // partners have committed so far. Mirrors the CSR module's own summary numbers.
+    const csrStats = await db.query(
+        `SELECT
+            COUNT(*) as total,
+            COALESCE(SUM(CASE WHEN status = 'new_enquiry' THEN 1 ELSE 0 END), 0) as new_count,
+            COALESCE(SUM(CASE WHEN created_at >= NOW() - INTERVAL 1 MONTH THEN 1 ELSE 0 END), 0) as this_month,
+            COALESCE(SUM(committed_amount), 0) as committed
+         FROM csr_enquiries`
+    );
 
     const usersByType = {};
     userStats.rows.forEach(row => { usersByType[row.user_type] = parseInt(row.count); });
@@ -52,7 +62,13 @@ const _getDashboardStats = async () => {
             thisMonth: parseFloat(donationStats.rows[0].this_month),
             thisWeek: parseFloat(donationStats.rows[0].this_week)
         },
-        certificates: certsByStatus
+        certificates: certsByStatus,
+        csr: {
+            total: parseInt(csrStats.rows[0].total) || 0,
+            newEnquiries: parseInt(csrStats.rows[0].new_count) || 0,
+            thisMonth: parseInt(csrStats.rows[0].this_month) || 0,
+            committedValue: parseFloat(csrStats.rows[0].committed) || 0
+        }
     };
 };
 const getDashboardStats = cached('stats', 30000, _getDashboardStats);

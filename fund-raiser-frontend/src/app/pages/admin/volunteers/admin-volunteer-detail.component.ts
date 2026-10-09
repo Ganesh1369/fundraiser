@@ -49,32 +49,28 @@ import { VolunteerAdminService } from '../../../services/volunteer-admin.service
                                 <div><dt>Email</dt><dd><a [href]="'mailto:' + v.email">{{ v.email }}</a></dd></div>
                                 <div><dt>Phone</dt><dd><a [href]="'tel:' + v.phone">{{ v.phone }}</a></dd></div>
                                 <div><dt>City</dt><dd>{{ v.city }}</dd></div>
-                                <div><dt>Pincode</dt><dd>{{ v.pincode }}</dd></div>
-                                <div><dt>Languages</dt><dd>{{ v.languages || '—' }}</dd></div>
+                                <div><dt>Current organisation / college</dt><dd>{{ v.institution || '—' }}</dd></div>
                             </dl>
                         </div>
                     </section>
 
+                    <!-- The same optional answers the registration form asks for. -->
                     <section class="card">
-                        <header class="head"><h2>Occupation &amp; availability</h2></header>
+                        <header class="head"><h2>Interests &amp; availability</h2></header>
                         <div class="body">
                             <dl class="pairs">
-                                <div><dt>Occupation type</dt><dd>{{ v.occupation_label }}</dd></div>
-                                <div><dt>Institution / employer</dt><dd>{{ v.institution }}</dd></div>
-                                <div *ngIf="v.college_name"><dt>College</dt><dd>{{ v.college_name }}</dd></div>
-                                <div *ngIf="v.course"><dt>Course</dt><dd>{{ v.course }}</dd></div>
-                                <div><dt>Availability</dt><dd>{{ v.availability_label }}</dd></div>
-                                <div><dt>Area of interest</dt><dd>{{ v.area_of_interest }}</dd></div>
-                                <div *ngIf="v.role_of_interest"><dt>Role applied for</dt><dd>{{ v.role_of_interest }}</dd></div>
-                                <div *ngIf="v.volunteer_mode"><dt>Volunteering mode</dt><dd>{{ v.volunteer_mode_label }}</dd></div>
-                                <div *ngIf="v.preferred_duration"><dt>Preferred duration</dt><dd>{{ v.preferred_duration }}</dd></div>
-                                <div *ngIf="v.skills"><dt>Skills</dt><dd>{{ v.skills }}</dd></div>
+                                <div><dt>Area of interest</dt><dd>{{ v.area_of_interest || '—' }}</dd></div>
+                                <div><dt>Preferred role</dt><dd>{{ v.role_of_interest || '—' }}</dd></div>
+                                <div class="wide"><dt>Skills</dt><dd>{{ v.skills || '—' }}</dd></div>
+                                <div><dt>Volunteering mode</dt><dd>{{ v.volunteer_mode_label || '—' }}</dd></div>
+                                <div><dt>Preferred duration</dt><dd>{{ v.preferred_duration || '—' }}</dd></div>
+                                <div><dt>Availability</dt><dd>{{ v.availability_label || '—' }}</dd></div>
                             </dl>
                         </div>
                     </section>
 
                     <section class="card" *ngIf="v.message">
-                        <header class="head"><h2>Message</h2></header>
+                        <header class="head"><h2>Why they want to volunteer</h2></header>
                         <div class="body">
                             <p class="message">{{ v.message }}</p>
                         </div>
@@ -82,17 +78,6 @@ import { VolunteerAdminService } from '../../../services/volunteer-admin.service
                 </div>
 
                 <div class="col-side">
-                    <section class="card">
-                        <header class="head"><h2>Emergency contact</h2></header>
-                        <div class="body">
-                            <dl class="pairs stack">
-                                <div><dt>Name</dt><dd>{{ v.emergency_name }}</dd></div>
-                                <div><dt>Relationship</dt><dd>{{ v.emergency_relationship }}</dd></div>
-                                <div><dt>Phone</dt><dd><a [href]="'tel:' + v.emergency_phone">{{ v.emergency_phone }}</a></dd></div>
-                            </dl>
-                        </div>
-                    </section>
-
                     <section class="card">
                         <header class="head"><h2>Consent</h2></header>
                         <div class="body">
@@ -144,6 +129,7 @@ import { VolunteerAdminService } from '../../../services/volunteer-admin.service
 
         .pairs { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
         .pairs.stack { grid-template-columns: 1fr; }
+        .pairs .wide { grid-column: 1 / -1; }
         .pairs dt { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #9CA3AF; margin-bottom: 2px; }
         .pairs dd { margin: 0; font-size: 0.875rem; color: #374151; font-weight: 500; }
         .pairs a { color: #16a34a; text-decoration: none; }

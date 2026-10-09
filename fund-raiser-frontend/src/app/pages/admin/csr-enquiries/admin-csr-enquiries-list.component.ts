@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { CsrEnquiryAdminService, CsrEnquiryFilters, CsrStatus } from '../../../services/csr-enquiry-admin.service';
 import { ProjectService } from '../../../services/project.service';
-import { CsrEnquiryFormComponent, EnquiryProjectOption } from '../../../components/csr-enquiry-form/csr-enquiry-form.component';
+import { CsrEnquiryFormComponent } from '../../../components/csr-enquiry-form/csr-enquiry-form.component';
 import { CSR_CONTRIBUTION_AREA_TITLES } from '../../../shared/csr-contribution-areas';
 
 /**
@@ -251,7 +251,6 @@ import { CSR_CONTRIBUTION_AREA_TITLES } from '../../../shared/csr-contribution-a
                     <p class="modal-sub">Record a corporate enquiry — it appears in the pipeline below once saved.</p>
                     <app-csr-enquiry-form
                         [adminMode]="true"
-                        [projects]="enquiryProjects"
                         [areas]="enquiryAreas"
                         (submitted)="onEnquirySubmitted()">
                     </app-csr-enquiry-form>
@@ -359,7 +358,7 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
     areas: string[] = [];
     projects: any[] = [];
 
-    filters: CsrEnquiryFilters = { page: 1, limit: 20 };
+    filters: CsrEnquiryFilters = this.defaultFilters();
     loading = true;
     errorMessage = '';
 
@@ -402,11 +401,6 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
         });
 
         this.load();
-    }
-
-    /** Preferred-project options for the enquiry form. */
-    get enquiryProjects(): EnquiryProjectOption[] {
-        return this.projects.map(p => ({ id: p.id, name: p.name }));
     }
 
     openEnquiry(): void {
@@ -481,8 +475,13 @@ export class AdminCsrEnquiriesListComponent implements OnInit {
         this.load();
     }
 
+    /** Dropdowns start as '' so their "Any …" option shows instead of a blank box. */
+    private defaultFilters(): CsrEnquiryFilters {
+        return { page: 1, limit: 20, ownerId: '', projectId: '', area: '', preset: '' };
+    }
+
     clearFilters(): void {
-        this.filters = { page: 1, limit: 20 };
+        this.filters = this.defaultFilters();
         this.load();
     }
 

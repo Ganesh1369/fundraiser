@@ -651,7 +651,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     razorpay.open();
                 }
             },
-            error: () => { this.isLoading = false; }
+            error: (err: any) => {
+                this.isLoading = false;
+                this.toast.error(err?.error?.message || 'Payment initialization failed.');
+                this.cdr.detectChanges();
+            }
         });
     }
 

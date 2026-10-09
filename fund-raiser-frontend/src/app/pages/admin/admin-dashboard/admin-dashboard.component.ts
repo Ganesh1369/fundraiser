@@ -19,6 +19,12 @@ interface DashboardStats {
         thisWeek: number;
     };
     certificates: { [key: string]: number };
+    csr?: {
+        total: number;
+        newEnquiries: number;
+        thisMonth: number;
+        committedValue: number;
+    };
 }
 
 interface Registration {

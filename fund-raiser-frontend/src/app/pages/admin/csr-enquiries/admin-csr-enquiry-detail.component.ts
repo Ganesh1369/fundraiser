@@ -48,9 +48,8 @@ import { CsrEnquiryAdminService, CsrStatus } from '../../../services/csr-enquiry
                                 <div><dt>Contact</dt><dd>{{ e.contact_person }}, {{ e.designation }}</dd></div>
                                 <div><dt>Email</dt><dd><a [href]="'mailto:' + e.email">{{ e.email }}</a></dd></div>
                                 <div><dt>Phone</dt><dd><a [href]="'tel:' + e.phone">{{ e.phone }}</a></dd></div>
-                                <div><dt>Indicated budget</dt><dd>{{ money(e.budget) }}</dd></div>
-                                <div><dt>Area of interest</dt><dd>{{ e.area_of_interest }}</dd></div>
-                                <div><dt>Preferred project</dt><dd>{{ e.project_name || '—' }}</dd></div>
+                                <div><dt>Indicated budget</dt><dd>{{ e.budget ? money(e.budget) : '—' }}</dd></div>
+                                <div><dt>Area of interest</dt><dd>{{ e.area_of_interest || '—' }}</dd></div>
                                 <div><dt>Location</dt><dd>{{ e.location || '—' }}</dd></div>
                             </dl>
                             <div class="message" *ngIf="e.message">

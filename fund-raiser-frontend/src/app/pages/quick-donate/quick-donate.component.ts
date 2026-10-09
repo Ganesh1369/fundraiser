@@ -166,9 +166,9 @@ export class QuickDonateComponent implements OnInit {
                 const rzp = new Razorpay(options);
                 rzp.open();
             },
-            error: () => this.zone.run(() => {
+            error: (err: any) => this.zone.run(() => {
                 this.isProcessing = false;
-                this.toast.error('Payment initialization failed.');
+                this.toast.error(err?.error?.message || 'Payment initialization failed.');
                 this.cdr.markForCheck();
             })
         });

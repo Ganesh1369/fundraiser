@@ -59,54 +59,6 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
             </div>
         </div>
 
-        <!-- Breakdowns -->
-        <div class="breakdowns" *ngIf="summary">
-            <section class="card bd">
-                <h3>By pincode</h3>
-                <div class="bars">
-                    <div class="bar-row" *ngFor="let b of summary.byPincode" (click)="filterBy('pincode', b.label)">
-                        <span class="bar-label">{{ b.label }}</span>
-                        <span class="bar-track"><span class="bar-fill" [style.width.%]="pct(b.count, summary.byPincode)"></span></span>
-                        <span class="bar-count">{{ b.count }}</span>
-                    </div>
-                    <p *ngIf="!summary.byPincode.length" class="empty">No data.</p>
-                </div>
-            </section>
-            <section class="card bd">
-                <h3>By city</h3>
-                <div class="bars">
-                    <div class="bar-row" *ngFor="let b of summary.byCity" (click)="filterBy('city', b.label)">
-                        <span class="bar-label">{{ b.label }}</span>
-                        <span class="bar-track"><span class="bar-fill" [style.width.%]="pct(b.count, summary.byCity)"></span></span>
-                        <span class="bar-count">{{ b.count }}</span>
-                    </div>
-                    <p *ngIf="!summary.byCity.length" class="empty">No data.</p>
-                </div>
-            </section>
-            <section class="card bd">
-                <h3>By occupation</h3>
-                <div class="bars">
-                    <div class="bar-row" *ngFor="let b of summary.byOccupation">
-                        <span class="bar-label">{{ b.label }}</span>
-                        <span class="bar-track"><span class="bar-fill" [style.width.%]="pct(b.count, summary.byOccupation)"></span></span>
-                        <span class="bar-count">{{ b.count }}</span>
-                    </div>
-                    <p *ngIf="!summary.byOccupation.length" class="empty">No data.</p>
-                </div>
-            </section>
-            <section class="card bd">
-                <h3>By area of interest</h3>
-                <div class="bars">
-                    <div class="bar-row" *ngFor="let b of summary.byArea" (click)="filterBy('area', b.label)">
-                        <span class="bar-label">{{ b.label }}</span>
-                        <span class="bar-track"><span class="bar-fill" [style.width.%]="pct(b.count, summary.byArea)"></span></span>
-                        <span class="bar-count">{{ b.count }}</span>
-                    </div>
-                    <p *ngIf="!summary.byArea.length" class="empty">No data.</p>
-                </div>
-            </section>
-        </div>
-
         <!-- Filters -->
         <section class="card filters">
             <div class="filter-grid">
@@ -282,17 +234,6 @@ import { TAMIL_NADU_CITIES } from '../../../shared/tamil-nadu-cities';
         .m-value { font-size: 1.25rem; font-weight: 700; color: #102a43; }
         .m-value.active { color: #16a34a; }
 
-        .breakdowns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .bd { padding: 16px 18px; margin: 0; }
-        .bd h3 { margin: 0 0 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #9CA3AF; }
-        .bars { display: flex; flex-direction: column; gap: 7px; }
-        .bar-row { display: grid; grid-template-columns: 84px 1fr 28px; align-items: center; gap: 8px; cursor: pointer; }
-        .bar-row:hover .bar-fill { background: #16a34a; }
-        .bar-label { font-size: 0.75rem; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .bar-track { height: 6px; background: #F3F4F6; border-radius: 3px; overflow: hidden; }
-        .bar-fill { display: block; height: 100%; background: #22c55e; border-radius: 3px; transition: background 0.15s ease; }
-        .bar-count { font-size: 0.75rem; color: #6B7280; text-align: right; font-weight: 600; }
-
         .filters { padding: 16px 20px; }
         .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
         .f { display: flex; flex-direction: column; gap: 4px; }
@@ -351,7 +292,7 @@ export class AdminVolunteersListComponent implements OnInit {
 
     meta: any = { areas: [], cities: [], institutions: [], occupations: [], availabilityOptions: [] };
     readonly cities = TAMIL_NADU_CITIES;
-    filters: VolunteerFilters = { page: 1, limit: 20 };
+    filters: VolunteerFilters = this.defaultFilters();
 
     loading = true;
     exporting = false;
@@ -426,25 +367,18 @@ export class AdminVolunteersListComponent implements OnInit {
         });
     }
 
-    /** Clicking a breakdown bar drills into that slice. */
-    filterBy(key: 'city' | 'pincode' | 'area', value: string): void {
-        (this.filters as any)[key] = (this.filters as any)[key] === value ? '' : value;
-        this.applyFilters();
-    }
-
-    /** Bar width relative to the largest value in the same group. */
-    pct(count: number, group: { count: number }[]): number {
-        const max = Math.max(...group.map(g => g.count), 1);
-        return Math.round((count / max) * 100);
-    }
-
     applyFilters(): void {
         this.filters.page = 1;
         this.load();
     }
 
+    /** Dropdowns start as '' so their "Any …" option shows instead of a blank box. */
+    private defaultFilters(): VolunteerFilters {
+        return { page: 1, limit: 20, occupationType: '', city: '', availability: '', status: 'all' };
+    }
+
     clearFilters(): void {
-        this.filters = { page: 1, limit: 20 };
+        this.filters = this.defaultFilters();
         this.load();
     }
 
